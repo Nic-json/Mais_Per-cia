@@ -9,8 +9,9 @@
  <div asp-validation-summary="ModelOnly" class="text-danger"></div>
  <div class="form-section-title"><span>01</span><div><h2>Identificação</h2><p>Informações do processo pericial.</p></div></div>
  <div class="row g-3">
-  <div class="col-md-7"><label asp-for="NomePericiado" class="form-label"></label><input asp-for="NomePericiado" class="form-control" placeholder="Nome completo" /><span asp-validation-for="NomePericiado" class="text-danger"></span></div>
+  <div class="col-md-7"><label asp-for="NomePericiado" class="form-label">Periciado principal</label><input asp-for="NomePericiado" class="form-control" placeholder="Nome completo" /><span asp-validation-for="NomePericiado" class="text-danger"></span></div>
   <div class="col-md-5"><label asp-for="Numero" class="form-label"></label><input asp-for="Numero" class="form-control" placeholder="Ex.: 0001234-56.2025" /><span asp-validation-for="Numero" class="text-danger"></span></div>
+  <div class="col-12"><label asp-for="OutrosPericiados" class="form-label">Outros periciados</label><textarea asp-for="OutrosPericiados" class="form-control" rows="3" placeholder="Digite um nome por linha"></textarea><div class="form-text">Você pode cadastrar até 50 periciados nesta perícia.</div><span asp-validation-for="OutrosPericiados" class="text-danger"></span></div>
   <div class="col-md-4"><label asp-for="DataEnvio" class="form-label"></label><input asp-for="DataEnvio" class="form-control" /><span asp-validation-for="DataEnvio" class="text-danger"></span></div>
   <div class="col-md-4"><label asp-for="DataAceite" class="form-label"></label><input asp-for="DataAceite" class="form-control" /><span asp-validation-for="DataAceite" class="text-danger"></span></div>
   <div class="col-md-4"><label asp-for="PrazoLaudo" class="form-label"></label><input asp-for="PrazoLaudo" class="form-control" /><span asp-validation-for="PrazoLaudo" class="text-danger"></span></div>
@@ -28,8 +29,22 @@
 @if (editar)
 {
  <section class="form-panel mt-4">
-  <div class="form-section-title"><span>03</span><div><h2>Editor de laudo</h2><p>Escreva e salve o rascunho ligado a esta perícia.</p></div></div>
-  <div class="d-flex flex-wrap align-items-center gap-3"><a asp-action="EditorLaudo" asp-route-id="@Model.Id" class="btn btn-primary">@(Model.Laudo is null ? "Criar laudo" : "Continuar editando")</a>@if (Model.Laudo is not null) { <span class="muted">Rascunho atualizado em @Model.Laudo.AtualizadoEm.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span> }</div>
+  <div class="form-section-title"><span>03</span><div><h2>Laudos desta perícia</h2><p>Cadastre vários laudos, cada um com seu número e periciado relacionado.</p></div></div>
+  @if (Model.Laudos.Count > 0)
+  {
+   <div class="table-responsive mb-4"><table class="table align-middle"><thead><tr><th>Número do laudo</th><th>Periciado</th><th>Última alteração</th><th></th></tr></thead><tbody>
+   @foreach (var laudo in Model.Laudos.OrderBy(l => l.NumeroLaudo))
+   {
+    <tr><td><strong>@laudo.NumeroLaudo</strong></td><td>@(laudo.Periciado?.Nome ?? "Não associado")</td><td>@(string.IsNullOrWhiteSpace(laudo.ConteudoHtml) ? "Rascunho vazio" : laudo.AtualizadoEm.ToLocalTime().ToString("dd/MM/yyyy HH:mm"))</td><td class="text-end"><a asp-action="EditorLaudo" asp-route-id="@Model.Id" asp-route-laudoId="@laudo.Id" class="action-link">@(string.IsNullOrWhiteSpace(laudo.ConteudoHtml) ? "Escrever" : "Abrir")</a><form asp-action="ExcluirLaudo" asp-route-id="@Model.Id" asp-route-laudoId="@laudo.Id" method="post" class="d-inline"><button type="submit" class="btn btn-link text-danger p-0 ms-3" onclick="return confirm('Excluir este laudo?')">Excluir</button></form></td></tr>
+   }
+   </tbody></table></div>
+  }
+  else { <p class="muted">Nenhum laudo cadastrado nesta perícia.</p> }
+  <form asp-action="CriarLaudo" asp-route-periciaId="@Model.Id" method="post" class="row g-3 align-items-end">
+   <div class="col-md-4"><label class="form-label" for="numeroLaudo">Número do laudo</label><input id="numeroLaudo" name="numeroLaudo" class="form-control" maxlength="80" required placeholder="Ex.: 1, 2 ou 0001-A" /></div>
+   <div class="col-md-5"><label class="form-label" for="periciadoId">Periciado relacionado</label><select id="periciadoId" name="periciadoId" class="form-select"><option value="">Sem associação</option>@foreach (var pessoa in Model.Periciados.OrderBy(p => p.Nome)) { <option value="@pessoa.Id">@pessoa.Nome</option> }</select></div>
+   <div class="col-md-3"><button type="submit" class="btn btn-primary">＋ Criar laudo</button></div>
+  </form>
  </section>
  <section class="form-panel document-panel mt-4">
   <div class="form-section-title"><span>04</span><div><h2>Laudos e documentos</h2><p>Arquivos privados desta perícia, acessíveis apenas após login.</p></div></div>

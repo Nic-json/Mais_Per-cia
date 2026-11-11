@@ -26,6 +26,29 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
         p.Status == StatusPericia.Cancelada ||
         (p.Status == StatusPericia.Concluida && p.ValorRecebido >= p.ValorHonorarios));
 
+    private static List<string> ObterNomesPericiados(string nomePrincipal, string? outrosNomes) =>
+        new[] { nomePrincipal }
+            .Concat((outrosNomes ?? "").Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries))
+            .Select(nome => nome.Trim())
+            .Where(nome => nome.Length > 0)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+    private void ValidarNomesPericiados(IReadOnlyCollection<string> nomes)
+    {
+        if (nomes.Count > 50)
+            ModelState.AddModelError(nameof(Pericia.OutrosPericiados), "Cadastre no máximo 50 periciados por perícia.");
+        if (nomes.Any(nome => nome.Length > 160))
+            ModelState.AddModelError(nameof(Pericia.OutrosPericiados), "Cada nome deve ter no máximo 160 caracteres.");
+    }
+
+    private static void PrepararOutrosNomes(Pericia pericia)
+    {
+        pericia.OutrosPericiados = string.Join(Environment.NewLine,
+            pericia.Periciados.Where(p => !string.Equals(p.Nome, pericia.NomePericiado, StringComparison.OrdinalIgnoreCase))
+                .Select(p => p.Nome));
+    }
+
     public IActionResult Banco()
     {
         var pastaRestauracao = Path.Combine(Path.GetDirectoryName(db.Database.GetDbConnection().DataSource)!, "backups-restauracao");
@@ -143,14 +166,16 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
                     }
                 }
 
-                SqliteSchema.EnsureAdditionalTables(importado);
+                SqliteSchema.EnsureAdditionalTables(importado, criarBackupAntesMigracao: false);
                 var colunasPericia = await ObterColunasAsync(importado, "Pericias");
                 var colunasObrigatorias = new[] { "Id", "NomePericiado", "Numero", "DataEnvio", "DataAceite", "PrazoLaudo", "ValorHonorarios", "ValorRecebido", "Status", "Observacoes", "CriadaEm" };
                 var colunasDocumentos = await ObterColunasAsync(importado, "DocumentosPericia");
+                var colunasPericiados = await ObterColunasAsync(importado, "Periciados");
                 var colunasLaudos = await ObterColunasAsync(importado, "LaudosPericia");
                 if (colunasObrigatorias.Any(coluna => !colunasPericia.Contains(coluna)) ||
                     new[] { "Id", "PericiaId", "NomeOriginal", "NomeArmazenado", "TamanhoBytes", "EnviadoEm" }.Any(coluna => !colunasDocumentos.Contains(coluna)) ||
-                    new[] { "Id", "PericiaId", "ConteudoHtml", "AtualizadoEm" }.Any(coluna => !colunasLaudos.Contains(coluna)))
+                    new[] { "Id", "PericiaId", "Nome" }.Any(coluna => !colunasPericiados.Contains(coluna)) ||
+                    new[] { "Id", "PericiaId", "NumeroLaudo", "PericiadoId", "ConteudoHtml", "AtualizadoEm" }.Any(coluna => !colunasLaudos.Contains(coluna)))
                 {
                     TempData["ErroBanco"] = "O banco enviado tem uma estrutura incompatível com o sistema.";
                     return RedirectToAction(nameof(Banco));
@@ -249,9 +274,9 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
     public async Task<IActionResult> Index(string? busca, StatusPericia? status)
     {
         var visaoGeral = ConsultaVisaoGeral();
-        var query = visaoGeral;
+        IQueryable<Pericia> query = visaoGeral.Include(p => p.Periciados);
         if (!string.IsNullOrWhiteSpace(busca))
-            query = query.Where(p => p.NomePericiado.Contains(busca) || p.Numero.Contains(busca));
+            query = query.Where(p => p.NomePericiado.Contains(busca) || p.Numero.Contains(busca) || p.Periciados.Any(pessoa => pessoa.Nome.Contains(busca)));
         if (status.HasValue) query = query.Where(p => p.Status == status.Value);
         ViewData["Title"] = "Visão geral";
         ViewBag.Busca = busca;
@@ -266,9 +291,9 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
 
     public async Task<IActionResult> Arquivadas(string? busca)
     {
-        var query = ConsultaArquivadas();
+        IQueryable<Pericia> query = ConsultaArquivadas().Include(p => p.Periciados);
         if (!string.IsNullOrWhiteSpace(busca))
-            query = query.Where(p => p.NomePericiado.Contains(busca) || p.Numero.Contains(busca));
+            query = query.Where(p => p.NomePericiado.Contains(busca) || p.Numero.Contains(busca) || p.Periciados.Any(pessoa => pessoa.Nome.Contains(busca)));
         ViewBag.Busca = busca;
         ViewBag.Total = await ConsultaArquivadas().CountAsync();
         return View(await query.OrderByDescending(p => p.CriadaEm).ToListAsync());
@@ -276,42 +301,68 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
 
     public async Task<IActionResult> Laudos(string? busca)
     {
-        var query = db.Pericias.AsNoTracking()
-            .Include(p => p.Laudo)
-            .Where(p => p.Laudo != null && p.Laudo.ConteudoHtml != "");
+        IQueryable<LaudoPericia> query = db.LaudosPericia.AsNoTracking()
+            .Include(laudo => laudo.Pericia).ThenInclude(pericia => pericia.Periciados)
+            .Include(laudo => laudo.Periciado);
         if (!string.IsNullOrWhiteSpace(busca))
-            query = query.Where(p => p.NomePericiado.Contains(busca) || p.Numero.Contains(busca));
+            query = query.Where(laudo => laudo.NumeroLaudo.Contains(busca) || laudo.Pericia.Numero.Contains(busca) ||
+                laudo.Pericia.NomePericiado.Contains(busca) || laudo.Pericia.Periciados.Any(pessoa => pessoa.Nome.Contains(busca)));
         ViewBag.Busca = busca;
         ViewBag.Total = await query.CountAsync();
-        return View(await query.OrderByDescending(p => p.Laudo!.AtualizadoEm).ToListAsync());
+        return View(await query.OrderByDescending(laudo => laudo.AtualizadoEm).ToListAsync());
     }
 
     public async Task<IActionResult> NovoLaudo()
     {
         var pericias = await ConsultaVisaoGeral()
-            .Where(p => !db.LaudosPericia.Any(l => l.PericiaId == p.Id))
-            .OrderBy(p => p.NomePericiado)
+            .Include(p => p.Periciados)
+            .OrderBy(p => p.Numero)
             .ToListAsync();
         return View(pericias);
     }
 
     [HttpPost, ValidateAntiForgeryToken]
-    public async Task<IActionResult> AbrirLaudoNovo(int periciaId)
+    public async Task<IActionResult> CriarLaudo(int periciaId, string? numeroLaudo, int? periciadoId)
     {
-        if (!await ConsultaVisaoGeral().AnyAsync(p => p.Id == periciaId)) return NotFound();
-        if (await db.LaudosPericia.AnyAsync(l => l.PericiaId == periciaId))
-            return RedirectToAction(nameof(EditorLaudo), new { id = periciaId });
-        return RedirectToAction(nameof(EditorLaudo), new { id = periciaId });
+        var pericia = await db.Pericias.Include(p => p.Periciados).FirstOrDefaultAsync(p => p.Id == periciaId);
+        if (pericia is null) return NotFound();
+        numeroLaudo = numeroLaudo?.Trim();
+        if (string.IsNullOrWhiteSpace(numeroLaudo) || numeroLaudo.Length > 80)
+        {
+            TempData["Erro"] = "Informe um número de laudo com até 80 caracteres.";
+            return RedirectToAction(nameof(Editar), new { id = periciaId });
+        }
+        if (periciadoId.HasValue && !pericia.Periciados.Any(p => p.Id == periciadoId.Value))
+        {
+            TempData["Erro"] = "O periciado selecionado não pertence a esta perícia.";
+            return RedirectToAction(nameof(Editar), new { id = periciaId });
+        }
+        if (await db.LaudosPericia.AnyAsync(l => l.PericiaId == periciaId && l.NumeroLaudo == numeroLaudo))
+        {
+            TempData["Erro"] = "Já existe um laudo com esse número nesta perícia.";
+            return RedirectToAction(nameof(Editar), new { id = periciaId });
+        }
+
+        var laudo = new LaudoPericia
+        {
+            PericiaId = periciaId,
+            NumeroLaudo = numeroLaudo,
+            PericiadoId = periciadoId,
+            AtualizadoEm = DateTime.UtcNow
+        };
+        db.LaudosPericia.Add(laudo);
+        await db.SaveChangesAsync();
+        return RedirectToAction(nameof(EditorLaudo), new { id = periciaId, laudoId = laudo.Id });
     }
 
     public async Task<IActionResult> Exportar()
     {
-        var registros = await db.Pericias.AsNoTracking().OrderBy(p => p.Numero).ToListAsync();
+        var registros = await db.Pericias.AsNoTracking().Include(p => p.Periciados).OrderBy(p => p.Numero).ToListAsync();
         static string Campo(string? valor) => $"\"{(valor ?? "").Replace("\"", "\"\"")}\"";
         var linhas = new List<string> { "Periciado;Numero;DataEnvio;DataAceite;PrazoLaudo;Honorarios;ValorRecebido;Status;Observacoes" };
         linhas.AddRange(registros.Select(p => string.Join(';', new[]
         {
-            Campo(p.NomePericiado), Campo(p.Numero), Campo(p.DataEnvio?.ToString("dd/MM/yyyy")),
+            Campo(string.Join(" | ", p.Periciados.Select(pessoa => pessoa.Nome).Prepend(p.NomePericiado).Distinct(StringComparer.OrdinalIgnoreCase))), Campo(p.Numero), Campo(p.DataEnvio?.ToString("dd/MM/yyyy")),
             Campo(p.DataAceite?.ToString("dd/MM/yyyy")), Campo(p.PrazoLaudo?.ToString("dd/MM/yyyy")),
             Campo(p.ValorHonorarios.ToString("0.00", CultureInfo.InvariantCulture)),
             Campo(p.ValorRecebido.ToString("0.00", CultureInfo.InvariantCulture)),
@@ -380,6 +431,8 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Criar(Pericia pericia, bool abrirLaudoDepois = false)
     {
+        var nomes = ObterNomesPericiados(pericia.NomePericiado, pericia.OutrosPericiados);
+        ValidarNomesPericiados(nomes);
         if (await db.Pericias.AnyAsync(p => p.Numero == pericia.Numero))
             ModelState.AddModelError(nameof(pericia.Numero), "Esse número de perícia já está cadastrado.");
         if (!ModelState.IsValid)
@@ -388,31 +441,47 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
             return View("Formulario", pericia);
         }
         pericia.CriadaEm = DateTime.Now;
+        pericia.Periciados = nomes.Select(nome => new Periciado { Nome = nome }).ToList();
         db.Pericias.Add(pericia);
         await db.SaveChangesAsync();
         TempData["Mensagem"] = "Perícia cadastrada com sucesso.";
-        if (abrirLaudoDepois) return RedirectToAction(nameof(EditorLaudo), new { id = pericia.Id });
+        if (abrirLaudoDepois) return RedirectToAction(nameof(Editar), new { id = pericia.Id });
         return RedirectToAction(nameof(Index));
     }
     public async Task<IActionResult> Editar(int id)
     {
-        var pericia = await db.Pericias.Include(p => p.Documentos).Include(p => p.Laudo).FirstOrDefaultAsync(p => p.Id == id);
-        return pericia is null ? NotFound() : View("Formulario", pericia);
+        var pericia = await db.Pericias.Include(p => p.Documentos).Include(p => p.Periciados).Include(p => p.Laudos).ThenInclude(l => l.Periciado).FirstOrDefaultAsync(p => p.Id == id);
+        if (pericia is null) return NotFound();
+        PrepararOutrosNomes(pericia);
+        return View("Formulario", pericia);
     }
 
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Editar(int id, Pericia pericia)
     {
         if (id != pericia.Id) return NotFound();
+        var nomes = ObterNomesPericiados(pericia.NomePericiado, pericia.OutrosPericiados);
+        ValidarNomesPericiados(nomes);
         if (await db.Pericias.AnyAsync(p => p.Numero == pericia.Numero && p.Id != id))
             ModelState.AddModelError(nameof(pericia.Numero), "Esse número de perícia já está cadastrado.");
         if (!ModelState.IsValid)
         {
             pericia.Documentos = await db.DocumentosPericia.Where(d => d.PericiaId == id).ToListAsync();
-            pericia.Laudo = await db.LaudosPericia.FirstOrDefaultAsync(l => l.PericiaId == id);
+            pericia.Periciados = await db.Periciados.Where(p => p.PericiaId == id).ToListAsync();
+            pericia.Laudos = await db.LaudosPericia.Include(l => l.Periciado).Where(l => l.PericiaId == id).OrderBy(l => l.NumeroLaudo).ToListAsync();
             return View("Formulario", pericia);
         }
-        db.Update(pericia);
+        var atual = await db.Pericias.Include(p => p.Periciados).FirstOrDefaultAsync(p => p.Id == id);
+        if (atual is null) return NotFound();
+        db.Entry(atual).CurrentValues.SetValues(pericia);
+        foreach (var pessoa in atual.Periciados.ToList())
+        {
+            if (!nomes.Contains(pessoa.Nome, StringComparer.OrdinalIgnoreCase))
+                db.Periciados.Remove(pessoa);
+        }
+        var nomesExistentes = atual.Periciados.Select(p => p.Nome).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        foreach (var nome in nomes.Where(nome => !nomesExistentes.Contains(nome)))
+            atual.Periciados.Add(new Periciado { PericiaId = id, Nome = nome });
         await db.SaveChangesAsync();
         TempData["Mensagem"] = "Perícia atualizada.";
         var arquivada = pericia.Status == StatusPericia.Cancelada ||
@@ -546,68 +615,84 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
             : NotFound();
     }
 
-    public async Task<IActionResult> EditorLaudo(int id)
+    private static EditorLaudoViewModel CriarModeloLaudo(LaudoPericia laudo) => new()
     {
-        var pericia = await db.Pericias.Include(p => p.Laudo).FirstOrDefaultAsync(p => p.Id == id);
-        if (pericia is null) return NotFound();
+        PericiaId = laudo.PericiaId,
+        LaudoId = laudo.Id,
+        NumeroLaudo = laudo.NumeroLaudo,
+        PericiadoId = laudo.PericiadoId,
+        Periciados = laudo.Pericia.Periciados.OrderBy(p => p.Nome).ToList(),
+        NomePericiado = laudo.Periciado?.Nome ?? laudo.Pericia.NomePericiado,
+        Numero = laudo.Pericia.Numero,
+        ConteudoHtml = laudo.ConteudoHtml,
+        AtualizadoEm = laudo.AtualizadoEm
+    };
 
-        return View(new EditorLaudoViewModel
-        {
-            PericiaId = pericia.Id,
-            NomePericiado = pericia.NomePericiado,
-            Numero = pericia.Numero,
-            ConteudoHtml = pericia.Laudo?.ConteudoHtml ?? "",
-            AtualizadoEm = pericia.Laudo?.AtualizadoEm
-        });
+    public async Task<IActionResult> EditorLaudo(int id, int laudoId)
+    {
+        var laudo = await db.LaudosPericia
+            .Include(l => l.Pericia).ThenInclude(p => p.Periciados)
+            .Include(l => l.Periciado)
+            .FirstOrDefaultAsync(l => l.Id == laudoId && l.PericiaId == id);
+        return laudo is null ? NotFound() : View(CriarModeloLaudo(laudo));
     }
 
     [HttpPost, ValidateAntiForgeryToken, RequestSizeLimit(512 * 1024)]
-    public async Task<IActionResult> SalvarLaudo(int id, string? conteudoHtml, bool previsualizar = false)
+    public async Task<IActionResult> SalvarLaudo(int id, int laudoId, string? numeroLaudo, int? periciadoId, string? conteudoHtml, bool previsualizar = false)
     {
-        var pericia = await db.Pericias.Include(p => p.Laudo).FirstOrDefaultAsync(p => p.Id == id);
-        if (pericia is null) return NotFound();
+        var laudo = await db.LaudosPericia.FirstOrDefaultAsync(l => l.Id == laudoId && l.PericiaId == id);
+        if (laudo is null) return NotFound();
+        numeroLaudo = numeroLaudo?.Trim();
+        if (string.IsNullOrWhiteSpace(numeroLaudo) || numeroLaudo.Length > 80 ||
+            await db.LaudosPericia.AnyAsync(l => l.PericiaId == id && l.Id != laudoId && l.NumeroLaudo == numeroLaudo))
+        {
+            TempData["ErroLaudo"] = "Informe um número de laudo válido e ainda não utilizado nesta perícia.";
+            return RedirectToAction(nameof(EditorLaudo), new { id, laudoId });
+        }
+        if (periciadoId.HasValue && !await db.Periciados.AnyAsync(p => p.Id == periciadoId.Value && p.PericiaId == id))
+        {
+            TempData["ErroLaudo"] = "O periciado selecionado não pertence a esta perícia.";
+            return RedirectToAction(nameof(EditorLaudo), new { id, laudoId });
+        }
         if (conteudoHtml?.Length > 200_000)
         {
             TempData["ErroLaudo"] = "O texto do laudo excede o limite de 200 mil caracteres.";
-            return RedirectToAction(nameof(EditorLaudo), new { id });
+            return RedirectToAction(nameof(EditorLaudo), new { id, laudoId });
         }
 
-        var conteudoSeguro = sanitizer.Sanitize(conteudoHtml ?? "");
-        if (pericia.Laudo is null)
-        {
-            pericia.Laudo = new LaudoPericia
-            {
-                PericiaId = pericia.Id,
-                ConteudoHtml = conteudoSeguro,
-                AtualizadoEm = DateTime.UtcNow
-            };
-            db.LaudosPericia.Add(pericia.Laudo);
-        }
-        else
-        {
-            pericia.Laudo.ConteudoHtml = conteudoSeguro;
-            pericia.Laudo.AtualizadoEm = DateTime.UtcNow;
-        }
-
+        laudo.NumeroLaudo = numeroLaudo;
+        laudo.PericiadoId = periciadoId;
+        laudo.ConteudoHtml = sanitizer.Sanitize(conteudoHtml ?? "");
+        laudo.AtualizadoEm = DateTime.UtcNow;
         await db.SaveChangesAsync();
         TempData["MensagemLaudo"] = "Rascunho salvo.";
-        return RedirectToAction(previsualizar ? nameof(VisualizarLaudo) : nameof(EditorLaudo), new { id });
+        return RedirectToAction(previsualizar ? nameof(VisualizarLaudo) : nameof(EditorLaudo), new { id, laudoId });
     }
 
-    public async Task<IActionResult> VisualizarLaudo(int id)
+    public async Task<IActionResult> VisualizarLaudo(int id, int laudoId)
     {
-        var pericia = await db.Pericias.Include(p => p.Laudo).FirstOrDefaultAsync(p => p.Id == id);
-        if (pericia is null) return NotFound();
-        if (pericia.Laudo is null) return RedirectToAction(nameof(EditorLaudo), new { id });
+        var laudo = await db.LaudosPericia
+            .Include(l => l.Pericia).ThenInclude(p => p.Periciados)
+            .Include(l => l.Periciado)
+            .FirstOrDefaultAsync(l => l.Id == laudoId && l.PericiaId == id);
+        if (laudo is null) return NotFound();
+        if (string.IsNullOrWhiteSpace(laudo.ConteudoHtml))
+            return RedirectToAction(nameof(EditorLaudo), new { id, laudoId });
 
-        return View(new EditorLaudoViewModel
-        {
-            PericiaId = pericia.Id,
-            NomePericiado = pericia.NomePericiado,
-            Numero = pericia.Numero,
-            ConteudoHtml = sanitizer.Sanitize(pericia.Laudo.ConteudoHtml),
-            AtualizadoEm = pericia.Laudo.AtualizadoEm
-        });
+        var modelo = CriarModeloLaudo(laudo);
+        modelo.ConteudoHtml = sanitizer.Sanitize(laudo.ConteudoHtml);
+        return View(modelo);
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> ExcluirLaudo(int id, int laudoId)
+    {
+        var laudo = await db.LaudosPericia.FirstOrDefaultAsync(l => l.Id == laudoId && l.PericiaId == id);
+        if (laudo is null) return NotFound();
+        db.LaudosPericia.Remove(laudo);
+        await db.SaveChangesAsync();
+        TempData["Mensagem"] = $"Laudo {laudo.NumeroLaudo} removido.";
+        return RedirectToAction(nameof(Editar), new { id });
     }
 
     [HttpPost, ValidateAntiForgeryToken]

@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Sistemas_para_pericias.Models;
 
@@ -19,6 +20,9 @@ public class Pericia
     [Required, StringLength(160, MinimumLength = 2)]
     [Display(Name = "Nome do periciado")]
     public string NomePericiado { get; set; } = "";
+
+    [NotMapped, Display(Name = "Outros periciados (um por linha)")]
+    public string OutrosPericiados { get; set; } = "";
 
     [Required, StringLength(80)]
     [Display(Name = "Número da perícia")]
@@ -50,7 +54,23 @@ public class Pericia
 
     public List<DocumentoPericia> Documentos { get; set; } = [];
 
-    public LaudoPericia? Laudo { get; set; }
+    public List<Periciado> Periciados { get; set; } = [];
+
+    public List<LaudoPericia> Laudos { get; set; } = [];
+}
+
+public class Periciado
+{
+    public int Id { get; set; }
+
+    public int PericiaId { get; set; }
+
+    [Required, StringLength(160)]
+    public string Nome { get; set; } = "";
+
+    public Pericia Pericia { get; set; } = null!;
+
+    public List<LaudoPericia> Laudos { get; set; } = [];
 }
 
 public class DocumentoPericia
@@ -78,9 +98,17 @@ public class LaudoPericia
 
     public int PericiaId { get; set; }
 
+    [Required, StringLength(80)]
+    [Display(Name = "Número do laudo")]
+    public string NumeroLaudo { get; set; } = "1";
+
+    public int? PericiadoId { get; set; }
+
     public string ConteudoHtml { get; set; } = "";
 
     public DateTime AtualizadoEm { get; set; } = DateTime.UtcNow;
 
     public Pericia Pericia { get; set; } = null!;
+
+    public Periciado? Periciado { get; set; }
 }

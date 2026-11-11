@@ -7,6 +7,7 @@ public class PericiasContext(DbContextOptions<PericiasContext> options) : DbCont
 {
     public DbSet<Pericia> Pericias => Set<Pericia>();
     public DbSet<DocumentoPericia> DocumentosPericia => Set<DocumentoPericia>();
+    public DbSet<Periciado> Periciados => Set<Periciado>();
     public DbSet<LaudoPericia> LaudosPericia => Set<LaudoPericia>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -24,16 +25,32 @@ public class PericiasContext(DbContextOptions<PericiasContext> options) : DbCont
                 .HasForeignKey(documento => documento.PericiaId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
+        modelBuilder.Entity<Periciado>(entity =>
+        {
+            entity.ToTable("Periciados");
+            entity.HasKey(periciado => periciado.Id);
+            entity.Property(periciado => periciado.Nome).IsRequired().HasMaxLength(160);
+            entity.HasIndex(periciado => periciado.PericiaId);
+            entity.HasOne(periciado => periciado.Pericia)
+                .WithMany(pericia => pericia.Periciados)
+                .HasForeignKey(periciado => periciado.PericiaId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
         modelBuilder.Entity<LaudoPericia>(entity =>
         {
             entity.ToTable("LaudosPericia");
             entity.HasKey(laudo => laudo.Id);
-            entity.HasIndex(laudo => laudo.PericiaId).IsUnique();
+            entity.Property(laudo => laudo.NumeroLaudo).IsRequired().HasMaxLength(80);
+            entity.HasIndex(laudo => new { laudo.PericiaId, laudo.NumeroLaudo }).IsUnique();
             entity.Property(laudo => laudo.ConteudoHtml).IsRequired();
             entity.HasOne(laudo => laudo.Pericia)
-                .WithOne(pericia => pericia.Laudo)
-                .HasForeignKey<LaudoPericia>(laudo => laudo.PericiaId)
+                .WithMany(pericia => pericia.Laudos)
+                .HasForeignKey(laudo => laudo.PericiaId)
                 .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(laudo => laudo.Periciado)
+                .WithMany(periciado => periciado.Laudos)
+                .HasForeignKey(laudo => laudo.PericiadoId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
     }
 }

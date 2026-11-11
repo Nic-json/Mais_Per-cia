@@ -7,7 +7,7 @@
 <head>
  <meta charset="utf-8" />
  <meta name="viewport" content="width=device-width, initial-scale=1" />
- <title>Laudo pericial - @Model.Numero</title>
+ <title>Laudo @Model.NumeroLaudo - @Model.Numero</title>
  <style>
   @@page { size: A4; margin: 22mm 20mm; }
   * { box-sizing: border-box; }
@@ -29,9 +29,9 @@
  </style>
 </head>
 <body>
- <div class="no-print"><a href="@Url.Action("EditorLaudo", new { id = Model.PericiaId })">Voltar ao editor</a><button type="button" onclick="window.print()">Imprimir / Salvar em PDF</button></div>
+ <div class="no-print"><a href="@Url.Action("EditorLaudo", new { id = Model.PericiaId, laudoId = Model.LaudoId })">Voltar ao editor</a><button type="button" onclick="window.print()">Imprimir / Salvar em PDF</button></div>
  <main class="document">
-  <header><h1>LAUDO PERICIAL</h1><div class="identification"><strong>Periciado:</strong> @Model.NomePericiado<br /><strong>Número da perícia:</strong> @Model.Numero</div></header>
+  <header><h1>LAUDO PERICIAL Nº @Model.NumeroLaudo</h1><div class="identification"><strong>Periciado:</strong> @Model.NomePericiado<br /><strong>Número da perícia:</strong> @Model.Numero</div></header>
   <article class="content">@Html.Raw(Model.ConteudoHtml)</article>
  </main>
 </body>

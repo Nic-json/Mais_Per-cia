@@ -36,6 +36,7 @@ Esse arranjo deixa aplicação e banco no mesmo servidor e cabe no teto mensal i
 
 - Painel com casos ativos, prazos vencidos, pagamentos e valores recebidos.
 - Cadastro, edição, busca, filtros, status e exclusão.
+- Cada perícia pode ter vários periciados e vários laudos com numeração própria; cada laudo pode ser associado a um periciado.
 - Login único de administrador com cookie seguro e limite de tentativas.
 - Editor de laudo em texto livre, com formatação básica, rascunho salvo por perícia e pré-visualização para impressão em PDF.
 - Edição externa do SQLite por exportação e importação autenticadas, com validação e ponto de restauração.

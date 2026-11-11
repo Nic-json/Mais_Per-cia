@@ -1,6 +1,6 @@
 @model Sistemas_para_pericias.Models.EditorLaudoViewModel
 @{
-    ViewData["Title"] = "Editor de laudo";
+    ViewData["Title"] = $"Laudo {Model.NumeroLaudo}";
 }
 
 <div class="page-heading">
@@ -8,15 +8,19 @@
   <a asp-action="Editar" asp-route-id="@Model.PericiaId" class="back-link">← Voltar para a perícia</a>
   <div class="eyebrow">LAUDO PERICIAL</div>
   <h1>Editor do laudo</h1>
-  <p><strong>@Model.NomePericiado</strong> · Perícia nº @Model.Numero</p>
+  <p><strong>Laudo nº @Model.NumeroLaudo</strong> · Perícia nº @Model.Numero · @Model.NomePericiado</p>
  </div>
 </div>
 
 @if (TempData["MensagemLaudo"] is string mensagem) { <div class="alert alert-success">@mensagem</div> }
 @if (TempData["ErroLaudo"] is string erro) { <div class="alert alert-danger">@erro</div> }
 
-<form asp-action="SalvarLaudo" asp-route-id="@Model.PericiaId" method="post" id="form-laudo" class="laudo-editor-panel">
+<form asp-action="SalvarLaudo" asp-route-id="@Model.PericiaId" asp-route-laudoId="@Model.LaudoId" method="post" id="form-laudo" class="laudo-editor-panel">
  <input type="hidden" name="conteudoHtml" id="conteudo-html" />
+ <div class="row g-3 p-3 border-bottom bg-light">
+  <div class="col-md-4"><label for="numeroLaudo" class="form-label">Número do laudo</label><input id="numeroLaudo" name="numeroLaudo" value="@Model.NumeroLaudo" maxlength="80" required class="form-control" /></div>
+  <div class="col-md-8"><label for="periciadoId" class="form-label">Periciado relacionado</label><select id="periciadoId" name="periciadoId" class="form-select"><option value="">Sem associação</option>@foreach (var pessoa in Model.Periciados.OrderBy(p => p.Nome)) { <option value="@pessoa.Id" selected="@(Model.PericiadoId == pessoa.Id)">@pessoa.Nome</option> }</select></div>
+ </div>
  <div class="laudo-toolbar" role="toolbar" aria-label="Formatação do laudo">
   <button type="button" data-command="bold" aria-label="Negrito" title="Negrito"><strong>B</strong></button>
   <button type="button" data-command="italic" aria-label="Itálico" title="Itálico"><em>I</em></button>
