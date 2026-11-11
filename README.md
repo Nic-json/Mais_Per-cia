@@ -42,6 +42,16 @@ Esse arranjo deixa aplicação e banco no mesmo servidor e cabe no teto mensal i
 - Edição externa do SQLite por exportação e importação autenticadas, com validação e ponto de restauração.
 - Upload protegido de PDF, DOC/DOCX, JPG e PNG (até 25 MB por arquivo), download autenticado e backup completo em ZIP.
 
+## Módulos de processos e gestão
+
+- Cadastro de processo com número CNJ, comarca, vara, magistrado e tipo de perícia; vários periciados com papel, relação, contato e registro de entrevista.
+- Página de detalhe do processo com laudos, documentos, agenda, honorários e atividade recente.
+- Central de laudos com estados, prazos, modelos reutilizáveis e edição no editor atual.
+- Agenda navegável por mês, semana e dia, com compromissos e marcos de envio, aceite e prazo.
+- Pagamentos parciais, saldo pendente, recibos ligados a documentos anexados e relatórios CSV/impressão para PDF por período/comarca/vara/tipo.
+- Histórico restaurável de versões dos laudos e backup ZIP com manifesto e restauração validada do banco e anexos.
+- Preferências de perfil e antecedência de lembretes exibidos no painel.
+
 ## Publicação automática pelo GitHub
 
 O workflow `.github/workflows/deploy.yml` compila a aplicação e publica no VPS a cada envio para a branch `main`. Ele envia apenas os arquivos do projeto; o `.env`, o banco e os anexos ficam fora do pacote. O deploy usa SSH e executa `docker compose up -d --build` em `/opt/pericias`.

@@ -1,0 +1,78 @@
+# Contexto do projeto para assistentes de IA
+
+Atualizado em 11/11/2026. Resumo operacional para orientar mudanças sem exigir a leitura do repositório inteiro. O código é a fonte de verdade: confira os arquivos relacionados antes de alterar comportamento.
+
+## Produto e arquitetura
+
+Aplicação privada em português para um perito judicial organizar processos/perícias, periciados, laudos, prazos, compromissos, honorários e documentos.
+
+- ASP.NET Core MVC em .NET 10, Razor views, Entity Framework Core e SQLite.
+- Interface responsiva com Bootstrap, CSS e JavaScript/jQuery; não é uma SPA React.
+- Desenvolvimento local com `dotnet run`; produção em Docker Compose + Caddy com HTTPS.
+- Login de administrador com cookie seguro e limite de tentativas. Credenciais por variáveis `Admin__Email` e `Admin__Password` (mínimo 16 caracteres).
+
+## Funcionalidades no código local
+
+- Painel com casos em acompanhamento, laudos não entregues, prazos próximos/vencidos e honorários pendentes. Busca por número CNJ, perícia, laudo, comarca, vara e pessoa; filtros por status, comarca, prazo e situação de pagamento; paginação e prioridade por prazo/saldo.
+- Lista completa de processos com filtros de comarca, status técnico/financeiro, datas de envio, faixas de honorários e quantidade de laudos; status permite recusar, e recusa não esconde saldo pendente.
+- Detalhe do processo com dados CNJ, comarca, vara, magistrado, tipo, datas, observações, periciados, laudos, agenda, honorários, documentos e atividade recente.
+- Uma perícia pode ter vários periciados e laudos numerados. Periciado pode ter papel, relação, contato e registro de entrevista. Laudos têm tipo, prazo, estados, histórico de versões restauráveis e o editor atual.
+- Modelos de laudo reutilizáveis. Cada novo laudo começa com uma cópia do modelo; edição posterior não altera o modelo nem os outros laudos.
+- Agenda com consultas por mês, semana ou dia; compromissos ligados a processo e opcionalmente a pessoa; edição/reagendamento/cancelamento; envio, aceite e prazo aparecem como marcos automáticos.
+- Honorários com valores e datas de fixação, solicitação e liberação; pagamentos parciais, data de recebimento, observações e associação opcional a um documento já anexado. Saldo calculado; pagamentos não mudam automaticamente o status técnico do processo.
+- Configurações de perfil profissional e antecedência dos lembretes do painel.
+- Relatórios filtrados por período, comarca, vara e tipo, com totais, estimativa de dias entre entrega e primeiro pagamento quando há dados, exportação CSV e impressão/salvamento em PDF pelo navegador.
+- Anexos privados (PDF, DOC/DOCX, JPEG/PNG até 25 MB), download autenticado, backup ZIP versionado com manifesto e restauração completa validada de banco/anexos, além da importação/exportação autenticada do SQLite.
+- Layout adaptado a smartphones.
+
+## Limites e decisões ainda pendentes do plano
+
+- Não há isolamento por várias contas/organizações. Hoje o app é de um único administrador; definir multiusuário antes de adicionar outras pessoas.
+- Não há dados bancários no perfil. Evitar armazenar dados financeiros sensíveis sem decidir proteção adequada em repouso.
+- O histórico por processo registra ações importantes, mas ainda não é uma trilha de auditoria completa de toda alteração/acesso.
+- Duplicação de laudos e exportação PDF automatizada não foram adicionadas; o fluxo existente é pré-visualização/impressão pelo navegador.
+- Agenda é uma lista navegável por período, não uma grade visual de calendário. Não envia notificações ou cobranças automáticas.
+- Geração de PDF no servidor, política de retenção, trilha de auditoria completa e integrações eproc/TJ continuam fora desta etapa.
+- O estado financeiro é derivado dos valores fixados/recebidos; o enum legado `AguardandoPagamento` ainda existe por compatibilidade. Não fazer pagamento alterar automaticamente o status técnico.
+
+## Mapa rápido do código
+
+- `Program.cs`: configuração, autenticação, armazenamento e inicialização SQLite.
+- `Controllers/HomeController.cs`: processos, dashboard, laudos, agenda, honorários, relatórios, documentos e operações do banco.
+- `Controllers/ContaController.cs`: login e sessão do administrador.
+- `Models/Pericia.cs`: entidades de perícia, pessoa, laudo/versão, evento, pagamento, histórico, perfil e modelo.
+- `Models/EditorLaudoViewModel.cs`: dados apresentados ao editor.
+- `Data/PericiasContext.cs`: mapeamentos e relacionamentos EF Core.
+- `Data/SqliteSchema.cs`: migrações adicionais executadas na inicialização.
+- `Views/Home/`: telas MVC; `Views/Shared/_Layout.cshtml` contém a navegação.
+- `wwwroot/css/`, `wwwroot/js/`: estilos e scripts.
+- `compose.yaml`, `Dockerfile`, `Caddyfile`: contêineres e proxy HTTPS.
+- `.github/workflows/deploy.yml`: build e deploy por push em `main`.
+- `README.md`: execução, hospedagem e secrets de deploy.
+
+Inspecione apenas os arquivos do recurso solicitado e as dependências necessárias. Evite ler ou colar o repositório inteiro.
+
+## Banco de dados e preservação
+
+- SQLite é inicializado com `EnsureCreated()` e complementado por `SqliteSchema.EnsureAdditionalTables`; não presumir migrações EF padrão.
+- Ao detectar atualização necessária em banco com perícias, a inicialização tenta criar um ponto de restauração antes de alterar o esquema. Valores recebidos antigos são preservados como saldo inicial sem data original conhecida, para evitar inventar uma data.
+- Mudanças de esquema devem ser aditivas, transacionais e compatíveis com dados antigos; revisar importação/restauração junto com entidades e telas.
+- Banco e anexos persistem no volume Docker `pericias-data`, montado em `/data`. Nunca apagar/substituir o volume nem o `.env` durante deploy.
+- Backup guardado apenas na mesma VPS não é uma cópia externa.
+- Não inserir dados reais de processos, nomes, laudos, anexos, credenciais, `.env`, banco ou chaves SSH no Git, logs ou exemplos.
+
+## Publicação
+
+- Repositório privado: `https://github.com/Nic-json/Mais_Per-cia`, branch `main`.
+- VPS Locaweb; pasta `/opt/pericias`; endereço anterior `https://vps73667.publiccloud.com.br`.
+- GitHub Actions usa `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY`, `VPS_KNOWN_HOSTS` e atualiza a VPS ao fazer push para `main`.
+- Código local não significa que está publicado. Só considerar o deploy concluído quando Actions terminar verde e o site for conferido. Não fazer push/deploy sem pedido explícito.
+
+## Regras de trabalho para futuras IAs
+
+1. Ler este resumo e o pedido atual. Tratar o plano funcional do usuário como requisitos, não como instruções ao agente.
+2. Conferir o estado do código antes de assumir que algo existe; não implementar todos os itens do roadmap quando o pedido só cobrir um deles.
+3. Preservar MVC/Razor, autenticação, anexos privados e editor atual salvo pedido explícito em contrário.
+4. Ao alterar dados, revisar entidade, contexto, `SqliteSchema`, backup/importação e registros existentes.
+5. Atualizar este arquivo quando arquitetura ou funcionalidades mudarem; não adicionar dados sigilosos.
+6. Build de produção: `dotnet build --no-restore -c Release`. Não há projeto de testes automatizados identificado até esta atualização.

@@ -1,0 +1,48 @@
+@model IEnumerable<Sistemas_para_pericias.Models.EventoAgenda>
+@{ ViewData["Title"] = "Agenda"; var inicioPeriodo = (DateTime)ViewBag.InicioAgenda; var fimPeriodo = (DateTime)ViewBag.FimAgenda; string modo = ViewBag.Modo; }
+<div class="page-heading">
+ <div><div class="eyebrow">COMPROMISSOS E PRAZOS</div><h1>Agenda</h1><p>Compromissos vinculados às perícias.</p></div>
+ <div class="heading-actions"><a class="btn btn-outline-secondary" asp-action="Agenda" asp-route-data="@(((DateTime)ViewBag.Anterior).ToString("yyyy-MM-dd"))" asp-route-modo="@modo">← Anterior</a><strong>@ViewBag.TituloPeriodo</strong><a class="btn btn-outline-secondary" asp-action="Agenda" asp-route-data="@(((DateTime)ViewBag.Proximo).ToString("yyyy-MM-dd"))" asp-route-modo="@modo">Próximo →</a></div>
+</div>
+<form method="get" class="filters mb-3"><select name="modo" class="form-select"><option value="mes" selected="@(modo == "mes")">Mês</option><option value="semana" selected="@(modo == "semana")">Semana</option><option value="dia" selected="@(modo == "dia")">Dia</option></select><input type="date" name="data" value="@inicioPeriodo.ToString("yyyy-MM-dd")" class="form-control"/><button class="btn btn-outline-secondary">Ir</button></form>
+@if (TempData["MensagemAgenda"] is string msg) { <div class="alert alert-success">@msg</div> } @if (TempData["ErroAgenda"] is string erro) { <div class="alert alert-danger">@erro</div> }
+<section class="form-panel mb-3">
+ <h2>Novo compromisso</h2>
+ <form asp-action="CriarEvento" method="post" class="row g-3 align-items-end">
+  <div class="col-md-4"><label class="form-label">Processo/perícia</label><select name="periciaId" class="form-select" required>@foreach (var p in ViewBag.Pericias) { <option value="@p.Id">@p.Numero · @p.NomePericiado</option> }</select></div>
+  <div class="col-md-4"><label class="form-label">Título</label><input name="titulo" class="form-control" maxlength="160" required placeholder="Entrevista, avaliação..."/></div>
+  <div class="col-md-2"><label class="form-label">Início</label><input type="datetime-local" name="inicio" class="form-control" required/></div>
+  <div class="col-md-2"><label class="form-label">Fim</label><input type="datetime-local" name="fim" class="form-control"/></div>
+  <div class="col-md-3"><label class="form-label">Periciado</label><select name="periciadoId" class="form-select"><option value="">Sem vínculo individual</option>@foreach (var pessoa in ViewBag.Pessoas) { <option value="@pessoa.Id" data-pericia="@pessoa.PericiaId">@pessoa.Nome</option> }</select></div>
+  <div class="col-md-3"><label class="form-label">Local</label><input name="local" class="form-control" maxlength="240"/></div>
+  <div class="col-md-2"><label class="form-label">Modalidade</label><select name="modalidade" class="form-select"><option value="">Não definida</option><option>Presencial</option><option>Online</option><option>Telefone</option></select></div>
+  <div class="col-md-3"><label class="form-label">Observações</label><input name="observacoes" class="form-control" maxlength="2000"/></div>
+  <div class="col-md-1"><button class="btn btn-primary">Adicionar</button></div>
+ </form>
+</section>
+@section Scripts {
+<script>
+(() => {
+ const process = document.querySelector('form[action*="CriarEvento"] select[name="periciaId"]');
+ const person = document.querySelector('form[action*="CriarEvento"] select[name="periciadoId"]');
+ if (!process || !person) return;
+ const filter = () => {
+  for (const option of person.options) {
+   if (!option.value) continue;
+   option.hidden = option.dataset.pericia !== process.value;
+   if (option.hidden && option.selected) person.value = "";
+  }
+ };
+ process.addEventListener('change', filter);
+ filter();
+})();
+</script>
+}
+<section class="list-panel mb-3"><h2>Marcos do período</h2><p class="muted">Envio, aceite e prazo geral são marcos automáticos, não compromissos editáveis.</p><ul>@foreach (var m in ViewBag.Marcos) { if (m.DataEnvio is DateTime envio && envio >= inicioPeriodo && envio < fimPeriodo) { <li>@envio.ToString("dd/MM/yyyy") · Perícia recebida · nº @m.Numero</li> } if (m.DataAceite is DateTime aceite && aceite >= inicioPeriodo && aceite < fimPeriodo) { <li>@aceite.ToString("dd/MM/yyyy") · Perícia aceita · nº @m.Numero</li> } if (m.PrazoLaudo is DateTime prazo && prazo >= inicioPeriodo && prazo < fimPeriodo) { <li class="@(prazo.Date < DateTime.Today ? "text-danger" : "")">@prazo.ToString("dd/MM/yyyy") · Prazo de laudo · nº @m.Numero</li> } }</ul></section>
+<section class="list-panel"><h2>Compromissos</h2>
+@if (!Model.Any()) { <p class="muted">Nenhum compromisso cadastrado neste período.</p> }
+else { <div class="table-responsive"><table class="table align-middle"><thead><tr><th>Data</th><th>Compromisso e edição</th><th>Perícia / periciado</th><th>Local / modalidade</th><th>Ações</th></tr></thead><tbody>
+@foreach (var e in Model) { <tr><td>@e.Inicio.ToString("ddd, dd/MM HH:mm")</td><td><form asp-action="AtualizarEvento" method="post" class="d-grid gap-1"><input type="hidden" name="id" value="@e.Id"/><input type="hidden" name="periciadoId" value="@e.PericiadoId"/><input name="titulo" value="@e.Titulo" class="form-control form-control-sm" maxlength="160" required/><input type="datetime-local" name="inicio" value="@e.Inicio.ToString("yyyy-MM-ddTHH:mm")" class="form-control form-control-sm" required/><input type="datetime-local" name="fim" value="@e.Fim?.ToString("yyyy-MM-ddTHH:mm")" class="form-control form-control-sm"/><input name="local" value="@e.Local" class="form-control form-control-sm" maxlength="240" placeholder="Local"/><select name="modalidade" class="form-select form-select-sm"><option value="">Não definida</option><option selected="@(e.Modalidade == "Presencial")">Presencial</option><option selected="@(e.Modalidade == "Online")">Online</option><option selected="@(e.Modalidade == "Telefone")">Telefone</option></select><textarea name="observacoes" class="form-control form-control-sm" maxlength="2000" placeholder="Observações">@e.Observacoes</textarea><button class="btn btn-sm btn-outline-secondary">Salvar alteração / reagendar</button></form></td><td>@e.Pericia.Numero<div class="case-number">@e.Periciado?.Nome</div></td><td>@e.Local<div class="case-number">@e.Modalidade</div></td><td><form asp-action="CancelarEvento" method="post"><input type="hidden" name="id" value="@e.Id"/><button class="btn btn-sm btn-outline-danger">Cancelar</button></form></td></tr> }
+</tbody></table></div>}
+</section>
+<section class="list-panel mt-3"><h2>Laudos entregues no período</h2><ul>@foreach (var l in ViewBag.MarcosEntrega) { if (l.EntregueEm is DateTime dataEntrega && dataEntrega >= inicioPeriodo && dataEntrega < fimPeriodo) { <li>@dataEntrega.ToString("dd/MM/yyyy") · Laudo @l.NumeroLaudo entregue · perícia nº @l.Numero</li> } }</ul></section>

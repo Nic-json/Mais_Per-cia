@@ -19,6 +19,8 @@
  <input type="hidden" name="conteudoHtml" id="conteudo-html" />
  <div class="row g-3 p-3 border-bottom bg-light">
   <div class="col-md-4"><label for="numeroLaudo" class="form-label">Número do laudo</label><input id="numeroLaudo" name="numeroLaudo" value="@Model.NumeroLaudo" maxlength="80" required class="form-control" /></div>
+  <div class="col-md-4"><label for="tipoLaudo" class="form-label">Tipo do laudo</label><input id="tipoLaudo" name="tipoLaudo" value="@Model.TipoLaudo" class="form-control" maxlength="80" placeholder="Principal, complementar..." /></div>
+  <div class="col-md-4"><label for="prazo" class="form-label">Prazo</label><input id="prazo" name="prazo" value="@Model.Prazo?.ToString("yyyy-MM-dd")" type="date" class="form-control" /></div>
   <div class="col-md-8"><label for="periciadoId" class="form-label">Periciado relacionado</label><select id="periciadoId" name="periciadoId" class="form-select"><option value="">Sem associação</option>@foreach (var pessoa in Model.Periciados.OrderBy(p => p.Nome)) { <option value="@pessoa.Id" selected="@(Model.PericiadoId == pessoa.Id)">@pessoa.Nome</option> }</select></div>
  </div>
  <div class="laudo-toolbar" role="toolbar" aria-label="Formatação do laudo">
@@ -43,6 +45,14 @@
   </div>
  </div>
 </form>
+
+<section class="form-panel mt-3">
+ <details>
+  <summary><strong>Histórico de versões</strong> (@Model.Versoes.Count)</summary>
+  @if (!Model.Versoes.Any()) { <p class="muted mt-3">As versões anteriores serão guardadas quando houver uma alteração salva.</p> }
+  else { <div class="table-responsive mt-3"><table class="table align-middle"><thead><tr><th>Salvo em</th><th>Responsável</th><th>Número / status</th><th>Ação</th></tr></thead><tbody>@foreach (var versao in Model.Versoes) { <tr><td>@versao.SalvoEm.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td><td>@versao.Responsavel</td><td>@versao.NumeroLaudo · @versao.Status</td><td><form asp-action="RestaurarVersaoLaudo" asp-route-id="@Model.PericiaId" asp-route-laudoId="@Model.LaudoId" method="post"><input type="hidden" name="versaoId" value="@versao.Id"/><button class="btn btn-sm btn-outline-secondary" onclick="return confirm('Restaurar esta versão? O conteúdo atual será salvo no histórico antes da restauração.')">Restaurar</button></form></td></tr> }</tbody></table></div> }
+ </details>
+</section>
 
 <style>
  .laudo-editor-panel { background: #fff; border: 1px solid #e4e7ec; border-radius: 16px; overflow: hidden; }

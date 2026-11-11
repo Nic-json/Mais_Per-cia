@@ -2,8 +2,8 @@
 @using Sistemas_para_pericias.Models
 @{
     ViewData["Title"] = "Arquivadas";
-    string NomeStatus(StatusPericia s) => s == StatusPericia.Cancelada ? "Cancelada" : "Concluída e paga";
-    string ClasseStatus(StatusPericia s) => s == StatusPericia.Cancelada ? "status-cancel" : "status-done";
+    string NomeStatus(StatusPericia s) => s == StatusPericia.Cancelada ? "Cancelada" : s == StatusPericia.Recusada ? "Recusada" : "Concluída e paga";
+    string ClasseStatus(StatusPericia s) => s is StatusPericia.Cancelada or StatusPericia.Recusada ? "status-cancel" : "status-done";
 }
 <div class="page-heading"><div><div class="eyebrow">HISTÓRICO</div><h1>Perícias arquivadas</h1><p>Casos concluídos e pagos ou cancelados.</p></div><div class="heading-actions"><a class="btn btn-primary btn-lg" asp-action="Criar">＋ Nova perícia</a></div></div>
 <section class="list-panel"><div class="list-heading"><div><h2>Arquivo</h2><span class="muted">@Model.Count() registros nesta busca · @ViewBag.Total no total</span></div></div>

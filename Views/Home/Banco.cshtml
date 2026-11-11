@@ -25,6 +25,16 @@
  @if (ViewBag.TemPontoRestauracao == true) { <a asp-action="BaixarPontoRestauracao" class="btn btn-outline-secondary ms-2">Baixar ponto de restauração anterior</a> }
 </section>
 
+<section class="form-panel border-danger-subtle mt-4">
+ <div class="form-section-title"><span>03</span><div><h2>Restaurar backup completo</h2><p>Use esta opção para restaurar o ZIP gerado pelo botão Backup completo.</p></div></div>
+ <div class="alert alert-warning">A restauração substitui o banco e adiciona os anexos do backup. Os arquivos atuais não referenciados serão mantidos no servidor. O sistema guarda um ponto de restauração do banco antes da troca.</div>
+ <form asp-action="RestaurarBackupCompleto" method="post" enctype="multipart/form-data" class="row g-3">
+  <div class="col-12"><label for="arquivoBackup" class="form-label">Backup completo (.zip)</label><input id="arquivoBackup" name="arquivoBackup" type="file" class="form-control" accept=".zip" required/><div class="form-text">Até 400 MB. O ZIP precisa conter manifesto, banco SQLite e documentos válidos.</div></div>
+  <div class="col-12"><div class="form-check"><input id="confirmarBackup" name="confirmar" type="checkbox" value="true" class="form-check-input" required/><label for="confirmarBackup" class="form-check-label">Confirmo que quero substituir os registros pelo conteúdo deste backup.</label></div></div>
+  <div class="col-12"><button type="submit" class="btn btn-danger" onclick="return confirm('Restaurar o banco e os anexos deste backup?')">Restaurar backup completo</button></div>
+ </form>
+</section>
+
 <section class="form-panel border-danger-subtle">
  <div class="form-section-title"><span>02</span><div><h2>Aplicar banco revisado</h2><p>O arquivo será validado antes da importação. O banco atual terá um ponto de restauração guardado na VPS.</p></div></div>
  <div class="alert alert-warning">Importar substitui os registros atuais pelas informações do arquivo enviado. Edite uma cópia baixada deste sistema e mantenha as tabelas e colunas. Não altere a tabela de documentos nem a estrutura do banco.</div>

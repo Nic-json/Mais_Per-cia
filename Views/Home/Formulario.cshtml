@@ -11,6 +11,11 @@
  <div class="row g-3">
   <div class="col-md-7"><label asp-for="NomePericiado" class="form-label">Periciado principal</label><input asp-for="NomePericiado" class="form-control" placeholder="Nome completo" /><span asp-validation-for="NomePericiado" class="text-danger"></span></div>
   <div class="col-md-5"><label asp-for="Numero" class="form-label"></label><input asp-for="Numero" class="form-control" placeholder="Ex.: 0001234-56.2025" /><span asp-validation-for="Numero" class="text-danger"></span></div>
+  <div class="col-md-6"><label asp-for="NumeroProcesso" class="form-label"></label><input asp-for="NumeroProcesso" class="form-control" placeholder="Número CNJ, se disponível" /></div>
+  <div class="col-md-6"><label asp-for="TipoPericia" class="form-label"></label><input asp-for="TipoPericia" class="form-control" placeholder="Ex.: médica, contábil, engenharia" /></div>
+  <div class="col-md-4"><label asp-for="Comarca" class="form-label"></label><input asp-for="Comarca" class="form-control" /></div>
+  <div class="col-md-4"><label asp-for="Vara" class="form-label"></label><input asp-for="Vara" class="form-control" /></div>
+  <div class="col-md-4"><label asp-for="Magistrado" class="form-label"></label><input asp-for="Magistrado" class="form-control" /></div>
   <div class="col-12"><label asp-for="OutrosPericiados" class="form-label">Outros periciados</label><textarea asp-for="OutrosPericiados" class="form-control" rows="3" placeholder="Digite um nome por linha"></textarea><div class="form-text">Você pode cadastrar até 50 periciados nesta perícia.</div><span asp-validation-for="OutrosPericiados" class="text-danger"></span></div>
   <div class="col-md-4"><label asp-for="DataEnvio" class="form-label"></label><input asp-for="DataEnvio" class="form-control" /><span asp-validation-for="DataEnvio" class="text-danger"></span></div>
   <div class="col-md-4"><label asp-for="DataAceite" class="form-label"></label><input asp-for="DataAceite" class="form-control" /><span asp-validation-for="DataAceite" class="text-danger"></span></div>
@@ -19,7 +24,12 @@
  <div class="form-section-title section-spacer"><span>02</span><div><h2>Financeiro e andamento</h2><p>Valores, pagamento e status atual.</p></div></div>
  <div class="row g-3">
   <div class="col-md-4"><label asp-for="ValorHonorarios" class="form-label"></label><div class="input-group"><span class="input-group-text">R$</span><input asp-for="ValorHonorarios" class="form-control" type="number" step="0.01" min="0" /></div><span asp-validation-for="ValorHonorarios" class="text-danger"></span></div>
-  <div class="col-md-4"><label asp-for="ValorRecebido" class="form-label"></label><div class="input-group"><span class="input-group-text">R$</span><input asp-for="ValorRecebido" class="form-control" type="number" step="0.01" min="0" /></div><span asp-validation-for="ValorRecebido" class="text-danger"></span></div>
+  <div class="col-md-4"><label asp-for="DataHonorariosFixados" class="form-label"></label><input asp-for="DataHonorariosFixados" class="form-control" /></div>
+  <div class="col-md-4"><label asp-for="ValorHonorariosSolicitados" class="form-label"></label><div class="input-group"><span class="input-group-text">R$</span><input asp-for="ValorHonorariosSolicitados" class="form-control" type="number" step="0.01" min="0" /></div><span asp-validation-for="ValorHonorariosSolicitados" class="text-danger"></span></div>
+  <div class="col-md-4"><label asp-for="DataHonorariosSolicitados" class="form-label"></label><input asp-for="DataHonorariosSolicitados" class="form-control" /></div>
+  <div class="col-md-4"><label asp-for="ValorHonorariosLiberados" class="form-label"></label><div class="input-group"><span class="input-group-text">R$</span><input asp-for="ValorHonorariosLiberados" class="form-control" type="number" step="0.01" min="0" /></div><span asp-validation-for="ValorHonorariosLiberados" class="text-danger"></span></div>
+  <div class="col-md-4"><label asp-for="DataHonorariosLiberados" class="form-label"></label><input asp-for="DataHonorariosLiberados" class="form-control" /></div>
+  <div class="col-md-4"><label asp-for="ValorRecebido" class="form-label"></label><div class="input-group"><span class="input-group-text">R$</span><input asp-for="ValorRecebido" class="form-control" type="number" step="0.01" min="0" readonly /></div><div class="form-text">Registre novos pagamentos na aba Honorários ou no processo.</div></div>
   <div class="col-md-4"><label asp-for="Status" class="form-label"></label><select asp-for="Status" asp-items="Html.GetEnumSelectList<StatusPericia>()" class="form-select"></select></div>
   <div class="col-12"><label asp-for="Observacoes" class="form-label"></label><textarea asp-for="Observacoes" class="form-control" rows="4" placeholder="Anotações importantes, contatos ou detalhes..."></textarea><span asp-validation-for="Observacoes" class="text-danger"></span></div>
  </div>
