@@ -1,17 +1,4 @@
-@{
-    ViewData["Title"] = "Banco de dados";
-}
-
-<div class="page-heading">
- <div>
-  <a asp-action="Index" class="back-link">← Voltar ao painel</a>
-  <div class="eyebrow">MANUTENÇÃO</div>
-  <h1>Banco de dados</h1>
-  <p>Baixe uma cópia SQLite para editar no computador e envie a versão revisada quando terminar.</p>
- </div>
-</div>
-
-@if (TempData["MensagemBanco"] is string mensagem) { <div class="alert alert-success">@mensagem</div> }
+﻿@if (TempData["MensagemBanco"] is string mensagem) { <div class="alert alert-success">@mensagem</div> }
 @if (TempData["ErroBanco"] is string erro) { <div class="alert alert-danger">@erro</div> }
 
 <section class="form-panel mb-4">
@@ -44,3 +31,4 @@
   <div class="col-12"><button type="submit" class="btn btn-danger" onclick="return confirm('Substituir o banco atual pelo arquivo selecionado?')">Importar banco editado</button></div>
  </form>
 </section>
+

@@ -23,7 +23,7 @@ Aplicação privada em português para um perito judicial organizar processos/pe
 - Configurações de perfil profissional e antecedência dos lembretes do painel.
 - Relatórios filtrados por período, comarca, vara e tipo, com totais, estimativa de dias entre entrega e primeiro pagamento quando há dados, exportação CSV e impressão/salvamento em PDF pelo navegador.
 - Anexos privados (PDF, DOC/DOCX, JPEG/PNG até 25 MB), download autenticado, backup ZIP versionado com manifesto e restauração completa validada de banco/anexos, além da importação/exportação autenticada do SQLite.
-- Layout adaptado a smartphones.
+- Layout adaptado a smartphones. Navegação: Visão geral como página principal; processos com abas de acompanhamento e arquivadas; laudos no menu principal; backup e gestão do SQLite dentro de Configurações.
 
 ## Limites e decisões ainda pendentes do plano
 

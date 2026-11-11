@@ -55,12 +55,7 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
                 .Select(p => p.Nome));
     }
 
-    public IActionResult Banco()
-    {
-        var pastaRestauracao = Path.Combine(Path.GetDirectoryName(db.Database.GetDbConnection().DataSource)!, "backups-restauracao");
-        ViewBag.TemPontoRestauracao = Directory.Exists(pastaRestauracao) && Directory.EnumerateFiles(pastaRestauracao, "antes-restauracao-*.db").Any();
-        return View();
-    }
+    public IActionResult Banco() => RedirectToAction(nameof(Configuracoes));
 
     public IActionResult BaixarPontoRestauracao()
     {
@@ -430,9 +425,10 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
     public async Task<IActionResult> Configuracoes()
     {
         ViewBag.EmailConta = User.Identity?.Name;
+        var pastaRestauracao = Path.Combine(Path.GetDirectoryName(db.Database.GetDbConnection().DataSource)!, "backups-restauracao");
+        ViewBag.TemPontoRestauracao = Directory.Exists(pastaRestauracao) && Directory.EnumerateFiles(pastaRestauracao, "antes-restauracao-*.db").Any();
         return View(await db.ConfiguracoesPerito.AsNoTracking().FirstOrDefaultAsync(c => c.Id == 1) ?? new ConfiguracaoPerito());
     }
-
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> SalvarConfiguracoes(ConfiguracaoPerito configuracao)
     {
@@ -453,9 +449,12 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
     }
 
     public async Task<IActionResult> Processos(string? busca, string? comarca, StatusPericia? status, string? financeiro,
-        decimal? honorariosMin, decimal? honorariosMax, int? laudosMin, int? laudosMax, DateTime? enviadoDe, DateTime? enviadoAte, int pagina = 1)
+        decimal? honorariosMin, decimal? honorariosMax, int? laudosMin, int? laudosMax, DateTime? enviadoDe, DateTime? enviadoAte, int pagina = 1, bool arquivadas = false)
     {
         var query = db.Pericias.AsNoTracking().Include(p => p.Periciados).Include(p => p.Laudos).AsQueryable();
+        query = arquivadas
+            ? query.Where(p => (p.Status == StatusPericia.Cancelada || p.Status == StatusPericia.Concluida || p.Status == StatusPericia.Recusada) && p.ValorRecebido >= p.ValorHonorarios)
+            : query.Where(p => !((p.Status == StatusPericia.Cancelada || p.Status == StatusPericia.Concluida || p.Status == StatusPericia.Recusada) && p.ValorRecebido >= p.ValorHonorarios));
         if (!string.IsNullOrWhiteSpace(busca)) query = query.Where(p => p.Numero.Contains(busca) || (p.NumeroProcesso != null && p.NumeroProcesso.Contains(busca)) || p.Periciados.Any(x => x.Nome.Contains(busca)) || p.Laudos.Any(l => l.NumeroLaudo.Contains(busca)));
         if (!string.IsNullOrWhiteSpace(comarca)) query = query.Where(p => p.Comarca == comarca);
         if (status.HasValue) query = query.Where(p => p.Status == status.Value);
@@ -472,7 +471,7 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
         ViewBag.Busca = busca; ViewBag.ComarcaFiltro = comarca; ViewBag.StatusFiltro = status; ViewBag.Financeiro = financeiro;
         ViewBag.HonorariosMin = honorariosMin; ViewBag.HonorariosMax = honorariosMax; ViewBag.LaudosMin = laudosMin; ViewBag.LaudosMax = laudosMax;
         ViewBag.EnviadoDe = enviadoDe?.ToString("yyyy-MM-dd"); ViewBag.EnviadoAte = enviadoAte?.ToString("yyyy-MM-dd");
-        ViewBag.Pagina = pagina; ViewBag.TotalPaginas = Math.Max(1, (int)Math.Ceiling(total / 25d));
+        ViewBag.Pagina = pagina; ViewBag.TotalPaginas = Math.Max(1, (int)Math.Ceiling(total / 25d)); ViewBag.Arquivadas = arquivadas;
         ViewBag.Comarcas = await db.Pericias.AsNoTracking().Where(p => p.Comarca != null && p.Comarca != "").Select(p => p.Comarca!).Distinct().OrderBy(c => c).ToListAsync();
         return View(await query.OrderByDescending(p => p.CriadaEm).Skip((pagina - 1) * 25).Take(25).ToListAsync());
     }
@@ -700,15 +699,7 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
         return File(Encoding.UTF8.GetPreamble().Concat(Encoding.UTF8.GetBytes(string.Join("\r\n", lines))).ToArray(), "text/csv; charset=utf-8", $"relatorio-pericial-{DateTime.Today:yyyy-MM-dd}.csv");
     }
 
-    public async Task<IActionResult> Arquivadas(string? busca)
-    {
-        IQueryable<Pericia> query = ConsultaArquivadas().Include(p => p.Periciados);
-        if (!string.IsNullOrWhiteSpace(busca))
-            query = query.Where(p => p.NomePericiado.Contains(busca) || p.Numero.Contains(busca) || p.Periciados.Any(pessoa => pessoa.Nome.Contains(busca)));
-        ViewBag.Busca = busca;
-        ViewBag.Total = await ConsultaArquivadas().CountAsync();
-        return View(await query.OrderByDescending(p => p.CriadaEm).ToListAsync());
-    }
+    public IActionResult Arquivadas(string? busca) => RedirectToAction(nameof(Processos), new { busca, arquivadas = true });
 
     public async Task<IActionResult> Laudos(string? busca, StatusLaudo? status, DateTime? prazoAte)
     {
@@ -955,7 +946,7 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
         TempData["Mensagem"] = "Perícia atualizada.";
         var arquivada = (pericia.Status == StatusPericia.Cancelada || pericia.Status == StatusPericia.Concluida || pericia.Status == StatusPericia.Recusada) &&
             pericia.ValorRecebido >= pericia.ValorHonorarios;
-        return RedirectToAction(arquivada ? nameof(Arquivadas) : nameof(Index));
+        return arquivada ? RedirectToAction(nameof(Processos), new { arquivadas = true }) : RedirectToAction(nameof(Index));
     }
     [HttpPost, ValidateAntiForgeryToken, RequestSizeLimit(TamanhoMaximoDocumento + 1024 * 1024)]
     public async Task<IActionResult> AnexarDocumento(int id, IFormFile? arquivo)

@@ -16,16 +16,13 @@
    <a class="brand" asp-controller="Home" asp-action="Index"><span class="brand-mark">P</span><span>perícia<span class="brand-light">clara</span><small>GESTÃO PERICIAL</small></span></a>
    <nav class="side-navigation" aria-label="Navegação principal">
     <div class="side-caption">MENU PRINCIPAL</div>
-    <a asp-controller="Home" asp-action="Processos" class="side-link @(actionAtual == "Processos" || actionAtual == "Processo" ? "active" : "")"><span>▤</span> Processos</a>
+    <a asp-controller="Home" asp-action="Index" class="side-link @(actionAtual == "Index" || actionAtual == "Criar" || actionAtual == "Editar" ? "active" : "")"><span>⌂</span> Visão geral</a>
+    <a asp-controller="Home" asp-action="Processos" asp-route-arquivadas="false" class="side-link @(actionAtual == "Processos" || actionAtual == "Processo" || actionAtual == "Arquivadas" ? "active" : "")"><span>▤</span> Processos</a>
+    <a asp-controller="Home" asp-action="Laudos" class="side-link @(actionAtual == "Laudos" || actionAtual == "NovoLaudo" || actionAtual == "EditorLaudo" || actionAtual == "ModelosLaudo" ? "active" : "")"><span>▧</span> Laudos</a>
     <a asp-controller="Home" asp-action="Agenda" class="side-link @(actionAtual == "Agenda" ? "active" : "")"><span>◷</span> Agenda</a>
     <a asp-controller="Home" asp-action="Honorarios" class="side-link @(actionAtual == "Honorarios" ? "active" : "")"><span>R$</span> Honorários</a>
     <a asp-controller="Home" asp-action="Relatorios" class="side-link @(actionAtual == "Relatorios" ? "active" : "")"><span>▥</span> Relatórios</a>
-    <a asp-controller="Home" asp-action="Configuracoes" class="side-link @(actionAtual == "Configuracoes" ? "active" : "")"><span>⚙</span> Configurações</a>
-    <a asp-controller="Home" asp-action="Index" class="side-link @(actionAtual == "Index" || actionAtual == "Criar" || actionAtual == "Editar" ? "active" : "")"><span>▦</span> Visão geral</a>
-    <div class="side-caption side-bottom">ORGANIZAÇÃO</div>
-    <a asp-controller="Home" asp-action="Arquivadas" class="side-link @(actionAtual == "Arquivadas" ? "active" : "")"><span>▤</span> Arquivadas</a>
-    <a asp-controller="Home" asp-action="Laudos" class="side-link @(actionAtual == "Laudos" || actionAtual == "NovoLaudo" || actionAtual == "EditorLaudo" ? "active" : "")"><span>▧</span> Laudos</a>
-    <a asp-controller="Home" asp-action="Banco" class="side-link @(actionAtual == "Banco" ? "active" : "")"><span>▣</span> Banco SQLite</a>
+    <a asp-controller="Home" asp-action="Configuracoes" class="side-link @(actionAtual == "Configuracoes" || actionAtual == "Banco" ? "active" : "")"><span>⚙</span> Configurações</a>
     <form asp-controller="Conta" asp-action="Sair" method="post" class="mobile-logout"><button type="submit" class="side-link"><span>↗</span> Sair</button></form>
    </nav>
    <div class="sidebar-footer"><span class="avatar">PC</span><span><b>@User.Identity?.Name</b><small>Administrador</small></span><form asp-controller="Conta" asp-action="Sair" method="post" class="ms-auto"><button type="submit" class="logout-button" title="Sair">↗</button></form></div>
