@@ -1,0 +1,38 @@
+@model Sistemas_para_pericias.Models.EditorLaudoViewModel
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+ <meta charset="utf-8" />
+ <meta name="viewport" content="width=device-width, initial-scale=1" />
+ <title>Laudo pericial - @Model.Numero</title>
+ <style>
+  @@page { size: A4; margin: 22mm 20mm; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #eef0f4; color: #222; font: 12pt/1.65 Georgia, 'Times New Roman', serif; }
+  .no-print { display: flex; justify-content: center; gap: 12px; padding: 18px; font: 14px Arial, sans-serif; }
+  .no-print a, .no-print button { border: 0; border-radius: 7px; padding: 10px 16px; background: #254f9b; color: white; text-decoration: none; cursor: pointer; }
+  .no-print a { background: #555e6d; }
+  .document { width: 210mm; min-height: 297mm; margin: 0 auto 28px; padding: 22mm 20mm; background: white; box-shadow: 0 2px 18px #18223022; }
+  header { text-align: center; border-bottom: 1px solid #777; padding-bottom: 18px; margin-bottom: 28px; }
+  header h1 { margin: 0 0 16px; font: bold 16pt Arial, sans-serif; letter-spacing: .04em; }
+  .identification { text-align: left; font: 10pt/1.5 Arial, sans-serif; }
+  .content { overflow-wrap: anywhere; }
+  .content h1, .content h2, .content h3 { margin-top: 1.5em; font: bold 12pt Arial, sans-serif; }
+  .content p { margin: 0 0 1em; text-align: justify; }
+  .content table { width: 100%; border-collapse: collapse; }
+  .content th, .content td { border: 1px solid #666; padding: 5px; }
+  @@media print { body { background: white; } .no-print { display: none !important; } .document { width: auto; min-height: 0; margin: 0; padding: 0; box-shadow: none; } }
+  @@media screen and (max-width: 760px) { .document { width: 100%; min-height: 0; padding: 24px; } }
+ </style>
+</head>
+<body>
+ <div class="no-print"><a href="@Url.Action("EditorLaudo", new { id = Model.PericiaId })">Voltar ao editor</a><button type="button" onclick="window.print()">Imprimir / Salvar em PDF</button></div>
+ <main class="document">
+  <header><h1>LAUDO PERICIAL</h1><div class="identification"><strong>Periciado:</strong> @Model.NomePericiado<br /><strong>Número da perícia:</strong> @Model.Numero</div></header>
+  <article class="content">@Html.Raw(Model.ConteudoHtml)</article>
+ </main>
+</body>
+</html>

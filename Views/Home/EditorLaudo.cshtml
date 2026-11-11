@@ -1,0 +1,81 @@
+@model Sistemas_para_pericias.Models.EditorLaudoViewModel
+@{
+    ViewData["Title"] = "Editor de laudo";
+}
+
+<div class="page-heading">
+ <div>
+  <a asp-action="Editar" asp-route-id="@Model.PericiaId" class="back-link">← Voltar para a perícia</a>
+  <div class="eyebrow">LAUDO PERICIAL</div>
+  <h1>Editor do laudo</h1>
+  <p><strong>@Model.NomePericiado</strong> · Perícia nº @Model.Numero</p>
+ </div>
+</div>
+
+@if (TempData["MensagemLaudo"] is string mensagem) { <div class="alert alert-success">@mensagem</div> }
+@if (TempData["ErroLaudo"] is string erro) { <div class="alert alert-danger">@erro</div> }
+
+<form asp-action="SalvarLaudo" asp-route-id="@Model.PericiaId" method="post" id="form-laudo" class="laudo-editor-panel">
+ <input type="hidden" name="conteudoHtml" id="conteudo-html" />
+ <div class="laudo-toolbar" role="toolbar" aria-label="Formatação do laudo">
+  <button type="button" data-command="bold" aria-label="Negrito" title="Negrito"><strong>B</strong></button>
+  <button type="button" data-command="italic" aria-label="Itálico" title="Itálico"><em>I</em></button>
+  <button type="button" data-command="underline" aria-label="Sublinhado" title="Sublinhado"><u>U</u></button>
+  <span class="toolbar-divider"></span>
+  <button type="button" data-command="formatBlock" data-value="h2" aria-label="Título" title="Título">Título</button>
+  <button type="button" data-command="formatBlock" data-value="p" aria-label="Parágrafo" title="Parágrafo">Parágrafo</button>
+  <span class="toolbar-divider"></span>
+  <button type="button" data-command="insertUnorderedList" aria-label="Lista com marcadores" title="Lista com marcadores">• Lista</button>
+  <button type="button" data-command="insertOrderedList" aria-label="Lista numerada" title="Lista numerada">1. Lista</button>
+  <button type="button" data-command="undo" aria-label="Desfazer" title="Desfazer">↶</button>
+  <button type="button" data-command="redo" aria-label="Refazer" title="Refazer">↷</button>
+ </div>
+ <div id="editor-laudo" class="laudo-editable" contenteditable="true" role="textbox" aria-label="Texto do laudo" aria-multiline="true" data-placeholder="Escreva o laudo aqui. Use a barra acima para formatar o texto.">@Html.Raw(Model.ConteudoHtml)</div>
+ <div class="laudo-editor-footer">
+  <span class="muted">@(Model.AtualizadoEm is DateTime atualizado ? $"Último salvamento: {atualizado.ToLocalTime():dd/MM/yyyy HH:mm}" : "Rascunho ainda não salvo")</span>
+  <div class="d-flex gap-2">
+   <button type="submit" name="previsualizar" value="true" class="btn btn-outline-secondary">Pré-visualizar / PDF</button>
+   <button type="submit" class="btn btn-primary">Salvar rascunho</button>
+  </div>
+ </div>
+</form>
+
+<style>
+ .laudo-editor-panel { background: #fff; border: 1px solid #e4e7ec; border-radius: 16px; overflow: hidden; }
+ .laudo-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 12px; background: #f8f9fb; border-bottom: 1px solid #e4e7ec; }
+ .laudo-toolbar button { min-width: 38px; min-height: 36px; padding: 6px 10px; border: 1px solid #d8dde5; border-radius: 7px; background: #fff; color: #25314a; }
+ .laudo-toolbar button:hover, .laudo-toolbar button:focus-visible { background: #edf1f8; }
+ .toolbar-divider { height: 24px; border-left: 1px solid #d8dde5; margin: 0 4px; }
+ .laudo-editable { min-height: 560px; max-height: 70vh; overflow-y: auto; padding: 38px clamp(22px, 7vw, 88px); outline: none; font-family: Georgia, 'Times New Roman', serif; font-size: 17px; line-height: 1.75; color: #202532; }
+ .laudo-editable:focus { box-shadow: inset 0 0 0 2px rgba(60, 99, 180, .18); }
+ .laudo-editable:empty::before { content: attr(data-placeholder); color: #9299a6; }
+ .laudo-editable h2 { margin: 1.4em 0 .5em; font: 700 1.15em Arial, sans-serif; }
+ .laudo-editable p { margin: 0 0 .85em; }
+ .laudo-editor-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; border-top: 1px solid #e4e7ec; }
+ @@media (max-width: 640px) { .laudo-editor-footer { align-items: stretch; flex-direction: column; } .laudo-editor-footer .d-flex { flex-direction: column; } .laudo-editor-footer .btn { width: 100%; } .laudo-editable { min-height: 60vh; padding: 24px 18px; } }
+</style>
+
+@section Scripts {
+ <script>
+  (() => {
+   const editor = document.getElementById('editor-laudo');
+   const hidden = document.getElementById('conteudo-html');
+   const form = document.getElementById('form-laudo');
+   document.querySelectorAll('.laudo-toolbar button[data-command]').forEach(button => {
+    button.addEventListener('mousedown', event => event.preventDefault());
+    button.addEventListener('click', () => {
+     editor.focus();
+     document.execCommand(button.dataset.command, false, button.dataset.value || null);
+    });
+   });
+   form.addEventListener('submit', () => { hidden.value = editor.innerHTML; });
+   document.addEventListener('keydown', event => {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
+     event.preventDefault();
+     hidden.value = editor.innerHTML;
+     form.requestSubmit();
+    }
+   });
+  })();
+ </script>
+}

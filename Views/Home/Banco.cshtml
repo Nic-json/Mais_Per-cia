@@ -1,0 +1,36 @@
+@{
+    ViewData["Title"] = "Banco de dados";
+}
+
+<div class="page-heading">
+ <div>
+  <a asp-action="Index" class="back-link">← Voltar ao painel</a>
+  <div class="eyebrow">MANUTENÇÃO</div>
+  <h1>Banco de dados</h1>
+  <p>Baixe uma cópia SQLite para editar no computador e envie a versão revisada quando terminar.</p>
+ </div>
+</div>
+
+@if (TempData["MensagemBanco"] is string mensagem) { <div class="alert alert-success">@mensagem</div> }
+@if (TempData["ErroBanco"] is string erro) { <div class="alert alert-danger">@erro</div> }
+
+<section class="form-panel mb-4">
+ <div class="form-section-title"><span>01</span><div><h2>Editar com um software externo</h2><p>O banco deste sistema usa SQLite. O DB Browser for SQLite pode abrir e editar o arquivo localmente.</p></div></div>
+ <ol>
+  <li>Baixe o arquivo SQLite abaixo.</li>
+  <li>Abra-o no <a href="https://sqlitebrowser.org/dl/" target="_blank" rel="noopener noreferrer">DB Browser for SQLite</a>, faça as alterações e clique em <strong>Write Changes</strong>.</li>
+  <li>Feche o programa e envie o arquivo revisado pelo formulário desta página.</li>
+ </ol>
+ <a asp-action="BaixarBanco" class="btn btn-outline-primary">Baixar banco SQLite (.db)</a>
+ @if (ViewBag.TemPontoRestauracao == true) { <a asp-action="BaixarPontoRestauracao" class="btn btn-outline-secondary ms-2">Baixar ponto de restauração anterior</a> }
+</section>
+
+<section class="form-panel border-danger-subtle">
+ <div class="form-section-title"><span>02</span><div><h2>Aplicar banco revisado</h2><p>O arquivo será validado antes da importação. O banco atual terá um ponto de restauração guardado na VPS.</p></div></div>
+ <div class="alert alert-warning">Importar substitui os registros atuais pelas informações do arquivo enviado. Edite uma cópia baixada deste sistema e mantenha as tabelas e colunas. Não altere a tabela de documentos nem a estrutura do banco.</div>
+ <form asp-action="RestaurarBanco" method="post" enctype="multipart/form-data" class="row g-3">
+  <div class="col-12"><label for="arquivoBanco" class="form-label">Banco SQLite editado</label><input id="arquivoBanco" name="arquivoBanco" type="file" class="form-control" accept=".db,.sqlite,.sqlite3" required /><div class="form-text">Arquivo de até 50 MB.</div></div>
+  <div class="col-12"><div class="form-check"><input id="confirmar" name="confirmar" type="checkbox" value="true" class="form-check-input" required /><label for="confirmar" class="form-check-label">Entendo que esta importação substitui os dados atuais pelo conteúdo do arquivo.</label></div></div>
+  <div class="col-12"><button type="submit" class="btn btn-danger" onclick="return confirm('Substituir o banco atual pelo arquivo selecionado?')">Importar banco editado</button></div>
+ </form>
+</section>

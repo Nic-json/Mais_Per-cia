@@ -1,0 +1,50 @@
+name: Build and deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Install .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build application
+        run: dotnet build "Sistemas para pericias.csproj" --configuration Release
+
+      - name: Package source for the VPS
+        run: tar -czf "$RUNNER_TEMP/pericias-deploy.tar.gz" --exclude=.git --exclude=.env --exclude='*.db' --exclude='*.db-shm' --exclude='*.db-wal' --exclude=App_Data --exclude=bin --exclude=obj --exclude=publish .
+
+      - name: Configure SSH
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d "$HOME/.ssh"
+          umask 077
+          printf '%s\n' "$VPS_SSH_KEY" > "$HOME/.ssh/deploy_key"
+          printf '%s\n' "$VPS_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+
+      - name: Copy package and deploy
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: |
+          ssh_args=(-i "$HOME/.ssh/deploy_key" -o IdentitiesOnly=yes -o UserKnownHostsFile="$HOME/.ssh/known_hosts" -o StrictHostKeyChecking=yes)
+          scp "${ssh_args[@]}" "$RUNNER_TEMP/pericias-deploy.tar.gz" "$VPS_USER@$VPS_HOST:/tmp/pericias-deploy.tar.gz"
+          ssh "${ssh_args[@]}" "$VPS_USER@$VPS_HOST" 'set -e; cd /opt/pericias; tar -xzf /tmp/pericias-deploy.tar.gz -C /opt/pericias; docker compose up -d --build; docker compose ps; rm -f /tmp/pericias-deploy.tar.gz'

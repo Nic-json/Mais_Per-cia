@@ -1,0 +1,16 @@
+.env
+.env.*
+!.env.example
+bin/
+obj/
+publish/
+App_Data/
+*.db
+*.db-shm
+*.db-wal
+*.pem
+*.key
+id_ed25519*
+id_rsa*
+.DS_Store
+Thumbs.db

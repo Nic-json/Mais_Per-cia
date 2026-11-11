@@ -1,0 +1,44 @@
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
+      ConnectionStrings__Pericias: Data Source=/data/pericias.db
+      Documentos__Diretorio: /data/uploads
+      Admin__Email: ${ADMIN_EMAIL:?Configure ADMIN_EMAIL no arquivo .env}
+      Admin__Password: ${ADMIN_PASSWORD:?Configure ADMIN_PASSWORD no arquivo .env}
+    volumes:
+      - pericias-data:/data
+    expose:
+      - "8080"
+    networks:
+      - web
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on:
+      - app
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:?Configure APP_DOMAIN no arquivo .env}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks:
+      - web
+
+volumes:
+  pericias-data:
+  caddy-data:
+  caddy-config:
+
+networks:
+  web:

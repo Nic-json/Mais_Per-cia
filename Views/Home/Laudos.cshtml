@@ -1,0 +1,10 @@
+@model IEnumerable<Sistemas_para_pericias.Models.Pericia>
+@{
+    ViewData["Title"] = "Laudos";
+}
+<div class="page-heading"><div><div class="eyebrow">DOCUMENTOS TÉCNICOS</div><h1>Laudos</h1><p>Consulte seus textos salvos ou comece um novo laudo.</p></div><div class="heading-actions"><a class="btn btn-primary btn-lg" asp-action="NovoLaudo">＋ Novo laudo</a></div></div>
+<section class="list-panel"><div class="list-heading"><div><h2>Laudos escritos</h2><span class="muted">@Model.Count() registros · @ViewBag.Total no total</span></div></div>
+<form method="get" class="filters"><div class="search-wrap"><input name="busca" value="@ViewBag.Busca" class="form-control" placeholder="Buscar por periciado ou número..." /></div><button class="btn btn-outline-secondary">Buscar</button>@if (ViewBag.Busca != null) { <a asp-action="Laudos" class="clear-filter">Limpar</a> }</form>
+@if (!Model.Any()) { <div class="empty-state"><div class="empty-icon">▧</div><h3>Nenhum laudo escrito ainda</h3><p>Crie um laudo e ele ficará disponível nesta lista.</p><a asp-action="NovoLaudo" class="btn btn-primary">Criar primeiro laudo</a></div> }
+else { <div class="table-responsive"><table class="table cases-table"><thead><tr><th>PERICIADO / Nº DA PERÍCIA</th><th>STATUS DA PERÍCIA</th><th>ÚLTIMA ALTERAÇÃO</th><th></th></tr></thead><tbody>@foreach (var p in Model) { <tr><td><div class="person-name">@p.NomePericiado</div><div class="case-number">Nº @p.Numero</div></td><td>@p.Status</td><td>@p.Laudo!.AtualizadoEm.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td><td class="actions"><a asp-action="EditorLaudo" asp-route-id="@p.Id" class="action-link">Abrir laudo</a></td></tr> }</tbody></table></div>}
+</section>

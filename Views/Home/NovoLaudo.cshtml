@@ -1,0 +1,9 @@
+@model IEnumerable<Sistemas_para_pericias.Models.Pericia>
+@{
+    ViewData["Title"] = "Novo laudo";
+}
+<div class="page-heading"><div><a asp-action="Laudos" class="back-link">← Voltar para laudos</a><div class="eyebrow">NOVO DOCUMENTO</div><h1>Escolha a perícia</h1><p>O laudo ficará vinculado à perícia selecionada.</p></div></div>
+<section class="list-panel">
+@if (!Model.Any()) { <div class="empty-state"><div class="empty-icon">▧</div><h3>Não há perícias disponíveis</h3><p>Cadastre uma perícia para iniciar um laudo.</p><a asp-action="Criar" asp-route-abrirLaudoDepois="true" class="btn btn-primary">Cadastrar perícia e criar laudo</a></div> }
+else { <div class="table-responsive"><table class="table cases-table"><thead><tr><th>PERICIADO / Nº DA PERÍCIA</th><th>STATUS</th><th></th></tr></thead><tbody>@foreach (var p in Model) { <tr><td><div class="person-name">@p.NomePericiado</div><div class="case-number">Nº @p.Numero</div></td><td>@p.Status</td><td class="actions"><form asp-action="AbrirLaudoNovo" method="post"><input type="hidden" name="periciaId" value="@p.Id" /><button class="btn btn-primary">Criar laudo</button></form></td></tr> }</tbody></table></div>}
+</section>

@@ -1,0 +1,11 @@
+bin/
+obj/
+build-validation/
+.git/
+.vs/
+.vscode/
+.env
+App_Data/*.db
+App_Data/*.db-shm
+App_Data/*.db-wal
+publish/

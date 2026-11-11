@@ -1,0 +1,27 @@
+@model IEnumerable<Sistemas_para_pericias.Models.Pericia>
+@using Sistemas_para_pericias.Models
+@{
+    ViewData["Title"] = "Visão geral";
+    string NomeStatus(StatusPericia s) => s switch { StatusPericia.AguardandoAceite => "Aguardando aceite", StatusPericia.EmAndamento => "Em andamento", StatusPericia.LaudoEnviado => "Laudo enviado", StatusPericia.AguardandoPagamento => "Aguardando pagamento", StatusPericia.Concluida => "Concluída", _ => "Cancelada" };
+    string ClasseStatus(StatusPericia s) => s switch { StatusPericia.Concluida => "status-done", StatusPericia.Cancelada => "status-cancel", StatusPericia.AguardandoPagamento => "status-wait", StatusPericia.LaudoEnviado => "status-sent", _ => "status-active" };
+}
+<div class="page-heading">
+  <div><div class="eyebrow">VISÃO GERAL</div><h1>Perícias em andamento</h1><p>Acompanhe os casos ativos, prazos e pagamentos pendentes.</p></div>
+  <div class="heading-actions"><a class="btn btn-outline-secondary" asp-action="Backup">↓ Backup completo (.zip)</a><a class="btn btn-outline-secondary" asp-action="Exportar">↓ CSV</a><a class="btn btn-primary btn-lg" asp-action="Criar"><span class="plus">＋</span> Nova perícia</a></div>
+</div>
+@if (TempData["Mensagem"] is string mensagem) { <div class="alert alert-success alert-dismissible fade show">@mensagem<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div> }
+<div class="stats-grid">
+ <div class="stat-card"><span class="stat-icon indigo">▤</span><div class="stat-label">PERÍCIAS ATIVAS</div><div class="stat-value">@ViewBag.Total</div><div class="stat-foot">em acompanhamento</div></div>
+ <div class="stat-card"><span class="stat-icon blue">◷</span><div class="stat-label">EM ANDAMENTO</div><div class="stat-value">@ViewBag.Ativas</div><div class="stat-foot">precisam da sua atenção</div></div>
+ <div class="stat-card"><span class="stat-icon red">!</span><div class="stat-label">PRAZOS VENCIDOS</div><div class="stat-value">@ViewBag.PrazosVencidos</div><div class="stat-foot">laudos fora do prazo</div></div>
+ <div class="stat-card"><span class="stat-icon amber">＄</span><div class="stat-label">AGUARDANDO PAGAMENTO</div><div class="stat-value">@ViewBag.AguardandoPagamento</div><div class="stat-foot">laudos já enviados</div></div>
+ <div class="stat-card"><span class="stat-icon green">↗</span><div class="stat-label">VALOR RECEBIDO</div><div class="stat-value money">@(((decimal)ViewBag.TotalRecebido).ToString("C", new System.Globalization.CultureInfo("pt-BR")))</div><div class="stat-foot">soma dos pagamentos</div></div>
+</div>
+<section class="list-panel">
+ <div class="list-heading"><div><h2>Perícias em acompanhamento</h2><span class="muted">@Model.Count() registros</span></div></div>
+ <form method="get" class="filters"><div class="search-wrap"><span>⌕</span><input name="busca" value="@ViewBag.Busca" class="form-control" placeholder="Buscar por nome ou número..." /></div><select name="status" class="form-select"><option value="">Todos os status</option>@foreach (var s in Enum.GetValues<StatusPericia>()) { <option value="@s" selected="@(ViewBag.StatusFiltro == s)">@NomeStatus(s)</option> }</select><button class="btn btn-outline-secondary">Filtrar</button>@if (ViewBag.Busca != null || ViewBag.StatusFiltro != null) { <a asp-action="Index" class="clear-filter">Limpar</a> }</form>
+ @if (!Model.Any()) { <div class="empty-state"><div class="empty-icon">▤</div><h3>Nenhuma perícia ativa encontrada</h3><p>Cadastre uma perícia ou consulte os casos finalizados em Arquivadas.</p><a asp-action="Criar" class="btn btn-primary">Cadastrar perícia</a></div> }
+ else { <div class="table-responsive"><table class="table cases-table"><thead><tr><th>PERICIADO / Nº DA PERÍCIA</th><th>DATA DE ENVIO</th><th>PRAZO DO LAUDO</th><th>HONORÁRIOS</th><th>STATUS</th><th></th></tr></thead><tbody>
+ @foreach (var p in Model) { <tr><td><div class="person-name">@p.NomePericiado</div><div class="case-number">Nº @p.Numero</div></td><td>@(p.DataEnvio?.ToString("dd/MM/yyyy") ?? "—")</td><td>@(p.PrazoLaudo?.ToString("dd/MM/yyyy") ?? "—")</td><td class="amount">@p.ValorHonorarios.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</td><td><span class="status-pill @ClasseStatus(p.Status)"><i></i>@NomeStatus(p.Status)</span></td><td class="actions"><a asp-action="Editar" asp-route-id="@p.Id" class="action-link">Editar</a></td></tr> }
+ </tbody></table></div> }
+</section>
