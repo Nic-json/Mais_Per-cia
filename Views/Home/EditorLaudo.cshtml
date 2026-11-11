@@ -3,14 +3,9 @@
     ViewData["Title"] = $"Laudo {Model.NumeroLaudo}";
 }
 
-<div class="page-heading">
- <div>
-  <a asp-action="Editar" asp-route-id="@Model.PericiaId" class="back-link">← Voltar para a perícia</a>
-  <div class="eyebrow">LAUDO PERICIAL</div>
-  <h1>Editor do laudo</h1>
-  <p><strong>Laudo nº @Model.NumeroLaudo</strong> · Perícia nº @Model.Numero · @Model.NomePericiado</p>
- </div>
-</div>
+<header class="page-heading">
+ <div><a asp-action="Editar" asp-route-id="@Model.PericiaId" class="back-link">← Voltar para a perícia</a><partial name="_PageTitle" model='new PageHeadingViewModel("LAUDO PERICIAL", "Editor do laudo", $"Laudo nº {Model.NumeroLaudo} · Perícia nº {Model.Numero} · {Model.NomePericiado}")' /></div>
+</header>
 
 @if (TempData["MensagemLaudo"] is string mensagem) { <div class="alert alert-success">@mensagem</div> }
 @if (TempData["ErroLaudo"] is string erro) { <div class="alert alert-danger">@erro</div> }

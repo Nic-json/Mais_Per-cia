@@ -24,6 +24,7 @@ Aplicação privada em português para um perito judicial organizar processos/pe
 - Relatórios filtrados por período, comarca, vara e tipo, com totais, estimativa de dias entre entrega e primeiro pagamento quando há dados, exportação CSV e impressão/salvamento em PDF pelo navegador.
 - Anexos privados (PDF, DOC/DOCX, JPEG/PNG até 25 MB), download autenticado, backup ZIP versionado com manifesto e restauração completa validada de banco/anexos, além da importação/exportação autenticada do SQLite.
 - Layout adaptado a smartphones. Navegação: Visão geral como página principal; processos com abas de acompanhamento e arquivadas; laudos no menu principal; backup e gestão do SQLite dentro de Configurações.
+- A identidade visual usa paleta neutra e componentes Razor compartilhados para títulos de páginas (`_PageTitle`) e títulos de seções/painéis (`_PanelTitle`), definidos por `PageHeadingViewModel` e `PanelHeadingViewModel`.
 
 ## Limites e decisões ainda pendentes do plano
 
@@ -44,7 +45,7 @@ Aplicação privada em português para um perito judicial organizar processos/pe
 - `Models/EditorLaudoViewModel.cs`: dados apresentados ao editor.
 - `Data/PericiasContext.cs`: mapeamentos e relacionamentos EF Core.
 - `Data/SqliteSchema.cs`: migrações adicionais executadas na inicialização.
-- `Views/Home/`: telas MVC; `Views/Shared/_Layout.cshtml` contém a navegação.
+- `Views/Home/`: telas MVC; `Views/Shared/_Layout.cshtml` contém a navegação, e `_PageTitle.cshtml` / `_PanelTitle.cshtml` padronizam os títulos das páginas e seções.
 - `wwwroot/css/`, `wwwroot/js/`: estilos e scripts.
 - `compose.yaml`, `Dockerfile`, `Caddyfile`: contêineres e proxy HTTPS.
 - `.github/workflows/deploy.yml`: build e deploy por push em `main`.

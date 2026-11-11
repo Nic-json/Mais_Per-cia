@@ -1,7 +1,7 @@
 @model Sistemas_para_pericias.Models.Pericia
 @using Sistemas_para_pericias.Models
 @{ ViewData["Title"] = Model.Id == 0 ? "Nova perícia" : "Editar perícia"; var editar = Model.Id != 0; }
-<div class="page-heading"><div><a asp-action="Index" class="back-link">← Voltar para perícias</a><div class="eyebrow">CADASTRO</div><h1>@(editar ? "Editar perícia" : "Nova perícia")</h1><p>Preencha os dados para organizar o acompanhamento.</p></div></div>
+<header class="page-heading"><div><a asp-action="Index" class="back-link">← Voltar para perícias</a><partial name="_PageTitle" model='new PageHeadingViewModel("CADASTRO", editar ? "Editar perícia" : "Nova perícia", "Preencha os dados para organizar o acompanhamento.")' /></div></header>
 @if (TempData["Mensagem"] is string mensagemDocumento) { <div class="alert alert-success">@mensagemDocumento</div> }
 @if (TempData["Erro"] is string erroDocumento) { <div class="alert alert-danger">@erroDocumento</div> }
 <form asp-action="@(editar ? "Editar" : "Criar")" asp-route-id="@Model.Id" method="post" class="form-panel">

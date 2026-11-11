@@ -143,3 +143,22 @@ body{color:var(--ink);background:var(--bg);font-size:14px}
 .footer{border-color:var(--line);color:#858c90}
 .alert{border-radius:7px}
 @media(max-width:700px){.form-control,.form-select,.input-group-text{font-size:16px;min-height:42px}}
+
+/* Shared page and panel heading components */
+.page-heading{gap:18px;align-items:center;margin:0 0 24px}
+.page-heading-copy{min-width:0;max-width:760px}
+.page-heading-copy .eyebrow{margin-bottom:6px}
+.page-heading-copy h1{margin:0 0 6px;font-size:25px;line-height:1.25;font-weight:650;letter-spacing:-.35px;color:#30383d}
+.page-heading-copy p{margin:0;color:#737b83;font-size:13px;line-height:1.55}
+.page-heading-copy+.heading-actions{flex:0 0 auto}
+.panel-heading{min-width:0}
+.form-panel>.panel-heading{margin-bottom:14px}
+.list-panel>.panel-heading{padding:18px 20px 12px}
+.panel-heading h2,.form-panel>h2,.list-panel>h2,.form-panel h2.section-title{margin:0;color:#394247;font:600 16px/1.4 'DM Sans',sans-serif;letter-spacing:-.1px}
+.panel-heading p{margin:4px 0 0;color:#798187;font-size:12px;line-height:1.5}
+.list-heading{gap:16px}
+.panel-heading-actions{display:flex;align-items:center;gap:8px}
+.form-panel>h2+.muted,.form-panel>h2+p{margin-top:6px}
+.form-section-title h2{font-size:14px;line-height:1.4;letter-spacing:0}
+.form-section-title p{font-size:12px;line-height:1.5}
+@media(max-width:700px){.page-heading{gap:12px;margin-bottom:20px}.page-heading-copy h1{font-size:22px}.page-heading-copy p{font-size:12px}.page-heading-copy+.heading-actions{width:100%}.panel-heading h2,.form-panel>h2,.list-panel>h2{font-size:15px}.panel-heading-actions{flex-wrap:wrap}.list-heading>.panel-heading{flex:1}.list-panel>.panel-heading{padding:15px 13px 11px}}

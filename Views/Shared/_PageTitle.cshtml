@@ -1,0 +1,12 @@
+@model Sistemas_para_pericias.Models.PageHeadingViewModel
+<div class="page-heading-copy">
+    @if (!string.IsNullOrWhiteSpace(Model.Eyebrow))
+    {
+        <div class="eyebrow">@Model.Eyebrow</div>
+    }
+    <h1>@Model.Title</h1>
+    @if (!string.IsNullOrWhiteSpace(Model.Description))
+    {
+        <p>@Model.Description</p>
+    }
+</div>

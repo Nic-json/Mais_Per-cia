@@ -1,0 +1,8 @@
+@model Sistemas_para_pericias.Models.PanelHeadingViewModel
+<header class="panel-heading">
+    <h2>@Model.Title</h2>
+    @if (!string.IsNullOrWhiteSpace(Model.Description))
+    {
+        <p>@Model.Description</p>
+    }
+</header>

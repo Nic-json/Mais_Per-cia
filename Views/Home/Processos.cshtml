@@ -5,7 +5,7 @@
     var arquivadas = ViewBag.Arquivadas == true;
     string StatusNome(StatusPericia s) => s switch { StatusPericia.AguardandoAceite => "Aguardando aceite", StatusPericia.EmAndamento => "Em andamento", StatusPericia.LaudoEnviado => "Laudo enviado", StatusPericia.AguardandoPagamento => "Aguardando pagamento", StatusPericia.Concluida => "Concluída", StatusPericia.Recusada => "Recusada", _ => "Cancelada" };
 }
-<div class="page-heading"><div><div class="eyebrow">ACERVO PERICIAL</div><h1>@(arquivadas ? "Processos arquivados" : "Processos e perícias")</h1><p>@(arquivadas ? "Consulte perícias concluídas e quitadas, canceladas ou recusadas." : "Pesquise e acompanhe os processos em andamento.")</p></div><div class="heading-actions"><a asp-action="Criar" class="btn btn-primary">+ Novo processo</a></div></div>
+<header class="page-heading"><partial name="_PageTitle" model='new PageHeadingViewModel("ACERVO PERICIAL", arquivadas ? "Processos arquivados" : "Processos e perícias", arquivadas ? "Consulte perícias concluídas e quitadas, canceladas ou recusadas." : "Pesquise e acompanhe os processos em andamento.")' /><div class="heading-actions"><a asp-action="Criar" class="btn btn-primary">+ Novo processo</a></div></header>
 <nav class="nav nav-tabs process-tabs mb-3" aria-label="Visualização de processos"><a class="nav-link @(!arquivadas ? "active" : "")" asp-action="Processos" asp-route-arquivadas="false">Em acompanhamento</a><a class="nav-link @(arquivadas ? "active" : "")" asp-action="Processos" asp-route-arquivadas="true">Arquivadas</a></nav>
 <section class="list-panel">
 @if (arquivadas)
