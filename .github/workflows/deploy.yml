@@ -14,13 +14,13 @@ concurrency:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Check out source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Install .NET SDK
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
 
@@ -29,6 +29,18 @@ jobs:
 
       - name: Package source for the VPS
         run: tar -czf "$RUNNER_TEMP/pericias-deploy.tar.gz" --exclude=.git --exclude=.env --exclude='*.db' --exclude='*.db-shm' --exclude='*.db-wal' --exclude=App_Data --exclude=bin --exclude=obj --exclude=publish .
+
+      - name: Check deployment secrets
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          if [[ -z "$VPS_HOST" || -z "$VPS_USER" || -z "$VPS_SSH_KEY" || -z "$VPS_KNOWN_HOSTS" ]]; then
+            echo "::error::Configure os secrets VPS_HOST, VPS_USER, VPS_SSH_KEY e VPS_KNOWN_HOSTS antes do deploy."
+            exit 1
+          fi
 
       - name: Configure SSH
         env:
