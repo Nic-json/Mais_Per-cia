@@ -14,9 +14,10 @@ public enum StatusPericia
     [Display(Name = "Recusada")] Recusada
 }
 
-public class Pericia
+public class Pericia : IUsuarioDono
 {
     public int Id { get; set; }
+    public int UsuarioId { get; set; }
 
     [Required, StringLength(160, MinimumLength = 2)]
     [Display(Name = "Nome do periciado")]
@@ -96,9 +97,10 @@ public class Pericia
     public List<HistoricoPericia> Historico { get; set; } = [];
 }
 
-public class Periciado
+public class Periciado : IUsuarioDono
 {
     public int Id { get; set; }
+    public int UsuarioId { get; set; }
 
     public int PericiaId { get; set; }
 
@@ -115,9 +117,10 @@ public class Periciado
     public List<LaudoPericia> Laudos { get; set; } = [];
 }
 
-public class DocumentoPericia
+public class DocumentoPericia : IUsuarioDono
 {
     public int Id { get; set; }
+    public int UsuarioId { get; set; }
 
     public int PericiaId { get; set; }
 
@@ -134,9 +137,10 @@ public class DocumentoPericia
     public Pericia Pericia { get; set; } = null!;
 }
 
-public class LaudoPericia
+public class LaudoPericia : IUsuarioDono
 {
     public int Id { get; set; }
+    public int UsuarioId { get; set; }
 
     public int PericiaId { get; set; }
 
@@ -165,9 +169,10 @@ public class LaudoPericia
     public List<VersaoLaudo> Versoes { get; set; } = [];
 }
 
-public class VersaoLaudo
+public class VersaoLaudo : IUsuarioDono
 {
     public int Id { get; set; }
+    public int UsuarioId { get; set; }
     public int LaudoId { get; set; }
     [Required, StringLength(80)] public string NumeroLaudo { get; set; } = "";
     [StringLength(80)] public string? Tipo { get; set; }
@@ -188,9 +193,10 @@ public enum StatusLaudo
     [Display(Name = "Complemento")] Complemento
 }
 
-public class EventoAgenda
+public class EventoAgenda : IUsuarioDono
 {
     public int Id { get; set; }
+    public int UsuarioId { get; set; }
     public int PericiaId { get; set; }
     public int? PericiadoId { get; set; }
     [Required, StringLength(160)] public string Titulo { get; set; } = "";
@@ -205,9 +211,10 @@ public class EventoAgenda
     public Periciado? Periciado { get; set; }
 }
 
-public class PagamentoHonorario
+public class PagamentoHonorario : IUsuarioDono
 {
     public int Id { get; set; }
+    public int UsuarioId { get; set; }
     public int PericiaId { get; set; }
     [Range(0.01, 999999999)] public decimal Valor { get; set; }
     [DataType(DataType.Date)] public DateTime? DataRecebimento { get; set; } = DateTime.Today;
@@ -217,9 +224,10 @@ public class PagamentoHonorario
     public Pericia Pericia { get; set; } = null!;
 }
 
-public class HistoricoPericia
+public class HistoricoPericia : IUsuarioDono
 {
     public int Id { get; set; }
+    public int UsuarioId { get; set; }
     public int PericiaId { get; set; }
     [Required, StringLength(80)] public string Tipo { get; set; } = "";
     [Required, StringLength(1000)] public string Descricao { get; set; } = "";
@@ -228,9 +236,10 @@ public class HistoricoPericia
     public Pericia Pericia { get; set; } = null!;
 }
 
-public class ConfiguracaoPerito
+public class ConfiguracaoPerito : IUsuarioDono
 {
-    public int Id { get; set; } = 1;
+    public int Id { get; set; }
+    public int UsuarioId { get; set; }
     [StringLength(160)] public string? NomeProfissional { get; set; }
     [StringLength(120)] public string? Especialidade { get; set; }
     [StringLength(80)] public string? RegistroProfissional { get; set; }
@@ -241,9 +250,10 @@ public class ConfiguracaoPerito
     public DateTime AtualizadoEm { get; set; } = DateTime.UtcNow;
 }
 
-public class ModeloLaudo
+public class ModeloLaudo : IUsuarioDono
 {
     public int Id { get; set; }
+    public int UsuarioId { get; set; }
     [Required, StringLength(100)] public string Nome { get; set; } = "";
     [StringLength(100000)] public string ConteudoHtml { get; set; } = "";
     public DateTime AtualizadoEm { get; set; } = DateTime.UtcNow;

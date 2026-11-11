@@ -4,12 +4,13 @@ namespace Sistemas_para_pericias.Data;
 
 public static class SqliteSchema
 {
-    public const int VersaoEsquema = 3;
+    public const int VersaoEsquema = 4;
 
     public static void EnsureAdditionalTables(SqliteConnection connection, bool criarBackupAntesMigracao = true)
     {
         var tinhaTabelaPagamentos = HasTable(connection, "PagamentosHonorarios");
-        var precisaMigrar = !HasTable(connection, "Periciados") || !tinhaTabelaPagamentos || !HasTable(connection, "EventosAgenda") || !HasTable(connection, "HistoricoPericias") || !HasTable(connection, "ConfiguracoesPerito") || !HasTable(connection, "ModelosLaudo") || !HasTable(connection, "VersoesLaudo") ||
+        var precisaMigrar = !HasTable(connection, "ContasUsuarios") || !HasTable(connection, "AssinaturasContas") || !HasTable(connection, "EventosAsaas") || !HasColumn(connection, "Pericias", "UsuarioId") || !HasColumn(connection, "DocumentosPericia", "UsuarioId") || !HasColumn(connection, "Periciados", "UsuarioId") || !HasColumn(connection, "LaudosPericia", "UsuarioId") || !HasColumn(connection, "VersoesLaudo", "UsuarioId") || !HasColumn(connection, "EventosAgenda", "UsuarioId") || !HasColumn(connection, "PagamentosHonorarios", "UsuarioId") || !HasColumn(connection, "HistoricoPericias", "UsuarioId") || !HasColumn(connection, "ConfiguracoesPerito", "UsuarioId") || !HasColumn(connection, "ModelosLaudo", "UsuarioId") ||
+            !HasTable(connection, "Periciados") || !tinhaTabelaPagamentos || !HasTable(connection, "EventosAgenda") || !HasTable(connection, "HistoricoPericias") || !HasTable(connection, "ConfiguracoesPerito") || !HasTable(connection, "ModelosLaudo") || !HasTable(connection, "VersoesLaudo") ||
             !HasColumn(connection, "Pericias", "NumeroProcesso") || !HasColumn(connection, "Pericias", "DataHonorariosFixados") ||
             !HasColumn(connection, "Pericias", "ValorHonorariosSolicitados") || !HasColumn(connection, "Pericias", "DataHonorariosSolicitados") ||
             !HasColumn(connection, "Pericias", "ValorHonorariosLiberados") || !HasColumn(connection, "Pericias", "DataHonorariosLiberados") ||
@@ -23,8 +24,31 @@ public static class SqliteSchema
         using var transaction = connection.BeginTransaction();
         var adicionouPericiadoId = false;
         Execute(connection, transaction, """
-            CREATE UNIQUE INDEX IF NOT EXISTS "IX_Pericias_Numero"
-                ON "Pericias" ("Numero");
+            CREATE TABLE IF NOT EXISTS "ContasUsuarios" (
+                "Id" INTEGER NOT NULL CONSTRAINT "PK_ContasUsuarios" PRIMARY KEY AUTOINCREMENT,
+                "Email" TEXT NOT NULL,
+                "EmailNormalizado" TEXT NOT NULL,
+                "Nome" TEXT NOT NULL,
+                "SenhaHash" TEXT NOT NULL,
+                "Ativo" INTEGER NOT NULL DEFAULT 1,
+                "CriadoEm" TEXT NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS "AssinaturasContas" (
+                "Id" INTEGER NOT NULL CONSTRAINT "PK_AssinaturasContas" PRIMARY KEY AUTOINCREMENT,
+                "UsuarioId" INTEGER NOT NULL,
+                "Status" TEXT NOT NULL DEFAULT 'Pendente',
+                "CheckoutId" TEXT NULL,
+                "CustomerId" TEXT NULL,
+                "SubscriptionId" TEXT NULL,
+                "AcessoAte" TEXT NULL,
+                "AtualizadoEm" TEXT NOT NULL,
+                CONSTRAINT "FK_AssinaturasContas_ContasUsuarios_UsuarioId" FOREIGN KEY ("UsuarioId") REFERENCES "ContasUsuarios" ("Id") ON DELETE CASCADE
+            );
+            CREATE UNIQUE INDEX IF NOT EXISTS "IX_AssinaturasContas_UsuarioId" ON "AssinaturasContas" ("UsuarioId");
+            CREATE TABLE IF NOT EXISTS "EventosAsaas" (
+                "Id" TEXT NOT NULL CONSTRAINT "PK_EventosAsaas" PRIMARY KEY,
+                "RecebidoEm" TEXT NOT NULL
+            );
             CREATE TABLE IF NOT EXISTS "DocumentosPericia" (
                 "Id" INTEGER NOT NULL CONSTRAINT "PK_DocumentosPericia" PRIMARY KEY AUTOINCREMENT,
                 "PericiaId" INTEGER NOT NULL,
@@ -138,6 +162,12 @@ public static class SqliteSchema
             CREATE INDEX IF NOT EXISTS "IX_VersoesLaudo_LaudoId_SalvoEm" ON "VersoesLaudo" ("LaudoId", "SalvoEm");
             """);
 
+        foreach (var tabela in new[] { "Pericias", "DocumentosPericia", "Periciados", "LaudosPericia", "VersoesLaudo", "EventosAgenda", "PagamentosHonorarios", "HistoricoPericias", "ConfiguracoesPerito", "ModelosLaudo" })
+        {
+            if (!HasColumn(connection, transaction, tabela, "UsuarioId"))
+                Execute(connection, transaction, $"ALTER TABLE \"{tabela}\" ADD COLUMN \"UsuarioId\" INTEGER NOT NULL DEFAULT 1;");
+        }
+
         if (!HasColumn(connection, transaction, "Periciados", "Papel"))
             Execute(connection, transaction, "ALTER TABLE \"Periciados\" ADD COLUMN \"Papel\" TEXT NULL;");
         if (!HasColumn(connection, transaction, "Periciados", "Relacao"))
@@ -146,7 +176,6 @@ public static class SqliteSchema
             Execute(connection, transaction, "ALTER TABLE \"Periciados\" ADD COLUMN \"Contato\" TEXT NULL;");
         if (!HasColumn(connection, transaction, "Periciados", "RegistroEntrevista"))
             Execute(connection, transaction, "ALTER TABLE \"Periciados\" ADD COLUMN \"RegistroEntrevista\" TEXT NULL;");
-
         if (!HasColumn(connection, transaction, "Pericias", "NumeroProcesso"))
             Execute(connection, transaction, "ALTER TABLE \"Pericias\" ADD COLUMN \"NumeroProcesso\" TEXT NULL;");
         if (!HasColumn(connection, transaction, "Pericias", "ValorHonorariosSolicitados"))
@@ -168,6 +197,13 @@ public static class SqliteSchema
         if (!HasColumn(connection, transaction, "Pericias", "TipoPericia"))
             Execute(connection, transaction, "ALTER TABLE \"Pericias\" ADD COLUMN \"TipoPericia\" TEXT NULL;");
         Execute(connection, transaction, "CREATE INDEX IF NOT EXISTS \"IX_Pericias_NumeroProcesso\" ON \"Pericias\" (\"NumeroProcesso\");");
+        Execute(connection, transaction, "DROP INDEX IF EXISTS \"IX_Pericias_Numero\";");
+        Execute(connection, transaction, "CREATE UNIQUE INDEX IF NOT EXISTS \"IX_Pericias_UsuarioId_Numero\" ON \"Pericias\" (\"UsuarioId\", \"Numero\");");
+        Execute(connection, transaction, "CREATE UNIQUE INDEX IF NOT EXISTS \"IX_ContasUsuarios_EmailNormalizado\" ON \"ContasUsuarios\" (\"EmailNormalizado\");");
+        Execute(connection, transaction, "CREATE UNIQUE INDEX IF NOT EXISTS \"IX_ConfiguracoesPerito_UsuarioId\" ON \"ConfiguracoesPerito\" (\"UsuarioId\");");
+        Execute(connection, transaction, "CREATE INDEX IF NOT EXISTS \"IX_ModelosLaudo_UsuarioId_Nome\" ON \"ModelosLaudo\" (\"UsuarioId\", \"Nome\");");
+        foreach (var tabela in new[] { "DocumentosPericia", "Periciados", "LaudosPericia", "VersoesLaudo", "EventosAgenda", "PagamentosHonorarios", "HistoricoPericias" })
+            Execute(connection, transaction, $"CREATE INDEX IF NOT EXISTS \"IX_{tabela}_UsuarioId\" ON \"{tabela}\" (\"UsuarioId\");");
 
         Execute(connection, transaction, """
             DROP INDEX IF EXISTS "IX_LaudosPericia_PericiaId";

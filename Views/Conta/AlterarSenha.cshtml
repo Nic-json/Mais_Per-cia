@@ -1,0 +1,12 @@
+@model Sistemas_para_pericias.Models.AlterarSenhaViewModel
+@{ ViewData["Title"] = "Alterar senha"; }
+<header class="page-heading"><partial name="_PageTitle" model='new PageHeadingViewModel("SUA CONTA", "Alterar senha", "Confirme a senha atual para escolher uma nova.")' /></header>
+<section class="form-panel" style="max-width:600px">
+ <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+ <form asp-action="AlterarSenha" asp-controller="Conta" method="post">
+  <div class="mb-3"><label asp-for="SenhaAtual" class="form-label"></label><input asp-for="SenhaAtual" class="form-control" autocomplete="current-password"/><span asp-validation-for="SenhaAtual" class="text-danger"></span></div>
+  <div class="mb-3"><label asp-for="NovaSenha" class="form-label"></label><input asp-for="NovaSenha" class="form-control" autocomplete="new-password"/><span asp-validation-for="NovaSenha" class="text-danger"></span></div>
+  <div class="mb-4"><label asp-for="ConfirmarNovaSenha" class="form-label"></label><input asp-for="ConfirmarNovaSenha" class="form-control" autocomplete="new-password"/><span asp-validation-for="ConfirmarNovaSenha" class="text-danger"></span></div>
+  <button class="btn btn-primary">Atualizar senha</button> <a asp-controller="Home" asp-action="Configuracoes" class="btn btn-light">Voltar</a>
+ </form>
+</section>

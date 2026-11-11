@@ -1,0 +1,40 @@
+@model Sistemas_para_pericias.Models.AssinaturaViewModel
+@{ ViewData["Title"] = "Assinatura"; Layout = null; }
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>Assinatura · Perícia Clara</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site-enhancements.css" asp-append-version="true" />
+</head>
+<body class="login-page">
+<main class="login-card">
+    <a class="brand login-brand" href="/"><span class="brand-mark">P</span><span>perícia<span class="brand-light">clara</span><small>GESTÃO PERICIAL</small></span></a>
+    <div class="eyebrow">ACESSO AO SISTEMA</div>
+    <h1>Ative sua assinatura</h1>
+    <p class="login-intro">Para proteger seus dados e manter o serviço, o acesso às áreas do sistema é liberado após a confirmação do primeiro pagamento.</p>
+    @if (TempData["ErroAssinatura"] is string erro) { <div class="alert alert-warning">@erro</div> }
+    @if (Model.AcessoAte >= DateTime.UtcNow) { <div class="alert alert-success">Assinatura ativa até @Model.AcessoAte.Value.ToLocalTime().ToString("dd/MM/yyyy").</div> }
+    else { <div class="alert alert-secondary">Situação: @Model.Status</div> }
+    @if (Model.ValorMensal is decimal valor) { <p class="fs-4 fw-semibold">R$ @valor.ToString("N2") <span class="fs-6 fw-normal text-muted">por mês</span></p> }
+    @if (Model.CheckoutConfigurado)
+    {
+        @if (!string.IsNullOrWhiteSpace(Model.CheckoutUrl))
+        {
+            <a class="btn btn-primary w-100 btn-lg mb-2" href="@Model.CheckoutUrl">Continuar para pagamento</a>
+        }
+        <form asp-action="Iniciar" method="post"><button type="submit" class="btn btn-primary w-100 btn-lg">@(Model.CheckoutUrl is null ? "Assinar agora" : "Gerar novo checkout")</button></form>
+        <p class="small text-muted mt-3">Pagamento processado pelo Asaas via Pix ou cartão. O acesso será ativado quando o sistema receber a confirmação do provedor.</p>
+    }
+    else
+    {
+        <div class="alert alert-info">A cobrança online ainda está em configuração. Sua conta foi criada; você poderá acessar o sistema quando o checkout estiver disponível.</div>
+    }
+    <div class="login-note"><form asp-controller="Conta" asp-action="Sair" method="post"><button class="btn btn-link p-0" type="submit">Sair da conta</button></form></div>
+</main>
+</body>
+</html>

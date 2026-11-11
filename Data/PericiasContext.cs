@@ -1,10 +1,16 @@
 using Microsoft.EntityFrameworkCore;
+using Sistemas_para_pericias.Security;
 using Sistemas_para_pericias.Models;
 
 namespace Sistemas_para_pericias.Data;
 
-public class PericiasContext(DbContextOptions<PericiasContext> options) : DbContext(options)
+public class PericiasContext(DbContextOptions<PericiasContext> options, ICurrentUser currentUser) : DbContext(options)
 {
+    private int CurrentUserId => currentUser.Id;
+
+    public DbSet<ContaUsuario> ContasUsuarios => Set<ContaUsuario>();
+    public DbSet<AssinaturaConta> Assinaturas => Set<AssinaturaConta>();
+    public DbSet<EventoAsaas> EventosAsaas => Set<EventoAsaas>();
     public DbSet<Pericia> Pericias => Set<Pericia>();
     public DbSet<DocumentoPericia> DocumentosPericia => Set<DocumentoPericia>();
     public DbSet<Periciado> Periciados => Set<Periciado>();
@@ -16,9 +22,52 @@ public class PericiasContext(DbContextOptions<PericiasContext> options) : DbCont
     public DbSet<ModeloLaudo> ModelosLaudo => Set<ModeloLaudo>();
     public DbSet<VersaoLaudo> VersoesLaudo => Set<VersaoLaudo>();
 
+    public override int SaveChanges()
+    {
+        AplicarUsuarioAtual();
+        return base.SaveChanges();
+    }
+
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        AplicarUsuarioAtual();
+        return base.SaveChangesAsync(cancellationToken);
+    }
+
+    private void AplicarUsuarioAtual()
+    {
+        foreach (var entry in ChangeTracker.Entries<IUsuarioDono>().Where(entry => entry.State == EntityState.Added))
+        {
+            if (CurrentUserId <= 0)
+                throw new InvalidOperationException("A conta autenticada não foi identificada para salvar estes dados.");
+            entry.Entity.UsuarioId = CurrentUserId;
+        }
+    }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<Pericia>().HasIndex(p => p.Numero).IsUnique();
+        modelBuilder.Entity<Pericia>().Property(e => e.UsuarioId).HasDefaultValue(1);
+        modelBuilder.Entity<DocumentoPericia>().Property(e => e.UsuarioId).HasDefaultValue(1);
+        modelBuilder.Entity<Periciado>().Property(e => e.UsuarioId).HasDefaultValue(1);
+        modelBuilder.Entity<LaudoPericia>().Property(e => e.UsuarioId).HasDefaultValue(1);
+        modelBuilder.Entity<VersaoLaudo>().Property(e => e.UsuarioId).HasDefaultValue(1);
+        modelBuilder.Entity<EventoAgenda>().Property(e => e.UsuarioId).HasDefaultValue(1);
+        modelBuilder.Entity<PagamentoHonorario>().Property(e => e.UsuarioId).HasDefaultValue(1);
+        modelBuilder.Entity<HistoricoPericia>().Property(e => e.UsuarioId).HasDefaultValue(1);
+        modelBuilder.Entity<ConfiguracaoPerito>().Property(e => e.UsuarioId).HasDefaultValue(1);
+        modelBuilder.Entity<ModeloLaudo>().Property(e => e.UsuarioId).HasDefaultValue(1);
+        modelBuilder.Entity<ContaUsuario>().HasIndex(u => u.EmailNormalizado).IsUnique();
+        modelBuilder.Entity<ContaUsuario>().ToTable("ContasUsuarios");
+        modelBuilder.Entity<AssinaturaConta>().ToTable("AssinaturasContas").HasIndex(s => s.UsuarioId).IsUnique();
+        modelBuilder.Entity<EventoAsaas>().ToTable("EventosAsaas");
+        modelBuilder.Entity<Pericia>().HasIndex(p => new { p.UsuarioId, p.Numero }).IsUnique();
+        modelBuilder.Entity<DocumentoPericia>().HasIndex(e => e.UsuarioId);
+        modelBuilder.Entity<Periciado>().HasIndex(e => e.UsuarioId);
+        modelBuilder.Entity<LaudoPericia>().HasIndex(e => e.UsuarioId);
+        modelBuilder.Entity<VersaoLaudo>().HasIndex(e => e.UsuarioId);
+        modelBuilder.Entity<EventoAgenda>().HasIndex(e => e.UsuarioId);
+        modelBuilder.Entity<PagamentoHonorario>().HasIndex(e => e.UsuarioId);
+        modelBuilder.Entity<HistoricoPericia>().HasIndex(e => e.UsuarioId);
         modelBuilder.Entity<Pericia>().Property(p => p.ValorHonorarios).HasPrecision(12, 2);
         modelBuilder.Entity<Pericia>().Property(p => p.ValorHonorariosSolicitados).HasPrecision(12, 2);
         modelBuilder.Entity<Pericia>().Property(p => p.ValorHonorariosLiberados).HasPrecision(12, 2);
@@ -93,5 +142,19 @@ public class PericiasContext(DbContextOptions<PericiasContext> options) : DbCont
             entity.HasIndex(h => new { h.PericiaId, h.CriadoEm });
             entity.HasOne(h => h.Pericia).WithMany(p => p.Historico).HasForeignKey(h => h.PericiaId).OnDelete(DeleteBehavior.Cascade);
         });
+
+        modelBuilder.Entity<ConfiguracaoPerito>().HasIndex(c => c.UsuarioId).IsUnique();
+        modelBuilder.Entity<ModeloLaudo>().HasIndex(m => new { m.UsuarioId, m.Nome });
+
+        modelBuilder.Entity<Pericia>().HasQueryFilter(e => e.UsuarioId == CurrentUserId);
+        modelBuilder.Entity<DocumentoPericia>().HasQueryFilter(e => e.UsuarioId == CurrentUserId);
+        modelBuilder.Entity<Periciado>().HasQueryFilter(e => e.UsuarioId == CurrentUserId);
+        modelBuilder.Entity<LaudoPericia>().HasQueryFilter(e => e.UsuarioId == CurrentUserId);
+        modelBuilder.Entity<VersaoLaudo>().HasQueryFilter(e => e.UsuarioId == CurrentUserId);
+        modelBuilder.Entity<EventoAgenda>().HasQueryFilter(e => e.UsuarioId == CurrentUserId);
+        modelBuilder.Entity<PagamentoHonorario>().HasQueryFilter(e => e.UsuarioId == CurrentUserId);
+        modelBuilder.Entity<HistoricoPericia>().HasQueryFilter(e => e.UsuarioId == CurrentUserId);
+        modelBuilder.Entity<ConfiguracaoPerito>().HasQueryFilter(e => e.UsuarioId == CurrentUserId);
+        modelBuilder.Entity<ModeloLaudo>().HasQueryFilter(e => e.UsuarioId == CurrentUserId);
     }
 }

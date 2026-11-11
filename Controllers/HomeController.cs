@@ -5,6 +5,7 @@ using Microsoft.Data.Sqlite;
 using Ganss.Xss;
 using System.IO.Compression;
 using System.Globalization;
+using System.Security.Claims;
 using System.Text;
 using Sistemas_para_pericias.Data;
 using Sistemas_para_pericias.Models;
@@ -15,8 +16,6 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
 {
     private sealed record ManifestoBackup(string Aplicacao, int VersaoFormato, int VersaoEsquema, DateTime CriadoEmUtc, int QuantidadeDocumentos);
     private const long TamanhoMaximoDocumento = 25 * 1024 * 1024;
-    private const long TamanhoMaximoBanco = 50 * 1024 * 1024;
-    private const long TamanhoMaximoBackupCompleto = 400 * 1024 * 1024;
     private readonly string diretorioDocumentos = configuration["Documentos:Diretorio"]
         ?? Path.Combine(environment.ContentRootPath, "App_Data", "uploads");
 
@@ -55,17 +54,31 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
                 .Select(p => p.Nome));
     }
 
+    private static void AtualizarCamposEditaveis(Pericia destino, Pericia origem)
+    {
+        destino.NomePericiado = origem.NomePericiado;
+        destino.Numero = origem.Numero;
+        destino.NumeroProcesso = origem.NumeroProcesso;
+        destino.Comarca = origem.Comarca;
+        destino.Vara = origem.Vara;
+        destino.Magistrado = origem.Magistrado;
+        destino.TipoPericia = origem.TipoPericia;
+        destino.DataEnvio = origem.DataEnvio;
+        destino.DataAceite = origem.DataAceite;
+        destino.PrazoLaudo = origem.PrazoLaudo;
+        destino.ValorHonorarios = origem.ValorHonorarios;
+        destino.DataHonorariosFixados = origem.DataHonorariosFixados;
+        destino.ValorHonorariosSolicitados = origem.ValorHonorariosSolicitados;
+        destino.DataHonorariosSolicitados = origem.DataHonorariosSolicitados;
+        destino.ValorHonorariosLiberados = origem.ValorHonorariosLiberados;
+        destino.DataHonorariosLiberados = origem.DataHonorariosLiberados;
+        destino.Status = origem.Status;
+        destino.Observacoes = origem.Observacoes;
+    }
+
     public IActionResult Banco() => RedirectToAction(nameof(Configuracoes));
 
-    public IActionResult BaixarPontoRestauracao()
-    {
-        var pastaRestauracao = Path.Combine(Path.GetDirectoryName(db.Database.GetDbConnection().DataSource)!, "backups-restauracao");
-        if (!Directory.Exists(pastaRestauracao)) return NotFound();
-        var caminho = Directory.EnumerateFiles(pastaRestauracao, "antes-restauracao-*.db")
-            .OrderByDescending(System.IO.File.GetCreationTimeUtc)
-            .FirstOrDefault();
-        return caminho is null ? NotFound() : PhysicalFile(caminho, "application/vnd.sqlite3", Path.GetFileName(caminho));
-    }
+
 
     public async Task<IActionResult> BaixarBanco()
     {
@@ -87,6 +100,8 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
                 await db.Database.CloseConnectionAsync();
             }
 
+            await LimparCopiaParaContaAsync(caminhoBanco, UsuarioAtualId());
+
             HttpContext.Response.OnCompleted(() =>
             {
                 try
@@ -97,6 +112,7 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
                 catch (UnauthorizedAccessException) { }
                 return Task.CompletedTask;
             });
+            Response.Headers.CacheControl = "no-store";
             return PhysicalFile(caminhoBanco, "application/vnd.sqlite3", nomeArquivo);
         }
         catch
@@ -106,284 +122,10 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
         }
     }
 
-    [HttpPost, ValidateAntiForgeryToken, RequestSizeLimit(TamanhoMaximoBackupCompleto), RequestFormLimits(MultipartBodyLengthLimit = TamanhoMaximoBackupCompleto)]
-    public async Task<IActionResult> RestaurarBackupCompleto(IFormFile? arquivoBackup, bool confirmar = false)
-    {
-        if (!confirmar || arquivoBackup is null || arquivoBackup.Length < 64 || arquivoBackup.Length > TamanhoMaximoBackupCompleto || !Path.GetExtension(arquivoBackup.FileName).Equals(".zip", StringComparison.OrdinalIgnoreCase))
-        {
-            TempData["ErroBanco"] = "Confirme a operação e selecione um backup completo ZIP válido de até 400 MB.";
-            return RedirectToAction(nameof(Banco));
-        }
 
-        var staging = Path.Combine(Path.GetTempPath(), $"pericias-restore-{Guid.NewGuid():N}");
-        var pastaDocumentosStaging = Path.Combine(staging, "documentos");
-        var caminhoBancoStaging = Path.Combine(staging, "pericias.db");
-        try
-        {
-            Directory.CreateDirectory(pastaDocumentosStaging);
-            await using var zipStream = arquivoBackup.OpenReadStream();
-            using var zip = new ZipArchive(zipStream, ZipArchiveMode.Read, leaveOpen: true);
-            if (zip.Entries.Count > 10002 || zip.Entries.Sum(e => e.Length) > TamanhoMaximoBackupCompleto)
-                throw new InvalidDataException("O backup excede os limites permitidos.");
-            var nomesEntradas = zip.Entries.Select(e => e.FullName).ToList();
-            if (nomesEntradas.Distinct(StringComparer.Ordinal).Count() != nomesEntradas.Count ||
-                nomesEntradas.Any(n => n != "manifesto.json" && n != "pericias.db" && !n.StartsWith("documentos/", StringComparison.Ordinal)))
-                throw new InvalidDataException("O ZIP contém caminhos inesperados ou entradas duplicadas.");
+    [AllowAnonymous]
+    public IActionResult Privacy() => View();
 
-            var manifestoEntry = zip.GetEntry("manifesto.json") ?? throw new InvalidDataException("O manifesto do backup não foi encontrado.");
-            if (manifestoEntry.Length > 16 * 1024) throw new InvalidDataException("Manifesto inválido.");
-            ManifestoBackup? manifesto;
-            await using (var manifestoStream = manifestoEntry.Open())
-                manifesto = await System.Text.Json.JsonSerializer.DeserializeAsync<ManifestoBackup>(manifestoStream);
-            if (manifesto is null || manifesto.Aplicacao != "PericiaClara" || manifesto.VersaoFormato != 1 || manifesto.VersaoEsquema > SqliteSchema.VersaoEsquema)
-                throw new InvalidDataException("Este backup foi criado por uma versão incompatível do sistema.");
-
-            var bancoEntry = zip.GetEntry("pericias.db") ?? throw new InvalidDataException("O banco não foi encontrado dentro do backup.");
-            if (bancoEntry.Length > TamanhoMaximoBanco) throw new InvalidDataException("O banco dentro do backup ultrapassa 50 MB.");
-            await ExtrairEntradaAsync(bancoEntry, caminhoBancoStaging);
-
-            var nomesNoZip = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            var documentosExtraidos = 0;
-            foreach (var entry in zip.Entries.Where(e => e.FullName.StartsWith("documentos/", StringComparison.Ordinal)))
-            {
-                var nome = entry.FullName["documentos/".Length..];
-                var extensao = Path.GetExtension(nome).ToLowerInvariant();
-                if (string.IsNullOrWhiteSpace(nome) || nome.Contains('/') || nome.Contains('\\') || !Guid.TryParseExact(Path.GetFileNameWithoutExtension(nome), "N", out _) ||
-                    !new[] { ".pdf", ".doc", ".docx", ".jpg", ".jpeg", ".png" }.Contains(extensao) || entry.Length <= 0 || entry.Length > TamanhoMaximoDocumento || !nomesNoZip.Add(nome))
-                    throw new InvalidDataException("O backup contém um nome de documento ou formato inválido.");
-                var caminho = Path.Combine(pastaDocumentosStaging, nome);
-                await ExtrairEntradaAsync(entry, caminho);
-                await using var stream = System.IO.File.OpenRead(caminho);
-                var arquivo = new FormFile(stream, 0, stream.Length, "arquivo", nome);
-                if (!await ArquivoCorrespondeAoFormatoAsync(arquivo, extensao))
-                    throw new InvalidDataException("Um documento do backup não corresponde ao formato declarado.");
-                documentosExtraidos++;
-            }
-            if (documentosExtraidos != manifesto.QuantidadeDocumentos)
-                throw new InvalidDataException("A quantidade de documentos não corresponde ao manifesto.");
-
-            var assinatura = new byte[16];
-            await using (var fs = System.IO.File.OpenRead(caminhoBancoStaging))
-            {
-                await fs.ReadExactlyAsync(assinatura);
-                if (!assinatura.SequenceEqual(Encoding.ASCII.GetBytes("SQLite format 3\0")))
-                    throw new InvalidDataException("O arquivo pericias.db do backup não é SQLite.");
-            }
-
-            var documentosReferenciados = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            await using (var conexao = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = caminhoBancoStaging }.ToString()))
-            {
-                await conexao.OpenAsync();
-                SqliteSchema.EnsureAdditionalTables(conexao, criarBackupAntesMigracao: false);
-                await using var comando = conexao.CreateCommand();
-                comando.CommandText = "SELECT \"NomeArmazenado\" FROM \"DocumentosPericia\";";
-                await using (var reader = await comando.ExecuteReaderAsync())
-                    while (await reader.ReadAsync()) documentosReferenciados.Add(reader.GetString(0));
-                if (!documentosReferenciados.IsSubsetOf(nomesNoZip))
-                    throw new InvalidDataException("Faltam arquivos anexados citados pelo banco no backup.");
-                await using var integridade = conexao.CreateCommand();
-                integridade.CommandText = "PRAGMA integrity_check;";
-                if (!string.Equals(Convert.ToString(await integridade.ExecuteScalarAsync()), "ok", StringComparison.OrdinalIgnoreCase))
-                    throw new InvalidDataException("O banco do backup falhou na verificação de integridade.");
-            }
-
-            Directory.CreateDirectory(diretorioDocumentos);
-            foreach (var caminho in Directory.EnumerateFiles(pastaDocumentosStaging))
-            {
-                var destino = Path.Combine(diretorioDocumentos, Path.GetFileName(caminho));
-                if (System.IO.File.Exists(destino)) throw new InvalidDataException("Já existe um arquivo com o mesmo identificador de documento.");
-                System.IO.File.Copy(caminho, destino, overwrite: false);
-            }
-
-            await using var bancoStream = System.IO.File.OpenRead(caminhoBancoStaging);
-            var bancoFormFile = new FormFile(bancoStream, 0, bancoStream.Length, "arquivoBanco", "pericias.db");
-            var resultado = await RestaurarBanco(bancoFormFile, confirmar: true);
-            if (!TempData.ContainsKey("MensagemBanco"))
-                TempData["ErroBanco"] = TempData["ErroBanco"] ?? "Não foi possível aplicar o banco deste backup. Os documentos existentes foram preservados.";
-            return resultado;
-        }
-        catch (Exception ex) when (ex is InvalidDataException or IOException or SqliteException or System.Text.Json.JsonException)
-        {
-            TempData["ErroBanco"] = ex.Message;
-            return RedirectToAction(nameof(Banco));
-        }
-        finally
-        {
-            if (Directory.Exists(staging)) Directory.Delete(staging, recursive: true);
-        }
-    }
-
-    private static async Task ExtrairEntradaAsync(ZipArchiveEntry entrada, string destino)
-    {
-        await using var origem = entrada.Open();
-        await using var arquivo = new FileStream(destino, FileMode.CreateNew, FileAccess.Write, FileShare.None, 81920, useAsync: true);
-        await origem.CopyToAsync(arquivo);
-        if (arquivo.Length != entrada.Length) throw new InvalidDataException("Um arquivo dentro do backup está incompleto.");
-    }
-
-    [HttpPost, ValidateAntiForgeryToken, RequestSizeLimit(TamanhoMaximoBanco + 1024 * 1024)]
-    public async Task<IActionResult> RestaurarBanco(IFormFile? arquivoBanco, bool confirmar = false)
-    {
-        if (!confirmar)
-        {
-            TempData["ErroBanco"] = "Marque a confirmação para substituir o banco atual.";
-            return RedirectToAction(nameof(Banco));
-        }
-        if (arquivoBanco is null || arquivoBanco.Length < 16 || arquivoBanco.Length > TamanhoMaximoBanco ||
-            !new[] { ".db", ".sqlite", ".sqlite3" }.Contains(Path.GetExtension(arquivoBanco.FileName), StringComparer.OrdinalIgnoreCase))
-        {
-            TempData["ErroBanco"] = "Selecione um arquivo SQLite válido de até 50 MB.";
-            return RedirectToAction(nameof(Banco));
-        }
-
-        var caminhoTemporario = Path.Combine(Path.GetTempPath(), $"pericias-import-{Guid.NewGuid():N}.db");
-        try
-        {
-            await using (var destinoTemporario = new FileStream(caminhoTemporario, FileMode.CreateNew, FileAccess.Write, FileShare.None, 81920, useAsync: true))
-                await arquivoBanco.CopyToAsync(destinoTemporario);
-
-            var assinaturaEsperada = Encoding.ASCII.GetBytes("SQLite format 3\0");
-            await using (var assinaturaStream = System.IO.File.OpenRead(caminhoTemporario))
-            {
-                var assinatura = new byte[assinaturaEsperada.Length];
-                await assinaturaStream.ReadExactlyAsync(assinatura);
-                if (!assinatura.SequenceEqual(assinaturaEsperada))
-                {
-                    TempData["ErroBanco"] = "O arquivo enviado não parece ser um banco SQLite.";
-                    return RedirectToAction(nameof(Banco));
-                }
-            }
-
-            await using (var importado = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = caminhoTemporario }.ToString()))
-            {
-                await importado.OpenAsync();
-                var tabelas = await ObterTabelasAsync(importado);
-                if (!tabelas.Contains("Pericias"))
-                {
-                    TempData["ErroBanco"] = "O banco enviado não contém a tabela de perícias deste sistema.";
-                    return RedirectToAction(nameof(Banco));
-                }
-
-                await using (var duplicados = importado.CreateCommand())
-                {
-                    duplicados.CommandText = "SELECT 1 FROM \"Pericias\" GROUP BY \"Numero\" HAVING COUNT(*) > 1 LIMIT 1;";
-                    try
-                    {
-                        if (await duplicados.ExecuteScalarAsync() is not null)
-                        {
-                            TempData["ErroBanco"] = "O banco contém números de perícia repetidos.";
-                            return RedirectToAction(nameof(Banco));
-                        }
-                    }
-                    catch (SqliteException)
-                    {
-                        TempData["ErroBanco"] = "O banco enviado tem uma estrutura incompatível com o sistema.";
-                        return RedirectToAction(nameof(Banco));
-                    }
-                }
-
-                SqliteSchema.EnsureAdditionalTables(importado, criarBackupAntesMigracao: false);
-                var colunasPericia = await ObterColunasAsync(importado, "Pericias");
-                var colunasObrigatorias = new[] { "Id", "NomePericiado", "Numero", "DataEnvio", "DataAceite", "PrazoLaudo", "ValorHonorarios", "ValorRecebido", "Status", "Observacoes", "CriadaEm" };
-                var colunasDocumentos = await ObterColunasAsync(importado, "DocumentosPericia");
-                var colunasPericiados = await ObterColunasAsync(importado, "Periciados");
-                var colunasLaudos = await ObterColunasAsync(importado, "LaudosPericia");
-                if (colunasObrigatorias.Any(coluna => !colunasPericia.Contains(coluna)) ||
-                    new[] { "Id", "PericiaId", "NomeOriginal", "NomeArmazenado", "TamanhoBytes", "EnviadoEm" }.Any(coluna => !colunasDocumentos.Contains(coluna)) ||
-                    new[] { "Id", "PericiaId", "Nome" }.Any(coluna => !colunasPericiados.Contains(coluna)) ||
-                    new[] { "Id", "PericiaId", "NumeroLaudo", "PericiadoId", "ConteudoHtml", "AtualizadoEm" }.Any(coluna => !colunasLaudos.Contains(coluna)))
-                {
-                    TempData["ErroBanco"] = "O banco enviado tem uma estrutura incompatível com o sistema.";
-                    return RedirectToAction(nameof(Banco));
-                }
-
-                await using var integridade = importado.CreateCommand();
-                integridade.CommandText = "PRAGMA integrity_check;";
-                if (!string.Equals(Convert.ToString(await integridade.ExecuteScalarAsync()), "ok", StringComparison.OrdinalIgnoreCase))
-                {
-                    TempData["ErroBanco"] = "O SQLite encontrou problemas de integridade no arquivo enviado.";
-                    return RedirectToAction(nameof(Banco));
-                }
-
-                await using var chaves = importado.CreateCommand();
-                chaves.CommandText = "PRAGMA foreign_key_check;";
-                await using var resultadoChaves = await chaves.ExecuteReaderAsync();
-                if (await resultadoChaves.ReadAsync())
-                {
-                    TempData["ErroBanco"] = "O arquivo contém referências inválidas entre tabelas.";
-                    return RedirectToAction(nameof(Banco));
-                }
-            }
-
-            var caminhoAtual = db.Database.GetDbConnection().DataSource;
-            var pastaRestauracao = Path.Combine(Path.GetDirectoryName(caminhoAtual)!, "backups-restauracao");
-            Directory.CreateDirectory(pastaRestauracao);
-            var caminhoPontoRestauracao = Path.Combine(pastaRestauracao, $"antes-restauracao-{DateTime.UtcNow:yyyyMMdd-HHmmss}-{Guid.NewGuid():N}.db");
-
-            await db.Database.OpenConnectionAsync();
-            try
-            {
-                var bancoAtual = (SqliteConnection)db.Database.GetDbConnection();
-                await using var pontoRestauracao = new SqliteConnection($"Data Source={caminhoPontoRestauracao}");
-                await pontoRestauracao.OpenAsync();
-                bancoAtual.BackupDatabase(pontoRestauracao);
-
-                await using var importado = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = caminhoTemporario, Mode = SqliteOpenMode.ReadOnly }.ToString());
-                await importado.OpenAsync();
-                try
-                {
-                    importado.BackupDatabase(bancoAtual);
-                }
-                catch
-                {
-                    pontoRestauracao.BackupDatabase(bancoAtual);
-                    throw;
-                }
-            }
-            finally
-            {
-                await db.Database.CloseConnectionAsync();
-            }
-
-            var pontosRestauracao = Directory.EnumerateFiles(pastaRestauracao, "antes-restauracao-*.db")
-                .OrderByDescending(System.IO.File.GetCreationTimeUtc)
-                .Skip(3);
-            foreach (var pontoAntigo in pontosRestauracao)
-                System.IO.File.Delete(pontoAntigo);
-
-            TempData["MensagemBanco"] = "Banco atualizado. Um ponto de restauração anterior foi guardado na VPS.";
-        }
-        catch (Exception ex) when (ex is SqliteException or IOException or InvalidDataException)
-        {
-            TempData["ErroBanco"] = "Não foi possível importar esse banco. O banco atual foi preservado.";
-        }
-        finally
-        {
-            if (System.IO.File.Exists(caminhoTemporario)) System.IO.File.Delete(caminhoTemporario);
-        }
-
-        return RedirectToAction(nameof(Banco));
-    }
-
-    private static async Task<HashSet<string>> ObterTabelasAsync(SqliteConnection connection)
-    {
-        var tabelas = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        await using var comando = connection.CreateCommand();
-        comando.CommandText = "SELECT name FROM sqlite_master WHERE type = 'table';";
-        await using var leitor = await comando.ExecuteReaderAsync();
-        while (await leitor.ReadAsync()) tabelas.Add(leitor.GetString(0));
-        return tabelas;
-    }
-
-    private static async Task<HashSet<string>> ObterColunasAsync(SqliteConnection connection, string tabela)
-    {
-        var colunas = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        await using var comando = connection.CreateCommand();
-        comando.CommandText = $"PRAGMA table_info(\"{tabela}\");";
-        await using var leitor = await comando.ExecuteReaderAsync();
-        while (await leitor.ReadAsync()) colunas.Add(leitor.GetString(1));
-        return colunas;
-    }
     [AllowAnonymous]
     public IActionResult Error() => View("Error", new ErrorViewModel { RequestId = HttpContext.TraceIdentifier });
 
@@ -408,7 +150,7 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
         ViewBag.Pagina = pagina; ViewBag.TotalPaginas = Math.Max(1, (int)Math.Ceiling(registrosFiltrados / 20d));
         ViewBag.Comarcas = await db.Pericias.AsNoTracking().Where(p => p.Comarca != null && p.Comarca != "").Select(p => p.Comarca!).Distinct().OrderBy(c => c).ToListAsync();
         ViewBag.LaudosPendentes = await db.LaudosPericia.CountAsync(l => l.Status != StatusLaudo.Entregue);
-        var config = await db.ConfiguracoesPerito.AsNoTracking().FirstOrDefaultAsync(c => c.Id == 1);
+        var config = await db.ConfiguracoesPerito.AsNoTracking().FirstOrDefaultAsync();
         ViewBag.Total = await visaoGeral.CountAsync();
         ViewBag.Ativas = await visaoGeral.CountAsync(p => p.Status == StatusPericia.EmAndamento || p.Status == StatusPericia.LaudoEnviado);
         ViewBag.AguardandoPagamento = await visaoGeral.CountAsync(p => p.ValorRecebido < p.ValorHonorarios);
@@ -424,18 +166,21 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
 
     public async Task<IActionResult> Configuracoes()
     {
-        ViewBag.EmailConta = User.Identity?.Name;
-        var pastaRestauracao = Path.Combine(Path.GetDirectoryName(db.Database.GetDbConnection().DataSource)!, "backups-restauracao");
-        ViewBag.TemPontoRestauracao = Directory.Exists(pastaRestauracao) && Directory.EnumerateFiles(pastaRestauracao, "antes-restauracao-*.db").Any();
-        return View(await db.ConfiguracoesPerito.AsNoTracking().FirstOrDefaultAsync(c => c.Id == 1) ?? new ConfiguracaoPerito());
+        ViewBag.EmailConta = User.FindFirstValue(ClaimTypes.Email);
+        return View(await db.ConfiguracoesPerito.AsNoTracking().FirstOrDefaultAsync() ?? new ConfiguracaoPerito());
     }
     [HttpPost, ValidateAntiForgeryToken]
-    public async Task<IActionResult> SalvarConfiguracoes(ConfiguracaoPerito configuracao)
+    public async Task<IActionResult> SalvarConfiguracoes(ConfiguracoesInputDto input)
     {
+        var configuracao = input.ToViewModel();
         if (configuracao.AntecedenciaPrazoDias is < 0 or > 60) ModelState.AddModelError(nameof(configuracao.AntecedenciaPrazoDias), "Use um período entre 0 e 60 dias.");
-        if (!ModelState.IsValid) { ViewBag.EmailConta = User.Identity?.Name; return View("Configuracoes", configuracao); }
-        var atual = await db.ConfiguracoesPerito.FirstOrDefaultAsync(c => c.Id == 1);
-        if (atual is null) { configuracao.Id = 1; configuracao.AtualizadoEm = DateTime.UtcNow; db.ConfiguracoesPerito.Add(configuracao); }
+        if (!ModelState.IsValid)
+        {
+            ViewBag.EmailConta = User.FindFirstValue(ClaimTypes.Email);
+            return View("Configuracoes", configuracao);
+        }
+        var atual = await db.ConfiguracoesPerito.FirstOrDefaultAsync();
+        if (atual is null) { configuracao.AtualizadoEm = DateTime.UtcNow; db.ConfiguracoesPerito.Add(configuracao); }
         else
         {
             atual.NomeProfissional = configuracao.NomeProfissional?.Trim(); atual.Especialidade = configuracao.Especialidade?.Trim();
@@ -573,7 +318,7 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> CancelarEvento(int id)
     {
-        var evento = await db.EventosAgenda.FindAsync(id);
+        var evento = await db.EventosAgenda.FirstOrDefaultAsync(e => e.Id == id);
         if (evento is null) return NotFound();
         evento.Cancelado = true;
         RegistrarHistorico(evento.PericiaId, "Agenda", "Compromisso cancelado.");
@@ -616,7 +361,7 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> RegistrarPagamento(int id, decimal valor, DateTime? dataRecebimento, int? documentoPericiaId, string? observacoes)
     {
-        var pericia = await db.Pericias.FindAsync(id);
+        var pericia = await db.Pericias.FirstOrDefaultAsync(p => p.Id == id);
         if (pericia is null) return NotFound();
         if (valor <= 0 || valor > Math.Max(0m, pericia.ValorHonorarios - pericia.ValorRecebido) ||
             (documentoPericiaId.HasValue && !await db.DocumentosPericia.AnyAsync(d => d.Id == documentoPericiaId && d.PericiaId == id)))
@@ -635,9 +380,9 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> ExcluirPagamento(int id)
     {
-        var pagamento = await db.PagamentosHonorarios.FindAsync(id);
+        var pagamento = await db.PagamentosHonorarios.FirstOrDefaultAsync(p => p.Id == id);
         if (pagamento is null) return NotFound();
-        var pericia = await db.Pericias.FindAsync(pagamento.PericiaId);
+        var pericia = await db.Pericias.FirstOrDefaultAsync(p => p.Id == pagamento.PericiaId);
         if (pericia is not null)
             pericia.ValorRecebido = Math.Max(0m, pericia.ValorRecebido - pagamento.Valor);
         var periciaId = pagamento.PericiaId;
@@ -750,7 +495,7 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
             return RedirectToAction(nameof(Editar), new { id = periciaId });
         }
 
-        var modelo = modeloId.HasValue ? await db.ModelosLaudo.FindAsync(modeloId.Value) : null;
+        var modelo = modeloId.HasValue ? await db.ModelosLaudo.FirstOrDefaultAsync(m => m.Id == modeloId.Value) : null;
         if (modeloId.HasValue && modelo is null) return NotFound();
         var laudo = new LaudoPericia
         {
@@ -782,7 +527,7 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
             TempData["ErroModelo"] = "Informe um nome e um conteúdo de até 100 mil caracteres.";
             return RedirectToAction(nameof(ModelosLaudo));
         }
-        var modelo = id == 0 ? new ModeloLaudo() : await db.ModelosLaudo.FindAsync(id);
+        var modelo = id == 0 ? new ModeloLaudo() : await db.ModelosLaudo.FirstOrDefaultAsync(m => m.Id == id);
         if (modelo is null) return NotFound();
         modelo.Nome = nome;
         modelo.ConteudoHtml = sanitizer.Sanitize(conteudoHtml ?? "");
@@ -796,7 +541,7 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> ExcluirModeloLaudo(int id)
     {
-        var modelo = await db.ModelosLaudo.FindAsync(id);
+        var modelo = await db.ModelosLaudo.FirstOrDefaultAsync(m => m.Id == id);
         if (modelo is null) return NotFound();
         db.ModelosLaudo.Remove(modelo);
         await db.SaveChangesAsync();
@@ -841,14 +586,20 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
                 await db.Database.CloseConnectionAsync();
             }
 
+            var usuarioId = UsuarioAtualId();
+            await LimparCopiaParaContaAsync(caminhoBanco, usuarioId);
+
             using (var arquivoZip = ZipFile.Open(caminhoZip, ZipArchiveMode.Create))
             {
                 arquivoZip.CreateEntryFromFile(caminhoBanco, "pericias.db", CompressionLevel.Fastest);
                 var quantidadeDocumentos = 0;
+                var nomesDocumentos = await db.DocumentosPericia.AsNoTracking().Select(d => d.NomeArmazenado).ToListAsync();
                 if (Directory.Exists(diretorioDocumentos))
                 {
-                    foreach (var documento in Directory.EnumerateFiles(diretorioDocumentos))
+                    foreach (var nome in nomesDocumentos)
                     {
+                        var documento = Path.Combine(diretorioDocumentos, Path.GetFileName(nome));
+                        if (!System.IO.File.Exists(documento)) continue;
                         arquivoZip.CreateEntryFromFile(documento, $"documentos/{Path.GetFileName(documento)}", CompressionLevel.Fastest);
                         quantidadeDocumentos++;
                     }
@@ -868,6 +619,7 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
                 catch (UnauthorizedAccessException) { }
                 return Task.CompletedTask;
             });
+            Response.Headers.CacheControl = "no-store";
             return PhysicalFile(caminhoZip, "application/zip", nomeArquivo);
         }
         catch
@@ -877,6 +629,32 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
         }
     }
 
+    private int UsuarioAtualId() => int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : 0;
+
+    private static async Task LimparCopiaParaContaAsync(string caminhoBanco, int usuarioId)
+    {
+        if (usuarioId <= 0) throw new InvalidOperationException("Não foi possível identificar a conta dona do backup.");
+        await using var conexao = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = caminhoBanco }.ToString());
+        await conexao.OpenAsync();
+        await using var transacao = (SqliteTransaction)await conexao.BeginTransactionAsync();
+        foreach (var tabela in new[] { "VersoesLaudo", "PagamentosHonorarios", "HistoricoPericias", "EventosAgenda", "DocumentosPericia", "LaudosPericia", "Periciados", "Pericias", "ConfiguracoesPerito", "ModelosLaudo" })
+        {
+            await using var comando = conexao.CreateCommand();
+            comando.Transaction = transacao;
+            comando.CommandText = $"DELETE FROM \"{tabela}\" WHERE \"UsuarioId\" <> $usuarioId;";
+            comando.Parameters.AddWithValue("$usuarioId", usuarioId);
+            await comando.ExecuteNonQueryAsync();
+        }
+        await using (var comando = conexao.CreateCommand())
+        {
+            comando.Transaction = transacao;
+            comando.CommandText = "DELETE FROM \"ContasUsuarios\" WHERE \"Id\" <> $usuarioId; UPDATE \"ContasUsuarios\" SET \"SenhaHash\" = 'REMOVIDA_DA_EXPORTACAO' WHERE \"Id\" = $usuarioId;";
+            comando.Parameters.AddWithValue("$usuarioId", usuarioId);
+            await comando.ExecuteNonQueryAsync();
+        }
+        await transacao.CommitAsync();
+    }
+
     public IActionResult Criar(bool abrirLaudoDepois = false)
     {
         ViewBag.AbrirLaudoDepois = abrirLaudoDepois;
@@ -884,10 +662,12 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
     }
 
     [HttpPost, ValidateAntiForgeryToken]
-    public async Task<IActionResult> Criar(Pericia pericia, bool abrirLaudoDepois = false)
+    public async Task<IActionResult> Criar(PericiaFormInputDto input, bool abrirLaudoDepois = false)
     {
+        var pericia = input.ToEntity();
         var nomes = ObterNomesPericiados(pericia.NomePericiado, pericia.OutrosPericiados);
         ValidarNomesPericiados(nomes);
+        if (!Enum.IsDefined(pericia.Status)) ModelState.AddModelError(nameof(pericia.Status), "Selecione um status válido.");
         if (await db.Pericias.AnyAsync(p => p.Numero == pericia.Numero))
             ModelState.AddModelError(nameof(pericia.Numero), "Esse número de perícia já está cadastrado.");
         if (!ModelState.IsValid)
@@ -914,15 +694,18 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
     }
 
     [HttpPost, ValidateAntiForgeryToken]
-    public async Task<IActionResult> Editar(int id, Pericia pericia)
+    public async Task<IActionResult> Editar([FromRoute] int id, PericiaFormInputDto input)
     {
-        if (id != pericia.Id) return NotFound();
+        var pericia = input.ToEntity();
+        pericia.Id = id;
         var nomes = ObterNomesPericiados(pericia.NomePericiado, pericia.OutrosPericiados);
         ValidarNomesPericiados(nomes);
+        if (!Enum.IsDefined(pericia.Status)) ModelState.AddModelError(nameof(pericia.Status), "Selecione um status válido.");
         if (await db.Pericias.AnyAsync(p => p.Numero == pericia.Numero && p.Id != id))
             ModelState.AddModelError(nameof(pericia.Numero), "Esse número de perícia já está cadastrado.");
         if (!ModelState.IsValid)
         {
+            pericia.ValorRecebido = await db.Pericias.AsNoTracking().Where(p => p.Id == id).Select(p => p.ValorRecebido).FirstOrDefaultAsync();
             pericia.Documentos = await db.DocumentosPericia.Where(d => d.PericiaId == id).ToListAsync();
             pericia.Periciados = await db.Periciados.Where(p => p.PericiaId == id).ToListAsync();
             pericia.Laudos = await db.LaudosPericia.Include(l => l.Periciado).Where(l => l.PericiaId == id).OrderBy(l => l.NumeroLaudo).ToListAsync();
@@ -930,9 +713,7 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
         }
         var atual = await db.Pericias.Include(p => p.Periciados).FirstOrDefaultAsync(p => p.Id == id);
         if (atual is null) return NotFound();
-        var recebidoAnterior = atual.ValorRecebido;
-        db.Entry(atual).CurrentValues.SetValues(pericia);
-        atual.ValorRecebido = recebidoAnterior;
+        AtualizarCamposEditaveis(atual, pericia);
         foreach (var pessoa in atual.Periciados.ToList())
         {
             if (!nomes.Contains(pessoa.Nome, StringComparer.OrdinalIgnoreCase))
@@ -945,13 +726,13 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
         await db.SaveChangesAsync();
         TempData["Mensagem"] = "Perícia atualizada.";
         var arquivada = (pericia.Status == StatusPericia.Cancelada || pericia.Status == StatusPericia.Concluida || pericia.Status == StatusPericia.Recusada) &&
-            pericia.ValorRecebido >= pericia.ValorHonorarios;
+            atual.ValorRecebido >= atual.ValorHonorarios;
         return arquivada ? RedirectToAction(nameof(Processos), new { arquivadas = true }) : RedirectToAction(nameof(Index));
     }
     [HttpPost, ValidateAntiForgeryToken, RequestSizeLimit(TamanhoMaximoDocumento + 1024 * 1024)]
     public async Task<IActionResult> AnexarDocumento(int id, IFormFile? arquivo)
     {
-        var pericia = await db.Pericias.FindAsync(id);
+        var pericia = await db.Pericias.FirstOrDefaultAsync(p => p.Id == id);
         if (pericia is null) return NotFound();
 
         if (arquivo is null || arquivo.Length == 0)
@@ -1071,9 +852,9 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
         if (documento is null) return NotFound();
 
         var caminho = Path.Combine(diretorioDocumentos, documento.NomeArmazenado);
-        return System.IO.File.Exists(caminho)
-            ? PhysicalFile(caminho, ContentTypeDocumento(documento.NomeArmazenado), documento.NomeOriginal)
-            : NotFound();
+        if (!System.IO.File.Exists(caminho)) return NotFound();
+        Response.Headers.CacheControl = "no-store";
+        return PhysicalFile(caminho, ContentTypeDocumento(documento.NomeArmazenado), documento.NomeOriginal);
     }
 
     private static EditorLaudoViewModel CriarModeloLaudo(LaudoPericia laudo) => new()
@@ -1100,7 +881,10 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
             .Include(l => l.Periciado)
             .Include(l => l.Versoes)
             .FirstOrDefaultAsync(l => l.Id == laudoId && l.PericiaId == id);
-        return laudo is null ? NotFound() : View(CriarModeloLaudo(laudo));
+        if (laudo is null) return NotFound();
+        var modelo = CriarModeloLaudo(laudo);
+        modelo.ConteudoHtml = sanitizer.Sanitize(modelo.ConteudoHtml);
+        return View(modelo);
     }
 
     [HttpPost, ValidateAntiForgeryToken, RequestSizeLimit(512 * 1024)]
@@ -1151,7 +935,7 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
         var versao = await db.VersoesLaudo.FirstOrDefaultAsync(v => v.Id == versaoId && v.LaudoId == laudoId);
         if (laudo is null || versao is null) return NotFound();
         db.VersoesLaudo.Add(new VersaoLaudo { LaudoId = laudo.Id, NumeroLaudo = laudo.NumeroLaudo, Tipo = laudo.Tipo, Status = laudo.Status, Prazo = laudo.Prazo, ConteudoHtml = laudo.ConteudoHtml, Responsavel = User.Identity?.Name, SalvoEm = DateTime.UtcNow });
-        laudo.NumeroLaudo = versao.NumeroLaudo; laudo.Tipo = versao.Tipo; laudo.Status = versao.Status; laudo.Prazo = versao.Prazo; laudo.ConteudoHtml = versao.ConteudoHtml; laudo.AtualizadoEm = DateTime.UtcNow;
+        laudo.NumeroLaudo = versao.NumeroLaudo; laudo.Tipo = versao.Tipo; laudo.Status = versao.Status; laudo.Prazo = versao.Prazo; laudo.ConteudoHtml = sanitizer.Sanitize(versao.ConteudoHtml); laudo.AtualizadoEm = DateTime.UtcNow;
         RegistrarHistorico(id, "Laudo", $"Versão salva em {versao.SalvoEm.ToLocalTime():dd/MM/yyyy HH:mm} restaurada.");
         await db.SaveChangesAsync();
         return RedirectToAction(nameof(EditorLaudo), new { id, laudoId });
@@ -1200,7 +984,7 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> ExcluirDocumento(int id)
     {
-        var documento = await db.DocumentosPericia.FindAsync(id);
+        var documento = await db.DocumentosPericia.FirstOrDefaultAsync(d => d.Id == id);
         if (documento is null) return NotFound();
 
         var periciaId = documento.PericiaId;

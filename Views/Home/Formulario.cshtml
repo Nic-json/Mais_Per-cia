@@ -29,7 +29,7 @@
   <div class="col-md-4"><label asp-for="DataHonorariosSolicitados" class="form-label"></label><input asp-for="DataHonorariosSolicitados" class="form-control" /></div>
   <div class="col-md-4"><label asp-for="ValorHonorariosLiberados" class="form-label"></label><div class="input-group"><span class="input-group-text">R$</span><input asp-for="ValorHonorariosLiberados" class="form-control" type="number" step="0.01" min="0" /></div><span asp-validation-for="ValorHonorariosLiberados" class="text-danger"></span></div>
   <div class="col-md-4"><label asp-for="DataHonorariosLiberados" class="form-label"></label><input asp-for="DataHonorariosLiberados" class="form-control" /></div>
-  <div class="col-md-4"><label asp-for="ValorRecebido" class="form-label"></label><div class="input-group"><span class="input-group-text">R$</span><input asp-for="ValorRecebido" class="form-control" type="number" step="0.01" min="0" readonly /></div><div class="form-text">Registre novos pagamentos na aba Honorários ou no processo.</div></div>
+  <div class="col-md-4"><label class="form-label">Valor recebido</label><div class="form-control-plaintext fw-semibold">@Model.ValorRecebido.ToString("C")</div><div class="form-text">Registre novos pagamentos na aba Honorários ou no processo.</div></div>
   <div class="col-md-4"><label asp-for="Status" class="form-label"></label><select asp-for="Status" asp-items="Html.GetEnumSelectList<StatusPericia>()" class="form-select"></select></div>
   <div class="col-12"><label asp-for="Observacoes" class="form-label"></label><textarea asp-for="Observacoes" class="form-control" rows="4" placeholder="Anotações importantes, contatos ou detalhes..."></textarea><span asp-validation-for="Observacoes" class="text-danger"></span></div>
  </div>

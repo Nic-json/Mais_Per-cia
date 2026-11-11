@@ -1,6 +1,12 @@
-﻿@{
-    ViewData["Title"] = "Privacy Policy";
-}
-<h1>@ViewData["Title"]</h1>
-
-<p>Use this page to detail your site's privacy policy.</p>
+@{ ViewData["Title"] = "Privacidade"; Layout = null; }
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>Privacidade · Perícia Clara</title><link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css"/><link rel="stylesheet" href="~/css/site.css" asp-append-version="true"/><link rel="stylesheet" href="~/css/site-enhancements.css" asp-append-version="true"/></head><body class="login-page"><main class="login-card" style="max-width:760px"><a class="brand login-brand" asp-controller="Conta" asp-action="Cadastro"><span class="brand-mark">P</span><span>perícia<span class="brand-light">clara</span><small>GESTÃO PERICIAL</small></span></a>
+<header class="page-heading"><partial name="_PageTitle" model='new PageHeadingViewModel("INFORMAÇÕES", "Privacidade", "Como os dados são tratados nesta versão do sistema.")' /></header>
+<section class="form-panel">
+ <div class="alert alert-warning"><strong>Aviso preliminar.</strong> Esta página ainda não substitui uma política de privacidade revisada para o serviço comercial. O responsável pelo serviço precisa incluir sua identificação e canal de contato antes de abrir cadastros ao público.</div>
+ <h2>Dados no sistema</h2>
+ <p>O serviço pode armazenar dados de conta (nome e e-mail), informações de processos e periciados, dados de contato, registros de entrevista, laudos e documentos anexados. O conteúdo inserido pelo perito pode incluir dados pessoais sensíveis.</p>
+ <p>Os registros são associados à conta que os criou e a aplicação aplica filtros por conta. A infraestrutura atual usa uma VPS e SQLite. O operador deve definir e informar retenção, exclusão, cópias de segurança, subprocessadores, canal para solicitações e responsabilidades de cada parte antes da oferta comercial.</p>
+ <h2>Contas</h2>
+ <p>O cadastro atual não verifica o endereço de e-mail e ainda não possui recuperação automática de senha nem encerramento/exclusão autônoma da conta. O usuário pode alterar a senha dentro do sistema. Não use esta versão com dados reais de clientes até definir esses procedimentos e publicar os termos aplicáveis.</p>
+ <p>Consulte a <a href="https://www.gov.br/anpd/pt-br/centrais-de-conteudo/materiais-educativos-e-publicacoes/guia-orientativo-para-definicoes-dos-agentes-de-tratamento-e-do-encarregado">orientação da ANPD sobre agentes de tratamento</a> para definir responsabilidades do perito e do fornecedor do serviço.</p>
+</section><p class="text-center mt-3"><a asp-controller="Conta" asp-action="Cadastro">Voltar ao cadastro</a></p></main></body></html>

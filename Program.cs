@@ -4,9 +4,14 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Identity;
 using System.Globalization;
+using System.Net;
 using System.Threading.RateLimiting;
 using Sistemas_para_pericias.Data;
+using Sistemas_para_pericias.Models;
+using Sistemas_para_pericias.Security;
 using Ganss.Xss;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,6 +22,10 @@ CultureInfo.DefaultThreadCurrentUICulture = cultura;
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddHttpClient("Asaas", client => client.Timeout = TimeSpan.FromSeconds(20));
+builder.Services.AddScoped<ICurrentUser, CurrentUser>();
+builder.Services.AddScoped<IPasswordHasher<ContaUsuario>, PasswordHasher<ContaUsuario>>();
 builder.Services.AddTransient(_ =>
 {
     var sanitizer = new HtmlSanitizer();
@@ -61,6 +70,14 @@ if (!string.IsNullOrWhiteSpace(dbFile) && dbFile != ":memory:")
     Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(dbFile))!);
 var documentosDir = builder.Configuration["Documentos:Diretorio"] ?? Path.Combine(builder.Environment.ContentRootPath, "App_Data", "uploads");
 Directory.CreateDirectory(documentosDir);
+var chavesDataProtectionDir = builder.Configuration["DataProtection:KeysDirectory"]
+    ?? Path.Combine(builder.Environment.ContentRootPath, "App_Data", "keys");
+Directory.CreateDirectory(chavesDataProtectionDir);
+if (!OperatingSystem.IsWindows())
+    File.SetUnixFileMode(chavesDataProtectionDir, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(chavesDataProtectionDir))
+    .SetApplicationName("PericiaClara");
 
 builder.Services.AddDbContext<PericiasContext>(options => options.UseSqlite(connectionString));
 
@@ -70,9 +87,17 @@ var forwardedHeaders = new ForwardedHeadersOptions
 {
     ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
 };
-forwardedHeaders.KnownIPNetworks.Clear();
-forwardedHeaders.KnownProxies.Clear();
+forwardedHeaders.KnownProxies.Add(IPAddress.Parse("172.30.253.2"));
+forwardedHeaders.ForwardLimit = 1;
 app.UseForwardedHeaders(forwardedHeaders);
+app.Use(async (context, next) =>
+{
+    context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+    context.Response.Headers["X-Frame-Options"] = "DENY";
+    context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+    context.Response.Headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
+    await next();
+});
 
 using (var scope = app.Services.CreateScope())
 {
@@ -86,6 +111,28 @@ using (var scope = app.Services.CreateScope())
     finally
     {
         db.Database.CloseConnection();
+    }
+
+    var seedEmail = adminEmail.Trim();
+    var seedNormalizedEmail = seedEmail.ToUpperInvariant();
+    if (!await db.ContasUsuarios.AnyAsync(conta => conta.Id == 1))
+    {
+        if (await db.ContasUsuarios.AnyAsync(conta => conta.EmailNormalizado == seedNormalizedEmail))
+            throw new InvalidOperationException("A conta inicial precisa usar o identificador 1 para preservar o vínculo dos dados antigos. Confira a tabela ContaUsuarios.");
+
+        var contaInicial = new ContaUsuario
+        {
+            Id = 1,
+            Email = seedEmail,
+            EmailNormalizado = seedNormalizedEmail,
+            Nome = seedEmail.Split('@')[0],
+            Ativo = true,
+            CriadoEm = DateTime.UtcNow
+        };
+        contaInicial.SenhaHash = scope.ServiceProvider.GetRequiredService<IPasswordHasher<ContaUsuario>>()
+            .HashPassword(contaInicial, adminPassword);
+        db.ContasUsuarios.Add(contaInicial);
+        await db.SaveChangesAsync();
     }
 }
 
@@ -108,6 +155,30 @@ app.UseRequestLocalization(new RequestLocalizationOptions
 
 app.UseAuthentication();
 app.UseRateLimiter();
+app.Use(async (context, next) =>
+{
+    var path = context.Request.Path;
+    if (context.User.Identity?.IsAuthenticated == true &&
+        !Path.HasExtension(path.Value) &&
+        !path.StartsWithSegments("/css") &&
+        !path.StartsWithSegments("/js") &&
+        !path.StartsWithSegments("/lib") &&
+        !path.StartsWithSegments("/Assinatura") &&
+        !path.StartsWithSegments("/Conta") &&
+        !path.StartsWithSegments("/webhooks") &&
+        !path.StartsWithSegments("/health") &&
+        int.TryParse(context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, out var userId) && userId != 1)
+    {
+        var db = context.RequestServices.GetRequiredService<PericiasContext>();
+        var liberado = await db.Assinaturas.AnyAsync(s => s.UsuarioId == userId && s.AcessoAte != null && s.AcessoAte >= DateTime.UtcNow);
+        if (!liberado)
+        {
+            context.Response.Redirect("/Assinatura");
+            return;
+        }
+    }
+    await next();
+});
 app.UseAuthorization();
 
 app.MapStaticAssets().AllowAnonymous();

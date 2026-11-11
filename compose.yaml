@@ -5,17 +5,21 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://+:8080
-      ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
       ConnectionStrings__Pericias: Data Source=/data/pericias.db
       Documentos__Diretorio: /data/uploads
+      DataProtection__KeysDirectory: /data/keys
       Admin__Email: ${ADMIN_EMAIL:?Configure ADMIN_EMAIL no arquivo .env}
       Admin__Password: ${ADMIN_PASSWORD:?Configure ADMIN_PASSWORD no arquivo .env}
+      Billing__MonthlyPrice: ${BILLING_MONTHLY_PRICE:-49.90}
+      Asaas__ApiKey: ${ASAAS_API_KEY:-}
+      Asaas__WebhookToken: ${ASAAS_WEBHOOK_TOKEN:-}
+      Asaas__BaseUrl: ${ASAAS_BASE_URL:-https://api-sandbox.asaas.com/v3}
     volumes:
       - pericias-data:/data
     expose:
       - "8080"
     networks:
-      - web
+      web: {}
 
   caddy:
     image: caddy:2
@@ -33,7 +37,8 @@ services:
       - caddy-data:/data
       - caddy-config:/config
     networks:
-      - web
+      web:
+        ipv4_address: 172.30.253.2
 
 volumes:
   pericias-data:
@@ -42,3 +47,7 @@ volumes:
 
 networks:
   web:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.253.0/28
