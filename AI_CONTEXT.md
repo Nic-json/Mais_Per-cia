@@ -9,7 +9,7 @@ Aplicação privada em português para um perito judicial organizar processos/pe
 - ASP.NET Core MVC em .NET 10, Razor views, Entity Framework Core e SQLite.
 - Interface responsiva com Bootstrap, CSS e JavaScript/jQuery; não é uma SPA React.
 - Desenvolvimento local com `dotnet run`; produção em Docker Compose + Caddy com HTTPS.
-- Cadastro individual e login com senha em hash ASP.NET Identity PasswordHasher, cookie seguro e limite por IP. Checkout mensal configurável via Asaas; somente webhook com token autenticado confirma pagamento e libera acesso, exceto a conta inicial ID 1. `Admin__Email`/`Admin__Password` bootstrap criam a conta inicial ID 1.
+- Cadastro individual e login com senha em hash ASP.NET Identity PasswordHasher, cookie seguro e limite por IP. Checkout mensal configurável via Asaas; antes de gerar cobrança, a aplicação consulta e provisiona o webhook Asaas. Somente webhook com token autenticado confirma pagamento e libera acesso, exceto a conta inicial ID 1. `Admin__Email`/`Admin__Password` bootstrap criam a conta inicial ID 1.
 - Todo registro operacional tem `UsuarioId`; filtros globais no `PericiasContext` e preenchimento automático em `SaveChanges` isolam as contas. Dados antigos migram para a conta inicial ID 1.
 
 ## Funcionalidades no código local

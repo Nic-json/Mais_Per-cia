@@ -48,6 +48,12 @@ public sealed class AssinaturaController(PericiasContext db, IConfiguration conf
 
         var baseUrl = config["Asaas:BaseUrl"]?.TrimEnd('/') ?? "https://api-sandbox.asaas.com/v3";
         var site = $"{Request.Scheme}://{Request.Host}";
+        if (!await GarantirWebhookAsync(baseUrl, site))
+        {
+            TempData["ErroAssinatura"] = "Não foi possível configurar a confirmação automática do pagamento. Nenhuma cobrança foi iniciada; tente novamente mais tarde.";
+            return RedirectToAction(nameof(Index));
+        }
+
         var payload = new
         {
             billingTypes = new[] { "PIX", "CREDIT_CARD" },
@@ -116,7 +122,7 @@ public sealed class AssinaturaController(PericiasContext db, IConfiguration conf
             var subscription = root.TryGetProperty("subscription", out var subObj) ? subObj : default;
             var payment = root.TryGetProperty("payment", out var payObj) ? payObj : default;
             var checkoutId = String(checkout, "id");
-            var subscriptionId = String(subscription, "id");
+            var subscriptionId = String(subscription, "id") ?? String(payment, "subscription");
             var customerId = String(checkout, "customer") ?? String(subscription, "customer") ?? String(payment, "customer");
             var externalRef = String(checkout, "externalReference") ?? String(subscription, "externalReference") ?? String(payment, "externalReference");
             var uid = int.TryParse(externalRef, out var parsed) ? parsed : (int?)null;
@@ -147,6 +153,15 @@ public sealed class AssinaturaController(PericiasContext db, IConfiguration conf
                 accountSub.Status = "Ativa";
                 accountSub.AcessoAte = Max(accountSub.AcessoAte, paidAt.AddDays(35));
             }
+            else if (eventName is "PAYMENT_REFUNDED" or "PAYMENT_CHARGEBACK_REQUESTED" or "PAYMENT_RECEIVED_IN_CASH_UNDONE")
+            {
+                accountSub.Status = "Suspensa";
+                accountSub.AcessoAte = DateTime.UtcNow;
+            }
+            else if (eventName == "PAYMENT_OVERDUE" && accountSub.AcessoAte < DateTime.UtcNow)
+            {
+                accountSub.Status = "Pendente";
+            }
             else if (eventName is "SUBSCRIPTION_CREATED" or "SUBSCRIPTION_UPDATED") accountSub.Status = "Ativa";
             else if (eventName is "SUBSCRIPTION_INACTIVATED" or "SUBSCRIPTION_DELETED") accountSub.Status = "Cancelada";
 
@@ -159,7 +174,78 @@ public sealed class AssinaturaController(PericiasContext db, IConfiguration conf
     private int UserId() => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!, CultureInfo.InvariantCulture);
     private bool CredenciaisOk() =>
         !string.IsNullOrWhiteSpace(config["Asaas:ApiKey"]) &&
-        !string.IsNullOrWhiteSpace(config["Asaas:WebhookToken"]);
+        config["Asaas:WebhookToken"] is { Length: >= 32 and <= 255 } token &&
+        !token.Any(char.IsWhiteSpace);
+
+    private async Task<bool> GarantirWebhookAsync(string baseUrl, string site)
+    {
+        var token = config["Asaas:WebhookToken"]!;
+        var email = config["Admin:Email"];
+        if (string.IsNullOrWhiteSpace(email)) return false;
+        var url = $"{site}/webhooks/asaas";
+        var body = new
+        {
+            name = "Perícia Clara - Assinaturas",
+            url,
+            email,
+            enabled = true,
+            interrupted = false,
+            apiVersion = 3,
+            authToken = token,
+            sendType = "SEQUENTIALLY",
+            events = new[]
+            {
+                "CHECKOUT_CREATED", "CHECKOUT_PAID", "CHECKOUT_CANCELED", "CHECKOUT_EXPIRED",
+                "SUBSCRIPTION_CREATED", "SUBSCRIPTION_UPDATED", "SUBSCRIPTION_INACTIVATED", "SUBSCRIPTION_DELETED",
+                "PAYMENT_CONFIRMED", "PAYMENT_RECEIVED", "PAYMENT_OVERDUE", "PAYMENT_REFUNDED",
+                "PAYMENT_CHARGEBACK_REQUESTED", "PAYMENT_RECEIVED_IN_CASH_UNDONE"
+            }
+        };
+        var client = clients.CreateClient("Asaas");
+        async Task<HttpResponseMessage> SendAsync(HttpMethod method, string endpoint, object? content = null)
+        {
+            var request = new HttpRequestMessage(method, $"{baseUrl}{endpoint}");
+            request.Headers.Add("access_token", config["Asaas:ApiKey"]);
+            if (content is not null) request.Content = JsonContent.Create(content);
+            return await client.SendAsync(request, HttpContext.RequestAborted);
+        }
+
+        try
+        {
+            using var listResponse = await SendAsync(HttpMethod.Get, "/webhooks?offset=0&limit=100");
+            if (!listResponse.IsSuccessStatusCode)
+            {
+                logger.LogWarning("Asaas webhook list returned HTTP {StatusCode}", (int)listResponse.StatusCode);
+                return false;
+            }
+            using var listJson = JsonDocument.Parse(await listResponse.Content.ReadAsStringAsync(HttpContext.RequestAborted));
+            string? webhookId = null;
+            if (listJson.RootElement.TryGetProperty("data", out var items) && items.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var item in items.EnumerateArray())
+                {
+                    if (String(item, "url") == url)
+                    {
+                        webhookId = String(item, "id");
+                        break;
+                    }
+                }
+            }
+
+            using var saveResponse = webhookId is null
+                ? await SendAsync(HttpMethod.Post, "/webhooks", body)
+                : await SendAsync(HttpMethod.Put, $"/webhooks/{Uri.EscapeDataString(webhookId)}", body);
+            if (saveResponse.IsSuccessStatusCode) return true;
+            logger.LogWarning("Asaas webhook provisioning returned HTTP {StatusCode}", (int)saveResponse.StatusCode);
+            return false;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or JsonException or TaskCanceledException)
+        {
+            logger.LogError(ex, "Failed to provision Asaas webhook");
+            return false;
+        }
+    }
+
     private static string CheckoutUrl(string id) => $"https://asaas.com/checkoutSession/show?id={Uri.EscapeDataString(id)}";
     private static string? String(JsonElement element, string name) => element.ValueKind == JsonValueKind.Object && element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
     private static DateTime? ParseDate(string? value) => DateTime.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var result) ? result : null;
