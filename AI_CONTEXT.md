@@ -1,6 +1,6 @@
 # Contexto do projeto para assistentes de IA
 
-Atualizado em 11/11/2026. Resumo operacional para orientar mudanças sem exigir a leitura do repositório inteiro. O código é a fonte de verdade: confira os arquivos relacionados antes de alterar comportamento.
+Atualizado em 18/11/2026. Resumo operacional para orientar mudanças sem exigir a leitura do repositório inteiro. O código é a fonte de verdade: confira os arquivos relacionados antes de alterar comportamento.
 
 ## Produto e arquitetura
 
@@ -14,9 +14,9 @@ Aplicação privada em português para um perito judicial organizar processos/pe
 
 ## Funcionalidades no código local
 
-- Painel com casos em acompanhamento, laudos não entregues, prazos próximos/vencidos e honorários pendentes. Busca por número CNJ, perícia, laudo, comarca, vara e pessoa; filtros por status, comarca, prazo e situação de pagamento; paginação e prioridade por prazo/saldo.
+- Painel com casos em acompanhamento, laudos não entregues, prazos próximos/vencidos e honorários pendentes. Busca por número da perícia, laudo, comarca, vara e pessoa; filtros por status, comarca, prazo e situação de pagamento; paginação e prioridade por prazo/saldo.
 - Lista completa de processos com filtros de comarca, status técnico/financeiro, datas de envio, faixas de honorários e quantidade de laudos; status permite recusar, e recusa não esconde saldo pendente.
-- Detalhe do processo com dados CNJ, comarca, vara, magistrado, tipo, datas, observações, periciados, laudos, agenda, honorários, documentos e atividade recente.
+- Detalhe da perícia com número da perícia como identificador principal, comarca, vara, magistrado, tipo, datas, observações, periciados, laudos, agenda, honorários, documentos e atividade recente. A antiga coluna de CNJ permanece apenas no SQLite por compatibilidade, sem edição, busca, exibição ou exportação.
 - Uma perícia pode ter zero ou vários periciados e zero ou vários laudos numerados; não existe periciado principal. No cadastro, periciados são adicionados individualmente por botão, com nome, telefone e observações. O telefone e as observações usam as colunas legadas `Contato` e `RegistroEntrevista`, preservando o banco existente; as propriedades antigas `Papel` e `Relacao` permanecem por compatibilidade, mas não são editadas neste formulário. Laudos têm tipo, prazo, estados, histórico de versões restauráveis e o editor atual; o HTML do laudo é sanitizado ao salvar, ao restaurar versões e antes de renderizar no editor/pré-visualização.
 - Modelos de laudo reutilizáveis. Cada novo laudo começa com uma cópia do modelo; edição posterior não altera o modelo nem os outros laudos.
 - Agenda com consultas por mês, semana ou dia; compromissos ligados a processo e opcionalmente a pessoa; edição/reagendamento/cancelamento; envio, aceite e prazo aparecem como marcos automáticos.

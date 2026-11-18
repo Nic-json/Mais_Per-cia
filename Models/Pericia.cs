@@ -26,7 +26,8 @@ public class Pericia : IUsuarioDono
     [Display(Name = "Número da perícia")]
     public string Numero { get; set; } = "";
 
-    [StringLength(80), Display(Name = "Número do processo (CNJ)")]
+    // Campo legado mantido no SQLite por compatibilidade; não é mais usado pela aplicação.
+    [StringLength(80)]
     public string? NumeroProcesso { get; set; }
 
     [StringLength(120), Display(Name = "Comarca")]

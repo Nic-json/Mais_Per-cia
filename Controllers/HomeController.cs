@@ -45,7 +45,6 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
     {
         destino.NomePericiado = "";
         destino.Numero = origem.Numero;
-        destino.NumeroProcesso = origem.NumeroProcesso;
         destino.Comarca = origem.Comarca;
         destino.Vara = origem.Vara;
         destino.Magistrado = origem.Magistrado;
@@ -121,7 +120,7 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
         var visaoGeral = ConsultaVisaoGeral();
         IQueryable<Pericia> query = visaoGeral.Include(p => p.Periciados).Include(p => p.Laudos);
         if (!string.IsNullOrWhiteSpace(busca))
-            query = query.Where(p => p.Numero.Contains(busca) || (p.NumeroProcesso != null && p.NumeroProcesso.Contains(busca)) || (p.Comarca != null && p.Comarca.Contains(busca)) || (p.Vara != null && p.Vara.Contains(busca)) || p.Periciados.Any(pessoa => pessoa.Nome.Contains(busca)) || p.Laudos.Any(l => l.NumeroLaudo.Contains(busca)));
+            query = query.Where(p => p.Numero.Contains(busca) || (p.Comarca != null && p.Comarca.Contains(busca)) || (p.Vara != null && p.Vara.Contains(busca)) || p.Periciados.Any(pessoa => pessoa.Nome.Contains(busca)) || p.Laudos.Any(l => l.NumeroLaudo.Contains(busca)));
         if (status.HasValue) query = query.Where(p => p.Status == status.Value);
         if (!string.IsNullOrWhiteSpace(comarca)) query = query.Where(p => p.Comarca == comarca);
         if (prazoDe.HasValue) query = query.Where(p => p.PrazoLaudo != null && p.PrazoLaudo >= prazoDe.Value);
@@ -187,7 +186,7 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
         query = arquivadas
             ? query.Where(p => (p.Status == StatusPericia.Cancelada || p.Status == StatusPericia.Concluida || p.Status == StatusPericia.Recusada) && p.ValorRecebido >= p.ValorHonorarios)
             : query.Where(p => !((p.Status == StatusPericia.Cancelada || p.Status == StatusPericia.Concluida || p.Status == StatusPericia.Recusada) && p.ValorRecebido >= p.ValorHonorarios));
-        if (!string.IsNullOrWhiteSpace(busca)) query = query.Where(p => p.Numero.Contains(busca) || (p.NumeroProcesso != null && p.NumeroProcesso.Contains(busca)) || p.Periciados.Any(x => x.Nome.Contains(busca)) || p.Laudos.Any(l => l.NumeroLaudo.Contains(busca)));
+        if (!string.IsNullOrWhiteSpace(busca)) query = query.Where(p => p.Numero.Contains(busca) || p.Periciados.Any(x => x.Nome.Contains(busca)) || p.Laudos.Any(l => l.NumeroLaudo.Contains(busca)));
         if (!string.IsNullOrWhiteSpace(comarca)) query = query.Where(p => p.Comarca == comarca);
         if (status.HasValue) query = query.Where(p => p.Status == status.Value);
         if (financeiro == "pendente") query = query.Where(p => p.ValorRecebido < p.ValorHonorarios);
@@ -335,7 +334,7 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
     public async Task<IActionResult> Honorarios(string? busca, string? situacao)
     {
         var query = db.Pericias.AsNoTracking().Include(p => p.Periciados).Include(p => p.Pagamentos).AsQueryable();
-        if (!string.IsNullOrWhiteSpace(busca)) query = query.Where(p => p.Numero.Contains(busca) || p.Periciados.Any(x => x.Nome.Contains(busca)) || (p.NumeroProcesso != null && p.NumeroProcesso.Contains(busca)));
+        if (!string.IsNullOrWhiteSpace(busca)) query = query.Where(p => p.Numero.Contains(busca) || p.Periciados.Any(x => x.Nome.Contains(busca)));
         if (situacao == "pendente") query = query.Where(p => p.ValorRecebido < p.ValorHonorarios);
         if (situacao == "quitado") query = query.Where(p => p.ValorRecebido >= p.ValorHonorarios);
         ViewBag.Busca = busca; ViewBag.Situacao = situacao;
@@ -428,8 +427,8 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
         if (!string.IsNullOrWhiteSpace(tipo)) query = query.Where(p => p.TipoPericia == tipo);
         var rows = (await query.ToListAsync()).Where(p => p.DataEnvio >= inicio && p.DataEnvio <= fim).OrderBy(p => p.Numero);
         static string Q(string? v) => $"\"{(v ?? "").Replace("\"", "\"\"")}\"";
-        var lines = new List<string> { "NumeroProcesso;NumeroPericia;Periciados;Comarca;Vara;Status;HonorariosFixados;DataFixacao;HonorariosSolicitados;DataSolicitacao;HonorariosLiberados;DataLiberacao;Recebido;Saldo" };
-        lines.AddRange(rows.Select(p => string.Join(';', new[] { Q(p.NumeroProcesso), Q(p.Numero), Q(string.Join(" | ", p.Periciados.Select(x => x.Nome))), Q(p.Comarca), Q(p.Vara), Q(p.Status.ToString()), Q(p.ValorHonorarios.ToString("0.00", CultureInfo.InvariantCulture)), Q(p.DataHonorariosFixados?.ToString("dd/MM/yyyy")), Q(p.ValorHonorariosSolicitados.ToString("0.00", CultureInfo.InvariantCulture)), Q(p.DataHonorariosSolicitados?.ToString("dd/MM/yyyy")), Q(p.ValorHonorariosLiberados.ToString("0.00", CultureInfo.InvariantCulture)), Q(p.DataHonorariosLiberados?.ToString("dd/MM/yyyy")), Q(p.ValorRecebido.ToString("0.00", CultureInfo.InvariantCulture)), Q(Math.Max(0m, p.ValorHonorarios - p.ValorRecebido).ToString("0.00", CultureInfo.InvariantCulture)) })));
+        var lines = new List<string> { "NumeroPericia;Periciados;Comarca;Vara;Status;HonorariosFixados;DataFixacao;HonorariosSolicitados;DataSolicitacao;HonorariosLiberados;DataLiberacao;Recebido;Saldo" };
+        lines.AddRange(rows.Select(p => string.Join(';', new[] { Q(p.Numero), Q(string.Join(" | ", p.Periciados.Select(x => x.Nome))), Q(p.Comarca), Q(p.Vara), Q(p.Status.ToString()), Q(p.ValorHonorarios.ToString("0.00", CultureInfo.InvariantCulture)), Q(p.DataHonorariosFixados?.ToString("dd/MM/yyyy")), Q(p.ValorHonorariosSolicitados.ToString("0.00", CultureInfo.InvariantCulture)), Q(p.DataHonorariosSolicitados?.ToString("dd/MM/yyyy")), Q(p.ValorHonorariosLiberados.ToString("0.00", CultureInfo.InvariantCulture)), Q(p.DataHonorariosLiberados?.ToString("dd/MM/yyyy")), Q(p.ValorRecebido.ToString("0.00", CultureInfo.InvariantCulture)), Q(Math.Max(0m, p.ValorHonorarios - p.ValorRecebido).ToString("0.00", CultureInfo.InvariantCulture)) })));
         return File(Encoding.UTF8.GetPreamble().Concat(Encoding.UTF8.GetBytes(string.Join("\r\n", lines))).ToArray(), "text/csv; charset=utf-8", $"relatorio-pericial-{DateTime.Today:yyyy-MM-dd}.csv");
     }
 
@@ -442,7 +441,7 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
             .Include(laudo => laudo.Periciado);
         if (!string.IsNullOrWhiteSpace(busca))
             query = query.Where(laudo => laudo.NumeroLaudo.Contains(busca) || laudo.Pericia.Numero.Contains(busca) ||
-                (laudo.Pericia.NumeroProcesso != null && laudo.Pericia.NumeroProcesso.Contains(busca)) || laudo.Pericia.Periciados.Any(pessoa => pessoa.Nome.Contains(busca)));
+                laudo.Pericia.Periciados.Any(pessoa => pessoa.Nome.Contains(busca)));
         if (status.HasValue) query = query.Where(l => l.Status == status.Value);
         if (prazoAte.HasValue) query = query.Where(l => l.Prazo != null && l.Prazo <= prazoAte.Value);
         ViewBag.Busca = busca;

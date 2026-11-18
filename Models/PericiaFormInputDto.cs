@@ -7,7 +7,6 @@ public sealed class PericiaFormInputDto
 {
     [MaxLength(50)] public List<PericiadoFormInputDto> Periciados { get; set; } = [];
     [Required, StringLength(80)] public string Numero { get; set; } = "";
-    [StringLength(80)] public string? NumeroProcesso { get; set; }
     [StringLength(120)] public string? Comarca { get; set; }
     [StringLength(120)] public string? Vara { get; set; }
     [StringLength(160)] public string? Magistrado { get; set; }
@@ -35,7 +34,6 @@ public sealed class PericiaFormInputDto
             RegistroEntrevista = p.Observacoes?.Trim()
         }).ToList(),
         Numero = (Numero ?? string.Empty).Trim(),
-        NumeroProcesso = NumeroProcesso?.Trim(),
         Comarca = Comarca?.Trim(),
         Vara = Vara?.Trim(),
         Magistrado = Magistrado?.Trim(),
