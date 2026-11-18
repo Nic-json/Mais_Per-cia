@@ -4,7 +4,7 @@ Atualizado em 18/11/2026. Resumo operacional para orientar mudanças sem exigir 
 
 ## Produto e arquitetura
 
-Mais Perícias é uma aplicação privada em português para um perito judicial organizar processos/perícias, periciados, laudos, prazos, compromissos, honorários e documentos. A assinatura visual usa o descritor “Gestão pericial”.
+Perito em Dia é uma aplicação privada em português para um perito judicial organizar processos/perícias, periciados, laudos, prazos, compromissos, honorários e documentos. A assinatura visual usa o descritor “Gestão pericial”.
 
 - ASP.NET Core MVC em .NET 10, Razor views, Entity Framework Core e SQLite.
 - Interface responsiva com Bootstrap, CSS e JavaScript/jQuery; não é uma SPA React.

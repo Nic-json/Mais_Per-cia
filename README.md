@@ -1,4 +1,4 @@
-# Mais Perícias
+# Perito em Dia
 
 Aplicação ASP.NET Core MVC para organizar perícias, prazos, laudos e honorários. Cada perito tem uma conta individual e os registros são isolados no banco SQLite compartilhado.
 
