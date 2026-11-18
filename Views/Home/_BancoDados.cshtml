@@ -18,7 +18,7 @@
  <form asp-action="RestaurarBackupCompleto" method="post" enctype="multipart/form-data" class="row g-3">
   <div class="col-12"><label for="arquivoBackup" class="form-label">Backup completo (.zip)</label><input id="arquivoBackup" name="arquivoBackup" type="file" class="form-control" accept=".zip" required/><div class="form-text">Até 400 MB. O ZIP precisa conter manifesto, banco SQLite e documentos válidos.</div></div>
   <div class="col-12"><div class="form-check"><input id="confirmarBackup" name="confirmar" type="checkbox" value="true" class="form-check-input" required/><label for="confirmarBackup" class="form-check-label">Confirmo que quero substituir os registros pelo conteúdo deste backup.</label></div></div>
-  <div class="col-12"><button type="submit" class="btn btn-danger" onclick="return confirm('Restaurar o banco e os anexos deste backup?')">Restaurar backup completo</button></div>
+  <div class="col-12"><button type="submit" class="btn btn-danger" data-confirm-message="Restaurar o banco e os anexos deste backup?">Restaurar backup completo</button></div>
  </form>
 </section>
 
@@ -28,7 +28,7 @@
  <form asp-action="RestaurarBanco" method="post" enctype="multipart/form-data" class="row g-3">
   <div class="col-12"><label for="arquivoBanco" class="form-label">Banco SQLite editado</label><input id="arquivoBanco" name="arquivoBanco" type="file" class="form-control" accept=".db,.sqlite,.sqlite3" required /><div class="form-text">Arquivo de até 50 MB.</div></div>
   <div class="col-12"><div class="form-check"><input id="confirmar" name="confirmar" type="checkbox" value="true" class="form-check-input" required /><label for="confirmar" class="form-check-label">Entendo que esta importação substitui os dados atuais pelo conteúdo do arquivo.</label></div></div>
-  <div class="col-12"><button type="submit" class="btn btn-danger" onclick="return confirm('Substituir o banco atual pelo arquivo selecionado?')">Importar banco editado</button></div>
+  <div class="col-12"><button type="submit" class="btn btn-danger" data-confirm-message="Substituir o banco atual pelo arquivo selecionado?">Importar banco editado</button></div>
  </form>
 </section>
 

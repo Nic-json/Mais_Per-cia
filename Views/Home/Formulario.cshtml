@@ -46,7 +46,7 @@
   <div class="col-md-4"><label class="form-label" for="DataEnvio">Data do SEI</label><input asp-for="DataEnvio" class="form-control" /><span asp-validation-for="DataEnvio" class="text-danger"></span></div>
   <div class="col-12"><label class="form-label">Pagamentos</label><div class="form-control-plaintext fw-semibold">Total recebido: @Model.ValorRecebido.ToString("C")</div>@if (Model.Pagamentos.Count > 0) { <div class="d-grid gap-1">@foreach (var pagamento in Model.Pagamentos.OrderByDescending(p => p.DataRecebimento)) { <div class="form-control-plaintext">@(pagamento.DataRecebimento?.ToString("dd/MM/yyyy") ?? "Data n&#227;o informada") · @pagamento.Valor.ToString("C")</div> }</div> } else { <div class="form-text">Nenhum pagamento detalhado registrado.</div> }@if (editar) { <a asp-action="Processo" asp-route-id="@Model.Id" asp-fragment="honorarios" class="action-link">Gerenciar pagamentos</a> }</div>
  </div>
- <div class="form-actions"><button type="submit" class="btn btn-primary btn-lg">@(editar ? "Salvar alterações" : "Cadastrar perícia")</button><a asp-action="Index" class="btn btn-light btn-lg">Cancelar</a>@if (editar) { <button type="submit" form="delete-form" class="btn btn-link text-danger ms-auto" onclick="return confirm('Remover esta perícia? Esta ação não pode ser desfeita.')">Excluir perícia</button> }</div>
+ <div class="form-actions"><button type="submit" class="btn btn-primary btn-lg">@(editar ? "Salvar alterações" : "Cadastrar perícia")</button><a asp-action="Index" class="btn btn-light btn-lg">Cancelar</a>@if (editar) { <button type="submit" form="delete-form" class="btn btn-link text-danger ms-auto" data-confirm-message="Remover esta perícia? Esta ação não pode ser desfeita.">Excluir perícia</button> }</div>
 </form>
 @if (editar) { <form id="delete-form" asp-action="Excluir" asp-route-id="@Model.Id" method="post"></form> }
 @if (editar)
@@ -58,7 +58,7 @@
    <div class="table-responsive mb-4"><table class="table align-middle"><thead><tr><th>Número do laudo</th><th>Periciado</th><th>Última alteração</th><th></th></tr></thead><tbody>
    @foreach (var laudo in Model.Laudos.OrderBy(l => l.Id))
    {
-    <tr><td><strong>@laudo.NumeroLaudo</strong></td><td>@(laudo.Periciado?.Nome ?? "Não associado")</td><td>@(string.IsNullOrWhiteSpace(laudo.ConteudoHtml) ? "Rascunho vazio" : laudo.AtualizadoEm.ToLocalTime().ToString("dd/MM/yyyy HH:mm"))</td><td class="text-end"><a asp-action="EditorLaudo" asp-route-id="@Model.Id" asp-route-laudoId="@laudo.Id" class="action-link">@(string.IsNullOrWhiteSpace(laudo.ConteudoHtml) ? "Escrever" : "Abrir")</a><form asp-action="ExcluirLaudo" asp-route-id="@Model.Id" asp-route-laudoId="@laudo.Id" method="post" class="d-inline"><button type="submit" class="btn btn-link text-danger p-0 ms-3" onclick="return confirm('Excluir este laudo?')">Excluir</button></form></td></tr>
+    <tr><td><strong>@laudo.NumeroLaudo</strong></td><td>@(laudo.Periciado?.Nome ?? "Não associado")</td><td>@(string.IsNullOrWhiteSpace(laudo.ConteudoHtml) ? "Rascunho vazio" : laudo.AtualizadoEm.ToLocalTime().ToString("dd/MM/yyyy HH:mm"))</td><td class="text-end"><a asp-action="EditorLaudo" asp-route-id="@Model.Id" asp-route-laudoId="@laudo.Id" class="action-link">@(string.IsNullOrWhiteSpace(laudo.ConteudoHtml) ? "Escrever" : "Abrir")</a><form asp-action="ExcluirLaudo" asp-route-id="@Model.Id" asp-route-laudoId="@laudo.Id" method="post" class="d-inline"><button type="submit" class="btn btn-link text-danger p-0 ms-3" data-confirm-message="Excluir este laudo?">Excluir</button></form></td></tr>
    }
    </tbody></table></div>
   }
@@ -79,7 +79,7 @@
    <div class="table-responsive mt-4"><table class="table align-middle"><thead><tr><th>Arquivo</th><th>Tamanho</th><th>Adicionado</th><th>Ações</th></tr></thead><tbody>
    @foreach (var documento in Model.Documentos.OrderByDescending(d => d.EnviadoEm))
    {
-    <tr><td>@documento.NomeOriginal</td><td>@((documento.TamanhoBytes / 1048576d).ToString("0.##")) MB</td><td>@documento.EnviadoEm.ToString("dd/MM/yyyy")</td><td><a asp-action="BaixarDocumento" asp-route-id="@documento.Id" class="action-link">Baixar</a><form asp-action="ExcluirDocumento" asp-route-id="@documento.Id" method="post" class="d-inline"><button type="submit" class="btn btn-link text-danger p-0 ms-3" onclick="return confirm('Excluir este arquivo?')">Excluir</button></form></td></tr>
+    <tr><td>@documento.NomeOriginal</td><td>@((documento.TamanhoBytes / 1048576d).ToString("0.##")) MB</td><td>@documento.EnviadoEm.ToString("dd/MM/yyyy")</td><td><a asp-action="BaixarDocumento" asp-route-id="@documento.Id" class="action-link">Baixar</a><form asp-action="ExcluirDocumento" asp-route-id="@documento.Id" method="post" class="d-inline"><button type="submit" class="btn btn-link text-danger p-0 ms-3" data-confirm-message="Excluir este arquivo?">Excluir</button></form></td></tr>
    }
    </tbody></table></div>
   }

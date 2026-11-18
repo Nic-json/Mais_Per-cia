@@ -1,13 +1,13 @@
-@model IEnumerable<Sistemas_para_pericias.Models.LaudoPericia>
+@model IEnumerable<Sistemas_para_pericias.Models.Pericia>
 @using Sistemas_para_pericias.Models
 @{ ViewData["Title"] = "Laudos"; string StatusLaudoNome(StatusLaudo s) => s switch { StatusLaudo.EmElaboracao => "Em elaboração", StatusLaudo.Concluido => "Concluído", _ => s.ToString() }; }
-<header class="page-heading"><partial name="_PageTitle" model='new PageHeadingViewModel("DOCUMENTOS TÉCNICOS", "Laudos", "Consulte laudos de todos os processos, prazos e estados de elaboração.")' /><div class="heading-actions"><a class="btn btn-outline-secondary" asp-action="ModelosLaudo">Modelos</a><a class="btn btn-primary btn-lg" asp-action="NovoLaudo">+ Novo laudo</a></div></header>
-<section class="list-panel"><div class="list-heading"><partial name="_PanelTitle" model='new PanelHeadingViewModel("Central de laudos", $"{Model.Count()} registros")' /></div>
+<header class="page-heading"><partial name="_PageTitle" model='new PageHeadingViewModel("DOCUMENTOS TÉCNICOS", "Laudos", "Abra uma perícia para consultar os laudos vinculados a ela.")' /><div class="heading-actions"><a class="btn btn-outline-secondary" asp-action="ModelosLaudo">Modelos</a></div></header>
+<section class="list-panel"><div class="list-heading"><partial name="_PanelTitle" model='new PanelHeadingViewModel("Perícias com laudos", $"{Model.Count()} perícias")' /></div>
 <form method="get" class="laudos-filters">
-    <label class="laudos-filter laudos-search">Buscar laudos
-        <input name="busca" value="@ViewBag.Busca" class="form-control" placeholder="Processo, periciado ou número do laudo" />
+    <label class="laudos-filter laudos-search">Buscar perícias
+        <input name="busca" value="@ViewBag.Busca" class="form-control" placeholder="Número da perícia ou periciado" />
     </label>
-    <label class="laudos-filter">Estado
+    <label class="laudos-filter">Estado de algum laudo
         <select name="status" class="form-select"><option value="">Todos os estados</option>@foreach (var s in Enum.GetValues<StatusLaudo>()) { <option value="@s" selected="@(ViewBag.StatusFiltro == s)">@StatusLaudoNome(s)</option> }</select>
     </label>
     <label class="laudos-filter">Prazo até
@@ -18,6 +18,6 @@
         <a asp-action="Laudos" class="btn btn-outline-secondary">Limpar</a>
     </div>
 </form>
-@if (!Model.Any()) { <div class="empty-state"><h3>Nenhum laudo encontrado</h3><p>Crie um laudo vinculado a uma perícia.</p><a asp-action="NovoLaudo" class="btn btn-primary">Criar primeiro laudo</a></div> }
-else { <div class="table-responsive"><table class="table cases-table laudos-table"><thead><tr><th>LAUDO / TIPO</th><th>PERICIADO</th><th>NÚMERO DA PERÍCIA</th><th>ESTADO</th><th>PRAZO / ATUALIZADO</th><th></th></tr></thead><tbody>@foreach (var laudo in Model) { <tr><td><div class="person-name">Laudo @laudo.NumeroLaudo</div><div class="case-number">@(laudo.Tipo ?? "Sem tipo")</div></td><td>@(laudo.Periciado?.Nome ?? "Não associado")</td><td><div class="person-name">Perícia nº @laudo.Pericia.Numero</div><div class="case-number">@laudo.Pericia.Comarca / @laudo.Pericia.Vara</div></td><td><form asp-action="AtualizarStatusLaudo" method="post" class="laudo-status-form"><input type="hidden" name="id" value="@laudo.PericiaId"/><input type="hidden" name="laudoId" value="@laudo.Id"/><input type="hidden" name="origem" value="laudos"/><select name="status" class="form-select form-select-sm">@foreach (var s in Enum.GetValues<StatusLaudo>()) { <option value="@s" selected="@(s == laudo.Status)">@StatusLaudoNome(s)</option> }</select><button class="btn btn-sm btn-outline-secondary">Salvar</button></form></td><td>@(laudo.Prazo?.ToString("dd/MM/yyyy") ?? "Sem prazo")<div class="case-number">@laudo.AtualizadoEm.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div></td><td><a asp-action="EditorLaudo" asp-route-id="@laudo.PericiaId" asp-route-laudoId="@laudo.Id" class="btn btn-sm btn-outline-secondary">Abrir editor</a></td></tr> }</tbody></table></div>}
+@if (!Model.Any()) { <div class="empty-state"><h3>Nenhuma perícia com laudos encontrada</h3><p>As perícias aparecerão aqui depois que tiverem ao menos um laudo.</p></div> }
+else { <div class="table-responsive"><table class="table cases-table laudos-table laudos-process-table"><thead><tr><th>PERÍCIA</th><th>PERICIADOS</th><th>LAUDOS</th><th>ATUALIZADO</th><th></th></tr></thead><tbody>@foreach (var pericia in Model) { var concluidos = pericia.Laudos.Count(laudo => laudo.Status == StatusLaudo.Concluido); var emElaboracao = pericia.Laudos.Count(laudo => laudo.Status == StatusLaudo.EmElaboracao); <tr><td><div class="person-name">Perícia nº @pericia.Numero</div><div class="case-number">@pericia.Comarca / @pericia.Vara</div></td><td>@(pericia.Periciados.Count == 0 ? "Sem periciados cadastrados" : string.Join(", ", pericia.Periciados.OrderBy(pessoa => pessoa.Nome).Select(pessoa => pessoa.Nome)))</td><td><div class="person-name">@pericia.Laudos.Count laudo(s)</div><div class="case-number">@emElaboracao em elaboração · @concluidos concluído(s)</div></td><td>@(pericia.Laudos.Max(laudo => (DateTime?)laudo.AtualizadoEm)?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "—")</td><td><a asp-action="Processo" asp-route-id="@pericia.Id" class="action-link">Abrir perícia</a></td></tr> }</tbody></table></div>}
 </section>

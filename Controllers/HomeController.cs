@@ -459,18 +459,18 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
     }
 
     [HttpPost, ValidateAntiForgeryToken]
-    public async Task<IActionResult> RegistrarContatoFinanceiro(int id, string? descricao)
+    public async Task<IActionResult> RegistrarAtualizacao(int id, string? descricao)
     {
         if (!await db.Pericias.AnyAsync(p => p.Id == id)) return NotFound();
         if (string.IsNullOrWhiteSpace(descricao) || descricao.Trim().Length > 900)
         {
-            TempData["ErroFinanceiro"] = "Descreva o contato ou acompanhamento em até 900 caracteres.";
+            TempData["ErroFinanceiro"] = "Escreva uma atualização de até 900 caracteres.";
             return RedirectToAction(nameof(Processo), new { id });
         }
-        RegistrarHistorico(id, "Cobrança", $"Acompanhamento manual: {descricao.Trim()}");
+        RegistrarHistorico(id, "Atualização", descricao.Trim());
         await db.SaveChangesAsync();
-        TempData["MensagemFinanceira"] = "Acompanhamento registrado no histórico.";
-        return RedirectToAction(nameof(Processo), new { id, fragment = "honorarios" });
+        TempData["MensagemFinanceira"] = "Atualização adicionada ao histórico.";
+        return RedirectToAction(nameof(Processo), new { id, fragment = "historico" });
     }
 
     public async Task<IActionResult> Relatorios(DateTime? inicio, DateTime? fim, string? comarca, string? vara, string? tipo)
@@ -514,19 +514,20 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
 
     public async Task<IActionResult> Laudos(string? busca, StatusLaudo? status, DateTime? prazoAte)
     {
-        IQueryable<LaudoPericia> query = db.LaudosPericia.AsNoTracking()
-            .Include(laudo => laudo.Pericia).ThenInclude(pericia => pericia.Periciados)
-            .Include(laudo => laudo.Periciado);
+        IQueryable<Pericia> query = db.Pericias.AsNoTracking()
+            .Include(pericia => pericia.Periciados)
+            .Include(pericia => pericia.Laudos)
+            .Where(pericia => pericia.Laudos.Any());
         if (!string.IsNullOrWhiteSpace(busca))
-            query = query.Where(laudo => laudo.NumeroLaudo.Contains(busca) || laudo.Pericia.Numero.Contains(busca) ||
-                laudo.Pericia.Periciados.Any(pessoa => pessoa.Nome.Contains(busca)));
-        if (status.HasValue) query = query.Where(l => l.Status == status.Value);
-        if (prazoAte.HasValue) query = query.Where(l => l.Prazo != null && l.Prazo <= prazoAte.Value);
+            query = query.Where(pericia => pericia.Numero.Contains(busca) ||
+                pericia.Periciados.Any(pessoa => pessoa.Nome.Contains(busca)));
+        if (status.HasValue) query = query.Where(pericia => pericia.Laudos.Any(laudo => laudo.Status == status.Value));
+        if (prazoAte.HasValue) query = query.Where(pericia => pericia.Laudos.Any(laudo => laudo.Prazo != null && laudo.Prazo <= prazoAte.Value));
         ViewBag.Busca = busca;
         ViewBag.StatusFiltro = status;
         ViewBag.PrazoAte = prazoAte?.ToString("yyyy-MM-dd");
         ViewBag.Total = await query.CountAsync();
-        return View(await query.OrderByDescending(laudo => laudo.AtualizadoEm).ToListAsync());
+        return View(await query.OrderByDescending(pericia => pericia.Laudos.Max(laudo => (DateTime?)laudo.AtualizadoEm)).ToListAsync());
     }
 
     public async Task<IActionResult> NovoLaudo()

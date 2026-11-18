@@ -4,6 +4,49 @@
 // Write your JavaScript code.
 
 (() => {
+    const confirmDialog = document.getElementById('app-confirm-dialog');
+    const confirmMessage = document.getElementById('app-confirm-message');
+    const confirmTitle = document.getElementById('app-confirm-title');
+    let pendingConfirmation = null;
+
+    document.addEventListener('click', event => {
+        const action = event.target.closest('[data-confirm-message]');
+        if (!action || action.dataset.confirmBypass === 'true') return;
+
+        event.preventDefault();
+        pendingConfirmation = action;
+        confirmMessage.textContent = action.dataset.confirmMessage || 'Deseja continuar com esta ação?';
+        confirmTitle.textContent = action.dataset.confirmTitle || 'Confirmar ação';
+        confirmDialog.showModal();
+    });
+
+    confirmDialog?.addEventListener('close', () => {
+        const action = pendingConfirmation;
+        pendingConfirmation = null;
+        if (confirmDialog.returnValue !== 'confirm' || !action) {
+            action?.focus({ preventScroll: true });
+            return;
+        }
+
+        if (action instanceof HTMLAnchorElement) {
+            window.location.assign(action.href);
+            return;
+        }
+
+        const form = action.form;
+        if (form) {
+            if (typeof form.requestSubmit === 'function') form.requestSubmit(action);
+            else form.submit();
+            action.focus({ preventScroll: true });
+            return;
+        }
+
+        action.dataset.confirmBypass = 'true';
+        action.click();
+        delete action.dataset.confirmBypass;
+        action.focus({ preventScroll: true });
+    });
+
     const normalize = value => (value ?? '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR').trim();
     let activeMenu = null;
     let menuSequence = 0;
