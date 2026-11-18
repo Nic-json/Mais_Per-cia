@@ -49,7 +49,7 @@ O cadastro individual e o isolamento por conta são a base técnica para vários
 
 ## Módulos de processos e gestão
 
-- Cadastro de perícia identificada pelo próprio número, com comarca, vara, magistrado e tipo de perícia; vários periciados com papel, relação, contato e registro de entrevista.
+- Cadastro de perícia identificada pelo próprio número, com comarca, vara e tipo de perícia; vários periciados com papel, relação, contato e registro de entrevista.
 - Página de detalhe do processo com laudos, documentos, agenda, honorários e atividade recente.
 - Central de laudos com estados, prazos, modelos reutilizáveis e edição no editor atual.
 - Agenda navegável por mês, semana e dia, com compromissos e marcos de envio, aceite e prazo.

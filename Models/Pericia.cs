@@ -36,7 +36,8 @@ public class Pericia : IUsuarioDono
     [StringLength(120), Display(Name = "Vara")]
     public string? Vara { get; set; }
 
-    [StringLength(160), Display(Name = "Magistrado(a)")]
+    // Campo legado mantido para preservar valores já existentes no SQLite.
+    [StringLength(160)]
     public string? Magistrado { get; set; }
 
     [StringLength(120), Display(Name = "Tipo de perícia")]

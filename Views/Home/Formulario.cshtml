@@ -4,17 +4,29 @@
 <header class="page-heading"><div><a asp-action="Index" class="back-link">← Voltar para perícias</a><partial name="_PageTitle" model='new PageHeadingViewModel("CADASTRO", editar ? "Editar perícia" : "Nova perícia", "Preencha os dados para organizar o acompanhamento.")' /></div></header>
 @if (TempData["Mensagem"] is string mensagemDocumento) { <div class="alert alert-success">@mensagemDocumento</div> }
 @if (TempData["Erro"] is string erroDocumento) { <div class="alert alert-danger">@erroDocumento</div> }
-<form asp-action="@(editar ? "Editar" : "Criar")" asp-route-id="@Model.Id" method="post" class="form-panel" data-catalogo-foros="@ViewBag.CatalogoForosJson">
+<form asp-action="@(editar ? "Editar" : "Criar")" asp-route-id="@Model.Id" method="post" class="form-panel pericia-form" data-catalogo-foros="@ViewBag.CatalogoForosJson">
  @if (!editar && ViewBag.AbrirLaudoDepois is true) { <input type="hidden" name="abrirLaudoDepois" value="true" /> }
  <div asp-validation-summary="All" class="text-danger"></div>
+ <input asp-for="DataHonorariosFixados" type="hidden" /><input asp-for="ValorHonorariosSolicitados" type="hidden" /><input asp-for="DataHonorariosSolicitados" type="hidden" />
+ <input asp-for="ValorHonorariosLiberados" type="hidden" /><input asp-for="DataHonorariosLiberados" type="hidden" />
  <div class="form-section-title"><span>01</span><div><h2>Identificação</h2><p>Informações do processo pericial.</p></div></div>
- <div class="row g-3">
+  <div class="row g-3 pericia-fields">
   <div class="col-12"><label asp-for="Numero" class="form-label"></label><input asp-for="Numero" class="form-control" placeholder="Ex.: 0001234-56.2025" /><span asp-validation-for="Numero" class="text-danger"></span></div>
 
-  <div class="col-md-6"><label asp-for="TipoPericia" class="form-label"></label><input asp-for="TipoPericia" class="form-control" placeholder="Ex.: médica, contábil, engenharia" /></div>
-  <div class="col-md-4"><label asp-for="Comarca" class="form-label"></label><input asp-for="Comarca" list="comarcas-tjrs" class="form-control" /><datalist id="comarcas-tjrs">@foreach (var foro in (IEnumerable<Sistemas_para_pericias.Services.ForoTjrs>)(ViewBag.CatalogoForos ?? Array.Empty<Sistemas_para_pericias.Services.ForoTjrs>())) { <option value="@foro.Comarca">@foro.Codigo · @foro.Foro</option> }</datalist><div class="form-text">No TJRS, o código final reconhecido preenche este campo automaticamente. Você pode ajustar ou digitar outro nome.</div></div>
+  <div class="col-md-6">
+   @if (editar)
+   {
+    <label asp-for="TipoPericia" class="form-label"></label><input asp-for="TipoPericia" class="form-control" placeholder="Ex.: médica, contábil, engenharia" />
+   }
+   else
+   {
+    <label class="form-label">Tipo da perícia</label>
+    <div class="form-control-plaintext fw-semibold">@(string.IsNullOrWhiteSpace(Model.TipoPericia) ? "Não configurado" : Model.TipoPericia)</div>
+    <div class="form-text">Definido automaticamente pela sua especialidade nas <a asp-action="Configuracoes">Configurações</a>.</div>
+   }
+  </div>
+  <div class="col-md-4"><label asp-for="Comarca" class="form-label"></label><input asp-for="Comarca" data-searchable-combobox="true" class="form-control" /><div class="form-text">No TJRS, o código final reconhecido preenche este campo automaticamente. Você pode pesquisar, ajustar ou digitar outro nome.</div></div>
   <div class="col-md-4"><label asp-for="Vara" class="form-label"></label><input asp-for="Vara" class="form-control" /></div>
-  <div class="col-md-4"><label asp-for="Magistrado" class="form-label"></label><input asp-for="Magistrado" class="form-control" /></div>
   <div class="col-12">
    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2"><div><label class="form-label mb-0">Periciados <span class="text-muted fw-normal">(opcional)</span></label><div class="form-text">A perícia pode ser cadastrada sem periciados. Você pode adicionar até 50 pessoas.</div></div><button type="button" id="adicionar-periciado" class="btn btn-outline-secondary">+ Adicionar periciado</button></div>
    <div asp-validation-for="Periciados" class="text-danger"></div>
@@ -35,21 +47,17 @@
    </div>
    <template id="modelo-periciado"><div class="border rounded p-3 periciado-item"><input type="hidden" name="Periciados[__index__].Id" value=""/><div class="row g-3 align-items-start"><div class="col-md-5"><label class="form-label" for="Periciados___index____Nome">Nome</label><input id="Periciados___index____Nome" name="Periciados[__index__].Nome" class="form-control" maxlength="160" required/><span class="text-danger" data-valmsg-for="Periciados[__index__].Nome"></span></div><div class="col-md-4"><label class="form-label" for="Periciados___index____Telefone">Telefone</label><input id="Periciados___index____Telefone" name="Periciados[__index__].Telefone" type="tel" class="form-control" maxlength="200" placeholder="(00) 00000-0000"/><span class="text-danger" data-valmsg-for="Periciados[__index__].Telefone"></span></div><div class="col-md-3 d-flex justify-content-md-end"><button type="button" class="btn btn-sm btn-outline-danger remover-periciado">Remover</button></div><div class="col-12"><label class="form-label" for="Periciados___index____Observacoes">Observações</label><textarea id="Periciados___index____Observacoes" name="Periciados[__index__].Observacoes" class="form-control" rows="2" maxlength="4000"></textarea><span class="text-danger" data-valmsg-for="Periciados[__index__].Observacoes"></span></div></div></div></template>
   </div>
-  <div class="col-md-4"><label asp-for="DataEnvio" class="form-label"></label><input asp-for="DataEnvio" class="form-control" /><span asp-validation-for="DataEnvio" class="text-danger"></span></div>
+  <div class="col-12"><label asp-for="Observacoes" class="form-label"></label><textarea asp-for="Observacoes" class="form-control" rows="4"></textarea><span asp-validation-for="Observacoes" class="text-danger"></span></div>
   <div class="col-md-4"><label asp-for="DataAceite" class="form-label"></label><input asp-for="DataAceite" class="form-control" /><span asp-validation-for="DataAceite" class="text-danger"></span></div>
   <div class="col-md-4"><label asp-for="PrazoLaudo" class="form-label"></label><input asp-for="PrazoLaudo" class="form-control" /><span asp-validation-for="PrazoLaudo" class="text-danger"></span></div>
  </div>
  <div class="form-section-title section-spacer"><span>02</span><div><h2>Financeiro e andamento</h2><p>Valores, pagamento e status atual.</p></div></div>
- <div class="row g-3">
+  <div class="row g-3 pericia-fields">
   <div class="col-md-4"><label asp-for="ValorHonorarios" class="form-label"></label><div class="input-group"><span class="input-group-text">R$</span><input asp-for="ValorHonorarios" class="form-control" type="number" step="0.01" min="0" /></div><span asp-validation-for="ValorHonorarios" class="text-danger"></span></div>
-  <div class="col-md-4"><label asp-for="DataHonorariosFixados" class="form-label"></label><input asp-for="DataHonorariosFixados" class="form-control" /></div>
-  <div class="col-md-4"><label asp-for="ValorHonorariosSolicitados" class="form-label"></label><div class="input-group"><span class="input-group-text">R$</span><input asp-for="ValorHonorariosSolicitados" class="form-control" type="number" step="0.01" min="0" /></div><span asp-validation-for="ValorHonorariosSolicitados" class="text-danger"></span></div>
-  <div class="col-md-4"><label asp-for="DataHonorariosSolicitados" class="form-label"></label><input asp-for="DataHonorariosSolicitados" class="form-control" /></div>
-  <div class="col-md-4"><label asp-for="ValorHonorariosLiberados" class="form-label"></label><div class="input-group"><span class="input-group-text">R$</span><input asp-for="ValorHonorariosLiberados" class="form-control" type="number" step="0.01" min="0" /></div><span asp-validation-for="ValorHonorariosLiberados" class="text-danger"></span></div>
-  <div class="col-md-4"><label asp-for="DataHonorariosLiberados" class="form-label"></label><input asp-for="DataHonorariosLiberados" class="form-control" /></div>
   <div class="col-md-4"><label class="form-label">Valor recebido</label><div class="form-control-plaintext fw-semibold">@Model.ValorRecebido.ToString("C")</div><div class="form-text">Registre novos pagamentos na aba Honorários ou no processo.</div></div>
   <div class="col-md-4"><label asp-for="Status" class="form-label"></label><select asp-for="Status" asp-items="Html.GetEnumSelectList<StatusPericia>()" class="form-select"></select></div>
-  <div class="col-12"><label asp-for="Observacoes" class="form-label"></label><textarea asp-for="Observacoes" class="form-control" rows="4" placeholder="Anotações importantes, contatos ou detalhes..."></textarea><span asp-validation-for="Observacoes" class="text-danger"></span></div>
+  <div class="col-md-4"><label class="form-label" for="DataEnvio">Data do SEI</label><input asp-for="DataEnvio" class="form-control" /><span asp-validation-for="DataEnvio" class="text-danger"></span></div>
+  <div class="col-12"><label class="form-label">Pagamentos</label>@if (Model.Pagamentos.Count > 0) { <div class="d-grid gap-1">@foreach (var pagamento in Model.Pagamentos.OrderByDescending(p => p.DataRecebimento)) { <div class="form-control-plaintext">@(pagamento.DataRecebimento?.ToString("dd/MM/yyyy") ?? "Data não informada") · @pagamento.Valor.ToString("C")</div> }</div> } else { <div class="form-control-plaintext">Nenhum pagamento registrado.</div> }@if (editar) { <a asp-action="Processo" asp-route-id="@Model.Id" asp-fragment="honorarios" class="action-link">Gerenciar pagamentos</a> }</div>
  </div>
  <div class="form-actions"><button type="submit" class="btn btn-primary btn-lg">@(editar ? "Salvar alterações" : "Cadastrar perícia")</button><a asp-action="Index" class="btn btn-light btn-lg">Cancelar</a>@if (editar) { <button type="submit" form="delete-form" class="btn btn-link text-danger ms-auto" onclick="return confirm('Remover esta perícia? Esta ação não pode ser desfeita.')">Excluir perícia</button> }</div>
 </form>

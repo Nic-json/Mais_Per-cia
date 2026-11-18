@@ -48,7 +48,6 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
         destino.Numero = origem.Numero;
         destino.Comarca = origem.Comarca;
         destino.Vara = origem.Vara;
-        destino.Magistrado = origem.Magistrado;
         destino.TipoPericia = origem.TipoPericia;
         destino.DataEnvio = origem.DataEnvio;
         destino.DataAceite = origem.DataAceite;
@@ -733,12 +732,9 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
     {
         input.Periciados ??= [];
         await AplicarComarcaDoCodigoTjrsAsync(input);
-        if (string.IsNullOrWhiteSpace(input.TipoPericia))
-        {
-            input.TipoPericia = await db.ConfiguracoesPerito.AsNoTracking()
-                .Select(c => c.Especialidade)
-                .FirstOrDefaultAsync();
-        }
+        input.TipoPericia = await db.ConfiguracoesPerito.AsNoTracking()
+            .Select(c => c.Especialidade)
+            .FirstOrDefaultAsync();
         var pericia = input.ToEntity();
         ValidarPericiados(input.Periciados);
         if (input.Periciados.Any(p => p.Id.HasValue))
@@ -763,7 +759,7 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
     }
     public async Task<IActionResult> Editar(int id)
     {
-        var pericia = await db.Pericias.Include(p => p.Documentos).Include(p => p.Periciados).Include(p => p.Laudos).ThenInclude(l => l.Periciado).FirstOrDefaultAsync(p => p.Id == id);
+        var pericia = await db.Pericias.Include(p => p.Documentos).Include(p => p.Periciados).Include(p => p.Pagamentos).Include(p => p.Laudos).ThenInclude(l => l.Periciado).FirstOrDefaultAsync(p => p.Id == id);
         if (pericia is null) return NotFound();
         await PrepararCatalogoForenseAsync();
         return View("Formulario", pericia);
@@ -790,6 +786,7 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
         {
             await PrepararCatalogoForenseAsync();
             pericia.ValorRecebido = await db.Pericias.AsNoTracking().Where(p => p.Id == id).Select(p => p.ValorRecebido).FirstOrDefaultAsync();
+            pericia.Pagamentos = await db.PagamentosHonorarios.Where(p => p.PericiaId == id).OrderByDescending(p => p.DataRecebimento).ToListAsync();
             pericia.Documentos = await db.DocumentosPericia.Where(d => d.PericiaId == id).ToListAsync();
             pericia.Laudos = await db.LaudosPericia.Include(l => l.Periciado).Where(l => l.PericiaId == id).OrderBy(l => l.NumeroLaudo).ToListAsync();
             return View("Formulario", pericia);

@@ -9,7 +9,6 @@ public sealed class PericiaFormInputDto
     [Required, StringLength(80)] public string Numero { get; set; } = "";
     [StringLength(120)] public string? Comarca { get; set; }
     [StringLength(120)] public string? Vara { get; set; }
-    [StringLength(160)] public string? Magistrado { get; set; }
     [StringLength(120)] public string? TipoPericia { get; set; }
     public DateTime? DataEnvio { get; set; }
     public DateTime? DataAceite { get; set; }
@@ -36,7 +35,6 @@ public sealed class PericiaFormInputDto
         Numero = (Numero ?? string.Empty).Trim(),
         Comarca = Comarca?.Trim(),
         Vara = Vara?.Trim(),
-        Magistrado = Magistrado?.Trim(),
         TipoPericia = TipoPericia?.Trim(),
         DataEnvio = DataEnvio,
         DataAceite = DataAceite,
