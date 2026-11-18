@@ -103,7 +103,7 @@
 }
 
 /* Process list layout */
-.process-tabs{margin:0 0 12px!important;border-bottom:1px solid var(--line);gap:5px}
+.process-tabs{width:100%;margin:0 0 -1px!important;position:relative;z-index:1;border-bottom:1px solid var(--line);gap:5px}
 .process-tabs .nav-link{padding:10px 16px;color:#737e95;font-size:12px;border:1px solid transparent;border-radius:8px 8px 0 0}
 .process-tabs .nav-link.active{color:var(--primary);font-weight:700;background:#fff;border-color:var(--line) var(--line) #fff}
 .process-filters{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px 12px;padding:19px 20px 17px;border-bottom:1px solid var(--line)}
@@ -209,6 +209,20 @@ body{color:var(--ink);background:var(--bg);font-size:14px}
 @media(max-width:700px){.pericia-form .pericia-fields>.col-12:has(#periciados-container)>.d-flex{align-items:flex-start}.pericia-form .pericia-fields>.col-12:has(#periciados-container)>.d-flex>div,.pericia-form .pericia-fields>.col-12:has(#periciados-container)>.d-flex>button{grid-column:auto;grid-row:auto}}
 .dashboard-stats-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
 @media(max-width:1100px){.dashboard-stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.table-responsive:has(> table.dashboard-table-fit),.table-responsive:has(> table.process-current-fit),.table-responsive:has(> table.process-archive-fit){overflow-x:hidden}
+.cases-table.dashboard-table-fit,.cases-table.process-current-fit,.cases-table.process-archive-fit{width:100%;min-width:0;table-layout:fixed;white-space:normal}
+.cases-table.dashboard-table-fit th,.cases-table.dashboard-table-fit td,.cases-table.process-current-fit th,.cases-table.process-current-fit td,.cases-table.process-archive-fit th,.cases-table.process-archive-fit td{overflow-wrap:anywhere;vertical-align:top}
+.dashboard-table-fit th:nth-child(1){width:20%}.dashboard-table-fit th:nth-child(2){width:24%}.dashboard-table-fit th:nth-child(3){width:8%}.dashboard-table-fit th:nth-child(4){width:11%}.dashboard-table-fit th:nth-child(5){width:19%}.dashboard-table-fit th:nth-child(6){width:11%}.dashboard-table-fit th:nth-child(7){width:7%}
+.process-current-fit th:nth-child(1){width:31%}.process-current-fit th:nth-child(2){width:12%}.process-current-fit th:nth-child(3){width:17%}.process-current-fit th:nth-child(4){width:15%}.process-current-fit th:nth-child(5){width:17%}.process-current-fit th:nth-child(6){width:8%}
+.process-archive-fit th:nth-child(1){width:15%}.process-archive-fit th:nth-child(2){width:25%}.process-archive-fit th:nth-child(3){width:8%}.process-archive-fit th:nth-child(4){width:20%}.process-archive-fit th:nth-child(5){width:22%}.process-archive-fit th:nth-child(6){width:10%}
+@media(max-width:700px){.cases-table.dashboard-table-fit thead th,.cases-table.dashboard-table-fit tbody td,.cases-table.process-current-fit thead th,.cases-table.process-current-fit tbody td,.cases-table.process-archive-fit thead th,.cases-table.process-archive-fit tbody td{padding:7px 4px;font-size:9px;line-height:1.35}.cases-table.dashboard-table-fit thead th,.cases-table.process-current-fit thead th,.cases-table.process-archive-fit thead th{font-size:7px;letter-spacing:0}.cases-table.dashboard-table-fit .case-number,.cases-table.process-current-fit .case-number,.cases-table.process-archive-fit .case-number{font-size:8px;line-height:1.35}}
+.dashboard-pagination{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px}
+.dashboard-pagination .pagination{margin:0;gap:4px}
+.page-size-form{flex:0 0 auto;margin:0}
+.page-size-select,.page-size-form .app-select-control{width:84px;min-width:84px}
+.page-size-select{height:32px;min-height:32px;padding-top:4px;padding-bottom:4px;font-size:11px}
+.page-size-form .app-select-trigger{min-height:32px;padding:4px 8px;font-size:11px}
+@media(max-width:700px){.dashboard-pagination{flex-wrap:wrap;gap:8px}.process-pagination{gap:8px}.process-pagination .page-size-form{margin-right:auto}}
 .list-panel>.panel-heading{padding:18px 20px 12px}
 .panel-heading h2,.form-panel>h2,.list-panel>h2,.form-panel h2.section-title{margin:0;color:#394247;font:600 16px/1.4 'DM Sans',sans-serif;letter-spacing:-.1px}
 .panel-heading p{margin:4px 0 0;color:#798187;font-size:12px;line-height:1.5}

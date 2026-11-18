@@ -32,6 +32,8 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
     private IQueryable<Pericia> ConsultaArquivadas() => db.Pericias.AsNoTracking().Where(p =>
         (p.Status == StatusPericia.Cancelada || p.Status == StatusPericia.Concluida || p.Status == StatusPericia.Recusada) && p.ValorRecebido >= p.ValorHonorarios);
 
+    private static int NormalizarTamanhoPagina(int valor, int padrao) => valor is 10 or 20 or 25 or 50 or 100 ? valor : padrao;
+
     private void ValidarPericiados(IReadOnlyCollection<PericiadoFormInputDto> periciados)
     {
         periciados ??= [];
@@ -114,8 +116,9 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
     [AllowAnonymous]
     public IActionResult Error() => View("Error", new ErrorViewModel { RequestId = HttpContext.TraceIdentifier });
 
-    public async Task<IActionResult> Index(string? busca, StatusPericia? status, string? pagamento, string? comarca, DateTime? prazoDe, DateTime? prazoAte, int pagina = 1)
+    public async Task<IActionResult> Index(string? busca, StatusPericia? status, string? pagamento, string? comarca, DateTime? prazoDe, DateTime? prazoAte, int pagina = 1, int porPagina = 20)
     {
+        porPagina = NormalizarTamanhoPagina(porPagina, 20);
         var visaoGeral = ConsultaVisaoGeral();
         IQueryable<Pericia> query = visaoGeral.Include(p => p.Periciados).Include(p => p.Laudos);
         if (!string.IsNullOrWhiteSpace(busca))
@@ -126,13 +129,14 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
         if (prazoAte.HasValue) query = query.Where(p => p.PrazoLaudo != null && p.PrazoLaudo <= prazoAte.Value);
         if (pagamento == "pendente") query = query.Where(p => p.ValorRecebido < p.ValorHonorarios);
         if (pagamento == "quitado") query = query.Where(p => p.ValorRecebido >= p.ValorHonorarios);
-        pagina = Math.Max(1, pagina);
         var registrosFiltrados = await query.CountAsync();
+        var totalPaginas = Math.Max(1, (int)Math.Ceiling(registrosFiltrados / (double)porPagina));
+        pagina = Math.Clamp(pagina, 1, totalPaginas);
         ViewData["Title"] = "Visão geral";
         ViewBag.Busca = busca;
         ViewBag.StatusFiltro = status;
         ViewBag.Pagamento = pagamento; ViewBag.ComarcaFiltro = comarca; ViewBag.PrazoDe = prazoDe?.ToString("yyyy-MM-dd"); ViewBag.PrazoAte = prazoAte?.ToString("yyyy-MM-dd");
-        ViewBag.Pagina = pagina; ViewBag.TotalPaginas = Math.Max(1, (int)Math.Ceiling(registrosFiltrados / 20d));
+        ViewBag.Pagina = pagina; ViewBag.TotalPaginas = totalPaginas; ViewBag.PorPagina = porPagina;
         ViewBag.Comarcas = await db.Pericias.AsNoTracking().Where(p => p.Comarca != null && p.Comarca != "").Select(p => p.Comarca!).Distinct().OrderBy(c => c).ToListAsync();
         ViewBag.LaudosPendentes = await db.LaudosPericia.CountAsync(l => l.Status != StatusLaudo.Entregue);
         var config = await db.ConfiguracoesPerito.AsNoTracking().FirstOrDefaultAsync();
@@ -145,7 +149,7 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
             ? await visaoGeral.CountAsync(p => p.PrazoLaudo >= DateTime.Today && p.PrazoLaudo <= DateTime.Today.AddDays(config.AntecedenciaPrazoDias))
             : 0;
         ViewBag.AntecedenciaPrazoDias = config?.AntecedenciaPrazoDias ?? 7;
-        return View(await query.OrderBy(p => p.PrazoLaudo == null).ThenBy(p => p.PrazoLaudo).ThenBy(p => p.ValorRecebido >= p.ValorHonorarios).ThenBy(p => p.DataHonorariosSolicitados ?? p.DataEnvio).ThenBy(p => p.DataEnvio).Skip((pagina - 1) * 20).Take(20).ToListAsync());
+        return View(await query.OrderBy(p => p.PrazoLaudo == null).ThenBy(p => p.PrazoLaudo).ThenBy(p => p.ValorRecebido >= p.ValorHonorarios).ThenBy(p => p.DataHonorariosSolicitados ?? p.DataEnvio).ThenBy(p => p.DataEnvio).Skip((pagina - 1) * porPagina).Take(porPagina).ToListAsync());
     }
 
     public async Task<IActionResult> Configuracoes()
@@ -252,8 +256,9 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
     }
 
     public async Task<IActionResult> Processos(string? busca, string? comarca, StatusPericia? status, string? financeiro,
-        decimal? honorariosMin, decimal? honorariosMax, int? laudosMin, int? laudosMax, DateTime? enviadoDe, DateTime? enviadoAte, int pagina = 1, bool arquivadas = false)
+        decimal? honorariosMin, decimal? honorariosMax, int? laudosMin, int? laudosMax, DateTime? enviadoDe, DateTime? enviadoAte, int pagina = 1, bool arquivadas = false, int porPagina = 25)
     {
+        porPagina = NormalizarTamanhoPagina(porPagina, 25);
         var query = db.Pericias.AsNoTracking().Include(p => p.Periciados).Include(p => p.Laudos).AsQueryable();
         query = arquivadas
             ? query.Where(p => (p.Status == StatusPericia.Cancelada || p.Status == StatusPericia.Concluida || p.Status == StatusPericia.Recusada) && p.ValorRecebido >= p.ValorHonorarios)
@@ -269,14 +274,15 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
         if (laudosMax.HasValue) query = query.Where(p => p.Laudos.Count <= laudosMax.Value);
         if (enviadoDe.HasValue) query = query.Where(p => p.DataEnvio >= enviadoDe.Value);
         if (enviadoAte.HasValue) query = query.Where(p => p.DataEnvio <= enviadoAte.Value);
-        pagina = Math.Max(1, pagina);
         var total = await query.CountAsync();
+        var totalPaginas = Math.Max(1, (int)Math.Ceiling(total / (double)porPagina));
+        pagina = Math.Clamp(pagina, 1, totalPaginas);
         ViewBag.Busca = busca; ViewBag.ComarcaFiltro = comarca; ViewBag.StatusFiltro = status; ViewBag.Financeiro = financeiro;
         ViewBag.HonorariosMin = honorariosMin; ViewBag.HonorariosMax = honorariosMax; ViewBag.LaudosMin = laudosMin; ViewBag.LaudosMax = laudosMax;
         ViewBag.EnviadoDe = enviadoDe?.ToString("yyyy-MM-dd"); ViewBag.EnviadoAte = enviadoAte?.ToString("yyyy-MM-dd");
-        ViewBag.Pagina = pagina; ViewBag.TotalPaginas = Math.Max(1, (int)Math.Ceiling(total / 25d)); ViewBag.Arquivadas = arquivadas;
+        ViewBag.Pagina = pagina; ViewBag.TotalPaginas = totalPaginas; ViewBag.PorPagina = porPagina; ViewBag.Arquivadas = arquivadas;
         ViewBag.Comarcas = await db.Pericias.AsNoTracking().Where(p => p.Comarca != null && p.Comarca != "").Select(p => p.Comarca!).Distinct().OrderBy(c => c).ToListAsync();
-        return View(await query.OrderByDescending(p => p.CriadaEm).Skip((pagina - 1) * 25).Take(25).ToListAsync());
+        return View(await query.OrderByDescending(p => p.CriadaEm).Skip((pagina - 1) * porPagina).Take(porPagina).ToListAsync());
     }
 
     public async Task<IActionResult> Processo(int id)
