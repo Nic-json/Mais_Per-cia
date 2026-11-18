@@ -27,6 +27,7 @@ Perito em Dia é uma aplicação privada em português para um perito judicial o
 - Layout adaptado a smartphones. Navegação: Visão geral como página principal; processos com abas de acompanhamento e arquivadas; laudos no menu principal; exportação de dados individuais dentro de Configurações.
 - As tabelas de Visão geral e Processos usam largura fixa com quebra de nomes e conteúdo nas células; em smartphone elas se ajustam à largura disponível sem rolagem horizontal.
 - Os paginadores de Visão geral e Processos permitem escolher 10, 20, 25, 50 ou 100 itens por página em um seletor sem rótulo visível; filtros e quantidade selecionada são preservados na navegação.
+- Ações em links de tabela e limpeza de filtros usam estilo de botão compartilhado com contorno; ações de busca usam o rótulo “Pesquisar”. Variantes primária/secundária conservam a hierarquia visual.
 - Cadastro e edição de perícia organizam cada campo em uma linha, com rótulo à esquerda e controle à direita; validações e ajudas ficam abaixo do controle. Em telas estreitas, o rótulo passa para cima.
 - A área de periciados usa uma linha de largura completa: título/ajuda à esquerda e botão de adicionar à direita.
 - No cadastro/edição, o bloco financeiro mostra honorários, status, data do SEI (campo legado `DataEnvio`) e uma área única de pagamentos, com total recebido e lançamentos detalhados. Valores e datas históricos de honorários solicitados/liberados continuam preservados, mas não são editáveis nesse formulário; pagamentos são geridos na seção Honorários do processo.

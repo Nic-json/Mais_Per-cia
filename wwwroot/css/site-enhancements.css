@@ -223,6 +223,14 @@ body{color:var(--ink);background:var(--bg);font-size:14px}
 .page-size-select{height:32px;min-height:32px;padding-top:4px;padding-bottom:4px;font-size:11px}
 .page-size-form .app-select-trigger{min-height:32px;padding:4px 8px;font-size:11px}
 @media(max-width:700px){.dashboard-pagination{flex-wrap:wrap;gap:8px}.process-pagination{gap:8px}.process-pagination .page-size-form{margin-right:auto}}
+.btn,.action-link,.clear-filter{border-radius:7px;font-family:'DM Sans',sans-serif;font-weight:600;transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s}
+.btn{min-height:36px}
+.btn-sm{min-height:32px}
+.btn-lg{min-height:42px}
+.action-link,.clear-filter{display:inline-flex;align-items:center;justify-content:center;min-height:32px;padding:6px 10px;border:1px solid var(--line);background:#fff;color:#586b72;font-size:11px;line-height:1.25;text-decoration:none;white-space:nowrap;cursor:pointer}
+.action-link:hover,.clear-filter:hover{background:#f5f7f7;border-color:#cfd8da;color:#3f5b63;text-decoration:none}
+.action-link:focus-visible,.clear-filter:focus-visible,.btn:focus-visible{outline:0;box-shadow:0 0 0 3px #58748724}
+.filters .clear-filter{min-height:36px}
 .list-panel>.panel-heading{padding:18px 20px 12px}
 .panel-heading h2,.form-panel>h2,.list-panel>h2,.form-panel h2.section-title{margin:0;color:#394247;font:600 16px/1.4 'DM Sans',sans-serif;letter-spacing:-.1px}
 .panel-heading p{margin:4px 0 0;color:#798187;font-size:12px;line-height:1.5}
