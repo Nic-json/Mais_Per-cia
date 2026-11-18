@@ -134,7 +134,7 @@
 body{color:var(--ink);background:var(--bg);font-size:14px}
 .sidebar,.topbar,.stat-card,.list-panel,.form-panel{background:#fff}
 .sidebar{border-color:var(--line)}
-.brand-mark{border-radius:12px;background:transparent!important;color:#587487;box-shadow:none;object-fit:contain;padding:0!important}
+.brand-mark{border-radius:9px;background:#eaf0f2;color:#587487;box-shadow:none}
 .brand-light,.side-link.active,.side-link:hover{color:#587487}
 .side-link{border-radius:7px;color:#69737a}
 .side-link.active,.side-link:hover{background:#f0f4f5}
@@ -280,5 +280,37 @@ body{color:var(--ink);background:var(--bg);font-size:14px}
 .laudo-status-form{display:flex;align-items:center;gap:7px;min-width:0}
 .laudo-status-form .form-select{flex:1 1 auto;width:1%;min-width:0;height:36px;font-size:11px}
 .laudo-status-form .btn{flex:0 0 auto;min-height:36px;white-space:nowrap}
+.honorarios-stats{grid-template-columns:repeat(5,minmax(0,1fr));gap:14px;margin-bottom:22px}
+.honorarios-stats .stat-card{display:flex;min-width:0;min-height:112px;flex-direction:column;justify-content:center;padding:18px}
+.honorarios-stats .stat-value.money{font:700 clamp(16px,1.45vw,21px)/1.25 Manrope,sans-serif;letter-spacing:-.35px;white-space:nowrap}
+.honorarios-panel{overflow:visible}
+.honorarios-filters{display:grid;grid-template-columns:minmax(260px,1fr) minmax(160px,230px) auto;align-items:end;gap:12px;padding:16px 20px;border-bottom:1px solid var(--line)}
+.honorarios-filter{display:grid;gap:6px;min-width:0;margin:0;color:#59646a;font-size:11px;font-weight:600}
+.honorarios-filter .form-control,.honorarios-filter .form-select{width:100%;min-width:0;height:39px;font-size:12px}
+.honorarios-filter .search-wrap{width:100%;height:39px;min-width:0}
+.honorarios-filter .search-wrap .form-control{height:37px}
+.honorarios-filter-actions .btn{height:39px;padding:8px 15px;font-size:11px;white-space:nowrap}
+.honorarios-table{width:100%;min-width:0;table-layout:fixed;white-space:normal}
+.honorarios-table th,.honorarios-table td{vertical-align:middle;overflow-wrap:anywhere}
+.honorarios-table th:nth-child(1){width:48%}.honorarios-table th:nth-child(2){width:11%}.honorarios-table th:nth-child(3){width:10%}.honorarios-table th:nth-child(4){width:9%}.honorarios-table th:nth-child(5){width:14%}.honorarios-table th:nth-child(6){width:8%}
+.honorarios-table td:nth-child(2),.honorarios-table td:nth-child(3),.honorarios-table td:nth-child(4){white-space:nowrap}
+.honorarios-table .case-number{line-height:1.45}
+.process-section-nav{gap:7px}
+.process-section-nav .nav-link{padding:8px 12px;border:1px solid var(--line);border-radius:7px;background:#fff;color:#59646a;font-size:12px;font-weight:500;text-decoration:none;transition:background-color .15s ease,border-color .15s ease,color .15s ease}
+.process-section-nav .nav-link:hover{background:#f3f5f6;border-color:#d9e0e3;color:#293a41}
+.process-section-nav .nav-link:focus-visible{outline:3px solid rgba(88,116,135,.22);outline-offset:2px;color:#293a41}
+.novo-laudo-table{width:100%;min-width:0;table-layout:fixed;white-space:normal}
+.novo-laudo-table th:first-child,.novo-laudo-table td:first-child{width:38%}
+.novo-laudo-table th:last-child,.novo-laudo-table td:last-child{width:62%}
+.novo-laudo-table td{vertical-align:middle}
+.novo-laudo-form{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr) max-content;align-items:end;gap:8px;min-width:0}
+.novo-laudo-form>label{display:grid;gap:6px;min-width:0;margin:0;color:#59646a;font-size:11px;font-weight:600}
+.novo-laudo-form .form-control,.novo-laudo-form .form-select{width:100%;min-width:0;height:38px;font-size:11px}
+.novo-laudo-form>.btn{min-height:38px;padding:7px 10px;font-size:11px;white-space:nowrap}
+@media(max-width:1100px){.honorarios-stats{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:700px){.honorarios-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.honorarios-stats .stat-card{min-height:96px;padding:12px}.honorarios-stats .stat-value.money{font-size:16px}.honorarios-filters{grid-template-columns:1fr;padding:14px 12px;gap:10px}.honorarios-filter-actions .btn{width:100%;min-height:42px}.table-responsive:has(>.honorarios-table){overflow-x:auto}.honorarios-table{min-width:850px}}
+@media(max-width:700px){.novo-laudo-table{min-width:820px}.novo-laudo-form{grid-template-columns:minmax(130px,1fr) minmax(160px,1.2fr) max-content}}
+.list-panel:has(>.table-pagination){overflow:visible}
+.table-pagination{position:sticky;bottom:0;z-index:10;border-bottom:1px solid var(--line);border-radius:0 0 9px 9px;box-shadow:0 -5px 14px rgba(25,35,61,.08)}
 @media(max-width:1000px){.laudos-filters{grid-template-columns:minmax(220px,2fr) minmax(140px,1fr);}.laudos-search{grid-column:1/-1}.laudos-filter-actions{justify-content:flex-end}}
 @media(max-width:700px){.laudos-filters{grid-template-columns:1fr;padding:0 12px 14px;gap:10px}.laudos-search{grid-column:auto}.laudos-filter-actions{display:grid;grid-template-columns:1fr 1fr}.laudos-filter-actions .btn{min-height:42px}.table-responsive:has(>.laudos-table){overflow-x:auto}.laudos-table{min-width:850px}}

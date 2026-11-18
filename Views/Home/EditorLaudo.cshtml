@@ -19,19 +19,43 @@
   <div class="col-md-8"><label for="periciadoId" class="form-label">Periciado relacionado</label><select id="periciadoId" name="periciadoId" class="form-select"><option value="">Sem associação</option>@foreach (var pessoa in Model.Periciados.OrderBy(p => p.Nome)) { <option value="@pessoa.Id" selected="@(Model.PericiadoId == pessoa.Id)">@pessoa.Nome</option> }</select></div>
  </div>
  <div class="laudo-toolbar" role="toolbar" aria-label="Formatação do laudo">
-  <button type="button" data-command="bold" aria-label="Negrito" title="Negrito"><strong>B</strong></button>
-  <button type="button" data-command="italic" aria-label="Itálico" title="Itálico"><em>I</em></button>
-  <button type="button" data-command="underline" aria-label="Sublinhado" title="Sublinhado"><u>U</u></button>
+  <div class="toolbar-group">
+   <label class="visually-hidden" for="laudo-font">Fonte</label>
+   <select id="laudo-font" class="toolbar-select" data-command="fontName" aria-label="Fonte"><option value="Arial">Arial</option><option value="Calibri">Calibri</option><option value="Georgia" selected>Georgia</option><option value="Times New Roman">Times New Roman</option></select>
+   <label class="visually-hidden" for="laudo-font-size">Tamanho da fonte</label>
+   <select id="laudo-font-size" class="toolbar-select toolbar-size" data-command="fontSize" aria-label="Tamanho da fonte"><option value="2">10</option><option value="3" selected>12</option><option value="4">14</option><option value="5">18</option><option value="6">24</option></select>
+  </div>
   <span class="toolbar-divider"></span>
-  <button type="button" data-command="formatBlock" data-value="h2" aria-label="Título" title="Título">Título</button>
-  <button type="button" data-command="formatBlock" data-value="p" aria-label="Parágrafo" title="Parágrafo">Parágrafo</button>
+  <div class="toolbar-group">
+   <button type="button" data-command="bold" aria-label="Negrito" title="Negrito"><strong>B</strong></button>
+   <button type="button" data-command="italic" aria-label="Itálico" title="Itálico"><em>I</em></button>
+   <button type="button" data-command="underline" aria-label="Sublinhado" title="Sublinhado"><u>U</u></button>
+   <button type="button" data-command="strikeThrough" aria-label="Tachado" title="Tachado"><s>S</s></button>
+  </div>
   <span class="toolbar-divider"></span>
-  <button type="button" data-command="insertUnorderedList" aria-label="Lista com marcadores" title="Lista com marcadores">• Lista</button>
-  <button type="button" data-command="insertOrderedList" aria-label="Lista numerada" title="Lista numerada">1. Lista</button>
-  <button type="button" data-command="undo" aria-label="Desfazer" title="Desfazer">↶</button>
-  <button type="button" data-command="redo" aria-label="Refazer" title="Refazer">↷</button>
+  <div class="toolbar-group">
+   <label class="visually-hidden" for="laudo-block">Estilo do parágrafo</label>
+   <select id="laudo-block" class="toolbar-select" data-command="formatBlock" aria-label="Estilo do parágrafo"><option value="p" selected>Parágrafo</option><option value="h1">Título 1</option><option value="h2">Título 2</option><option value="h3">Título 3</option><option value="blockquote">Citação</option></select>
+   <button type="button" data-command="justifyLeft" aria-label="Alinhar à esquerda" title="Alinhar à esquerda">☰</button>
+   <button type="button" data-command="justifyCenter" aria-label="Centralizar" title="Centralizar">≡</button>
+   <button type="button" data-command="justifyRight" aria-label="Alinhar à direita" title="Alinhar à direita">☷</button>
+   <button type="button" data-command="justifyFull" aria-label="Justificar" title="Justificar">▤</button>
+  </div>
+  <span class="toolbar-divider"></span>
+  <div class="toolbar-group">
+   <button type="button" data-command="insertUnorderedList" aria-label="Lista com marcadores" title="Lista com marcadores">• Lista</button>
+   <button type="button" data-command="insertOrderedList" aria-label="Lista numerada" title="Lista numerada">1. Lista</button>
+   <button type="button" data-command="outdent" aria-label="Diminuir recuo" title="Diminuir recuo">⇤</button>
+   <button type="button" data-command="indent" aria-label="Aumentar recuo" title="Aumentar recuo">⇥</button>
+  </div>
+  <span class="toolbar-divider"></span>
+  <div class="toolbar-group">
+   <button type="button" data-command="undo" aria-label="Desfazer" title="Desfazer">↶</button>
+   <button type="button" data-command="redo" aria-label="Refazer" title="Refazer">↷</button>
+  </div>
  </div>
- <div id="editor-laudo" class="laudo-editable" contenteditable="true" role="textbox" aria-label="Texto do laudo" aria-multiline="true" data-placeholder="Escreva o laudo aqui. Use a barra acima para formatar o texto.">@Html.Raw(Model.ConteudoHtml)</div>
+ <div class="laudo-page-workspace"><div id="editor-laudo" class="laudo-editable" contenteditable="true" lang="pt-BR" spellcheck="true" autocorrect="on" autocapitalize="sentences" role="textbox" aria-label="Texto do laudo" aria-multiline="true" data-placeholder="Escreva o laudo aqui. Use a barra acima para formatar o texto.">@Html.Raw(Model.ConteudoHtml)</div></div>
+ <div class="laudo-editor-status"><span>Corretor ortográfico do navegador ativo · Português (Brasil)</span><span id="laudo-word-count">0 palavras</span></div>
  <div class="laudo-editor-footer">
   <span class="muted">@(Model.AtualizadoEm is DateTime atualizado ? $"Último salvamento: {atualizado.ToLocalTime():dd/MM/yyyy HH:mm}" : "Rascunho ainda não salvo")</span>
   <div class="d-flex gap-2">
@@ -50,18 +74,27 @@
 </section>
 
 <style>
- .laudo-editor-panel { background: #fff; border: 1px solid #e4e7ec; border-radius: 16px; overflow: hidden; }
- .laudo-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 12px; background: #f8f9fb; border-bottom: 1px solid #e4e7ec; }
- .laudo-toolbar button { min-width: 38px; min-height: 36px; padding: 6px 10px; border: 1px solid #d8dde5; border-radius: 7px; background: #fff; color: #25314a; }
- .laudo-toolbar button:hover, .laudo-toolbar button:focus-visible { background: #edf1f8; }
- .toolbar-divider { height: 24px; border-left: 1px solid #d8dde5; margin: 0 4px; }
- .laudo-editable { min-height: 560px; max-height: 70vh; overflow-y: auto; padding: 38px clamp(22px, 7vw, 88px); outline: none; font-family: Georgia, 'Times New Roman', serif; font-size: 17px; line-height: 1.75; color: #202532; overflow-wrap: anywhere; }
- .laudo-editable:focus { box-shadow: inset 0 0 0 2px rgba(60, 99, 180, .18); }
- .laudo-editable:empty::before { content: attr(data-placeholder); color: #9299a6; }
- .laudo-editable h2 { margin: 1.4em 0 .5em; font: 700 1.15em Arial, sans-serif; }
- .laudo-editable p { margin: 0 0 .85em; }
- .laudo-editor-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; border-top: 1px solid #e4e7ec; }
- @@media (max-width: 640px) { .laudo-editor-footer { align-items: stretch; flex-direction: column; } .laudo-editor-footer .d-flex { flex-direction: column; } .laudo-editor-footer .btn { width: 100%; } .laudo-editable { min-height: 58vh; max-height: none; padding: 21px 16px; } }
+ .laudo-editor-panel{background:#fff;border:1px solid #dfe4e8;border-radius:10px;overflow:visible}
+ .laudo-toolbar{position:sticky;top:0;z-index:10;display:flex;flex-wrap:wrap;align-items:center;gap:7px;padding:10px 14px;background:#f7f8f9;border-bottom:1px solid #dfe4e8}
+ .toolbar-group{display:flex;align-items:center;gap:4px}
+ .laudo-toolbar button,.toolbar-select{height:36px;min-width:36px;padding:5px 9px;border:1px solid transparent;border-radius:5px;background:transparent;color:#30383d;font-size:12px}
+ .laudo-toolbar button:hover,.laudo-toolbar button:focus-visible,.toolbar-select:hover,.toolbar-select:focus-visible{background:#e9edef;border-color:#d7dfe3;outline:none}
+ .toolbar-select{min-width:112px;border-color:#d8dfe3;background:#fff}
+ .toolbar-size{min-width:64px;width:64px}
+ .toolbar-divider{height:24px;border-left:1px solid #d5dce0;margin:0 3px}
+ .laudo-page-workspace{padding:30px 20px;background:#edf0f2}
+ .laudo-editable{width:min(100%,816px);min-height:1120px;margin:0 auto;padding:96px 88px;outline:none;border:1px solid #e1e4e6;background:#fff;box-shadow:0 2px 12px rgba(31,47,56,.12);font-family:Georgia,'Times New Roman',serif;font-size:16px;line-height:1.75;color:#202a30;overflow-wrap:anywhere}
+ .laudo-editable:focus{box-shadow:0 2px 12px rgba(31,47,56,.12),0 0 0 2px rgba(88,116,135,.16)}
+ .laudo-editable:empty::before{content:attr(data-placeholder);color:#92999f}
+ .laudo-editable p{margin:0 0 .85em}
+ .laudo-editable h1,.laudo-editable h2,.laudo-editable h3{margin:1.25em 0 .55em;font-family:Arial,sans-serif;line-height:1.3;color:#202a30}
+ .laudo-editable h1{font-size:1.7em}.laudo-editable h2{font-size:1.4em}.laudo-editable h3{font-size:1.15em}
+ .laudo-editable blockquote{margin:1em 0;padding-left:1em;border-left:3px solid #8aa9b8;color:#59656c}
+ .laudo-editable ul,.laudo-editable ol{padding-left:2em;margin:0 0 1em}
+ .laudo-editable font[size="2"]{font-size:10pt}.laudo-editable font[size="3"]{font-size:12pt}.laudo-editable font[size="4"]{font-size:14pt}.laudo-editable font[size="5"]{font-size:18pt}.laudo-editable font[size="6"]{font-size:24pt}
+ .laudo-editor-status{display:flex;justify-content:space-between;gap:12px;padding:7px 16px;background:#f7f8f9;border-top:1px solid #dfe4e8;color:#78838a;font-size:11px}
+ .laudo-editor-footer{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;border-top:1px solid #dfe4e8}
+ @@media(max-width:640px){.laudo-toolbar{position:static;padding:8px}.toolbar-divider{display:none}.toolbar-select{min-width:100px}.laudo-page-workspace{padding:10px 6px}.laudo-editable{min-height:calc(100vh - 350px);padding:48px 24px;font-size:16px;box-shadow:none}.laudo-editor-status{align-items:flex-start;flex-direction:column}.laudo-editor-footer{align-items:stretch;flex-direction:column}.laudo-editor-footer .d-flex{flex-direction:column}.laudo-editor-footer .btn{width:100%;min-height:42px}}
 </style>
 
 @section Scripts {
@@ -70,11 +103,42 @@
    const editor = document.getElementById('editor-laudo');
    const hidden = document.getElementById('conteudo-html');
    const form = document.getElementById('form-laudo');
+   const wordCount = document.getElementById('laudo-word-count');
+   let savedRange = null;
+   const rememberSelection = () => {
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount && editor.contains(selection.anchorNode))
+     savedRange = selection.getRangeAt(0).cloneRange();
+   };
+   const restoreSelection = () => {
+    if (!savedRange) return;
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(savedRange);
+    editor.focus();
+   };
+   const updateWordCount = () => {
+    const words = editor.innerText.trim().match(/\S+/g) || [];
+    wordCount.textContent = `${words.length} ${words.length === 1 ? 'palavra' : 'palavras'}`;
+   };
+   editor.addEventListener('keyup', rememberSelection);
+   editor.addEventListener('mouseup', rememberSelection);
+   editor.addEventListener('input', () => { rememberSelection(); updateWordCount(); });
    document.querySelectorAll('.laudo-toolbar button[data-command]').forEach(button => {
-    button.addEventListener('mousedown', event => event.preventDefault());
+    button.addEventListener('mousedown', event => { rememberSelection(); event.preventDefault(); });
     button.addEventListener('click', () => {
-     editor.focus();
+     restoreSelection();
      document.execCommand(button.dataset.command, false, button.dataset.value || null);
+     rememberSelection();
+    });
+   });
+   document.querySelectorAll('.laudo-toolbar select[data-command]').forEach(select => {
+    select.addEventListener('mousedown', rememberSelection);
+    select.addEventListener('change', () => {
+     restoreSelection();
+     document.execCommand(select.dataset.command, false, select.value);
+     editor.focus();
+     rememberSelection();
     });
    });
    form.addEventListener('submit', () => { hidden.value = editor.innerHTML; });
@@ -85,6 +149,7 @@
      form.requestSubmit();
     }
    });
+   updateWordCount();
   })();
  </script>
 }

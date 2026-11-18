@@ -540,26 +540,25 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
     }
 
     [HttpPost, ValidateAntiForgeryToken]
-    public async Task<IActionResult> CriarLaudo(int periciaId, string? numeroLaudo, int? periciadoId, int? modeloId)
+    public async Task<IActionResult> CriarLaudo(int periciaId, int? periciadoId, int? modeloId)
     {
         var pericia = await db.Pericias.Include(p => p.Periciados).FirstOrDefaultAsync(p => p.Id == periciaId);
         if (pericia is null) return NotFound();
-        numeroLaudo = numeroLaudo?.Trim();
-        if (string.IsNullOrWhiteSpace(numeroLaudo) || numeroLaudo.Length > 80)
-        {
-            TempData["Erro"] = "Informe um número de laudo com até 80 caracteres.";
-            return RedirectToAction(nameof(Editar), new { id = periciaId });
-        }
         if (periciadoId.HasValue && !pericia.Periciados.Any(p => p.Id == periciadoId.Value))
         {
             TempData["Erro"] = "O periciado selecionado não pertence a esta perícia.";
             return RedirectToAction(nameof(Editar), new { id = periciaId });
         }
-        if (await db.LaudosPericia.AnyAsync(l => l.PericiaId == periciaId && l.NumeroLaudo == numeroLaudo))
-        {
-            TempData["Erro"] = "Já existe um laudo com esse número nesta perícia.";
-            return RedirectToAction(nameof(Editar), new { id = periciaId });
-        }
+
+        var numerosLaudos = await db.LaudosPericia.Where(l => l.PericiaId == periciaId).Select(l => l.NumeroLaudo).ToListAsync();
+        var maiorNumero = numerosLaudos
+            .Select(numero => int.TryParse(numero, NumberStyles.None, CultureInfo.InvariantCulture, out var valor) ? valor : 0)
+            .DefaultIfEmpty(0)
+            .Max();
+        var proximoNumero = maiorNumero < int.MaxValue ? maiorNumero + 1 : 1;
+        while (numerosLaudos.Contains(proximoNumero.ToString(CultureInfo.InvariantCulture), StringComparer.Ordinal))
+            proximoNumero++;
+        var numeroLaudo = proximoNumero.ToString(CultureInfo.InvariantCulture);
 
         var modelo = modeloId.HasValue ? await db.ModelosLaudo.FirstOrDefaultAsync(m => m.Id == modeloId.Value) : null;
         if (modeloId.HasValue && modelo is null) return NotFound();

@@ -30,10 +30,14 @@ builder.Services.AddTransient(_ =>
 {
     var sanitizer = new HtmlSanitizer();
     sanitizer.AllowedTags.Clear();
-    foreach (var tag in new[] { "p", "br", "strong", "b", "em", "i", "u", "s", "h1", "h2", "h3", "blockquote", "hr", "ul", "ol", "li", "table", "thead", "tbody", "tr", "th", "td", "div" })
+    foreach (var tag in new[] { "p", "br", "strong", "b", "em", "i", "u", "s", "strike", "font", "h1", "h2", "h3", "blockquote", "hr", "ul", "ol", "li", "table", "thead", "tbody", "tr", "th", "td", "div" })
         sanitizer.AllowedTags.Add(tag);
     sanitizer.AllowedAttributes.Clear();
+    foreach (var attribute in new[] { "style", "face", "size" })
+        sanitizer.AllowedAttributes.Add(attribute);
     sanitizer.AllowedCssProperties.Clear();
+    sanitizer.AllowedCssProperties.Add("text-align");
+    sanitizer.AllowedCssProperties.Add("font-family");
     return sanitizer;
 });
 var adminEmail = builder.Configuration["Admin:Email"];

@@ -13,7 +13,7 @@
  <div class="app-shell">
   @{ var actionAtual = ViewContext.RouteData.Values["action"]?.ToString(); }
   <aside class="sidebar">
-   <a class="brand" asp-controller="Home" asp-action="Index"><img class="brand-mark" src="~/images/perito-em-dia-mark.svg" alt=""/><span>Perito <span class="brand-light">em Dia</span><small>GESTÃO PERICIAL</small></span></a>
+   <a class="brand" asp-controller="Home" asp-action="Index"><span class="brand-mark">P</span><span>Perito <span class="brand-light">em Dia</span><small>GESTÃO PERICIAL</small></span></a>
    <nav class="side-navigation" aria-label="Navegação principal">
     <div class="side-caption">MENU PRINCIPAL</div>
     <a asp-controller="Home" asp-action="Index" class="side-link @(actionAtual == "Index" || actionAtual == "Criar" || actionAtual == "Editar" ? "active" : "")"><span>⌂</span> Visão geral</a>
