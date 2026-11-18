@@ -4,13 +4,13 @@ namespace Sistemas_para_pericias.Data;
 
 public static class SqliteSchema
 {
-    public const int VersaoEsquema = 4;
+    public const int VersaoEsquema = 5;
 
     public static void EnsureAdditionalTables(SqliteConnection connection, bool criarBackupAntesMigracao = true)
     {
         var tinhaTabelaPagamentos = HasTable(connection, "PagamentosHonorarios");
         var precisaMigrar = !HasTable(connection, "ContasUsuarios") || !HasTable(connection, "AssinaturasContas") || !HasTable(connection, "EventosAsaas") || !HasColumn(connection, "Pericias", "UsuarioId") || !HasColumn(connection, "DocumentosPericia", "UsuarioId") || !HasColumn(connection, "Periciados", "UsuarioId") || !HasColumn(connection, "LaudosPericia", "UsuarioId") || !HasColumn(connection, "VersoesLaudo", "UsuarioId") || !HasColumn(connection, "EventosAgenda", "UsuarioId") || !HasColumn(connection, "PagamentosHonorarios", "UsuarioId") || !HasColumn(connection, "HistoricoPericias", "UsuarioId") || !HasColumn(connection, "ConfiguracoesPerito", "UsuarioId") || !HasColumn(connection, "ModelosLaudo", "UsuarioId") ||
-            !HasTable(connection, "Periciados") || !tinhaTabelaPagamentos || !HasTable(connection, "EventosAgenda") || !HasTable(connection, "HistoricoPericias") || !HasTable(connection, "ConfiguracoesPerito") || !HasTable(connection, "ModelosLaudo") || !HasTable(connection, "VersoesLaudo") ||
+            !HasTable(connection, "Periciados") || !tinhaTabelaPagamentos || !HasTable(connection, "EventosAgenda") || !HasTable(connection, "HistoricoPericias") || !HasTable(connection, "ConfiguracoesPerito") || !HasTable(connection, "ModelosLaudo") || !HasTable(connection, "VersoesLaudo") || !HasTable(connection, "UnidadesForenses") ||
             !HasColumn(connection, "Pericias", "NumeroProcesso") || !HasColumn(connection, "Pericias", "DataHonorariosFixados") ||
             !HasColumn(connection, "Pericias", "ValorHonorariosSolicitados") || !HasColumn(connection, "Pericias", "DataHonorariosSolicitados") ||
             !HasColumn(connection, "Pericias", "ValorHonorariosLiberados") || !HasColumn(connection, "Pericias", "DataHonorariosLiberados") ||
@@ -141,6 +141,16 @@ public static class SqliteSchema
                 "AvisarPrazosNoPainel" INTEGER NOT NULL DEFAULT 1,
                 "AtualizadoEm" TEXT NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS "UnidadesForenses" (
+                "Id" INTEGER NOT NULL CONSTRAINT "PK_UnidadesForenses" PRIMARY KEY AUTOINCREMENT,
+                "UsuarioId" INTEGER NOT NULL DEFAULT 1,
+                "Tribunal" TEXT NOT NULL DEFAULT 'TJRS',
+                "Uf" TEXT NOT NULL DEFAULT 'RS',
+                "Codigo" TEXT NOT NULL,
+                "Comarca" TEXT NOT NULL,
+                "Foro" TEXT NULL
+            );
+            CREATE UNIQUE INDEX IF NOT EXISTS "IX_UnidadesForenses_UsuarioId_Tribunal_Uf_Codigo" ON "UnidadesForenses" ("UsuarioId", "Tribunal", "Uf", "Codigo");
             CREATE TABLE IF NOT EXISTS "ModelosLaudo" (
                 "Id" INTEGER NOT NULL CONSTRAINT "PK_ModelosLaudo" PRIMARY KEY AUTOINCREMENT,
                 "Nome" TEXT NOT NULL,

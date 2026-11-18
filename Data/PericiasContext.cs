@@ -19,6 +19,7 @@ public class PericiasContext(DbContextOptions<PericiasContext> options, ICurrent
     public DbSet<PagamentoHonorario> PagamentosHonorarios => Set<PagamentoHonorario>();
     public DbSet<HistoricoPericia> HistoricoPericias => Set<HistoricoPericia>();
     public DbSet<ConfiguracaoPerito> ConfiguracoesPerito => Set<ConfiguracaoPerito>();
+    public DbSet<UnidadeForense> UnidadesForenses => Set<UnidadeForense>();
     public DbSet<ModeloLaudo> ModelosLaudo => Set<ModeloLaudo>();
     public DbSet<VersaoLaudo> VersoesLaudo => Set<VersaoLaudo>();
 
@@ -55,6 +56,7 @@ public class PericiasContext(DbContextOptions<PericiasContext> options, ICurrent
         modelBuilder.Entity<PagamentoHonorario>().Property(e => e.UsuarioId).HasDefaultValue(1);
         modelBuilder.Entity<HistoricoPericia>().Property(e => e.UsuarioId).HasDefaultValue(1);
         modelBuilder.Entity<ConfiguracaoPerito>().Property(e => e.UsuarioId).HasDefaultValue(1);
+        modelBuilder.Entity<UnidadeForense>().Property(e => e.UsuarioId).HasDefaultValue(1);
         modelBuilder.Entity<ModeloLaudo>().Property(e => e.UsuarioId).HasDefaultValue(1);
         modelBuilder.Entity<ContaUsuario>().HasIndex(u => u.EmailNormalizado).IsUnique();
         modelBuilder.Entity<ContaUsuario>().ToTable("ContasUsuarios");
@@ -144,6 +146,7 @@ public class PericiasContext(DbContextOptions<PericiasContext> options, ICurrent
         });
 
         modelBuilder.Entity<ConfiguracaoPerito>().HasIndex(c => c.UsuarioId).IsUnique();
+        modelBuilder.Entity<UnidadeForense>().HasIndex(u => new { u.UsuarioId, u.Tribunal, u.Uf, u.Codigo }).IsUnique();
         modelBuilder.Entity<ModeloLaudo>().HasIndex(m => new { m.UsuarioId, m.Nome });
 
         modelBuilder.Entity<Pericia>().HasQueryFilter(e => e.UsuarioId == CurrentUserId);
@@ -155,6 +158,7 @@ public class PericiasContext(DbContextOptions<PericiasContext> options, ICurrent
         modelBuilder.Entity<PagamentoHonorario>().HasQueryFilter(e => e.UsuarioId == CurrentUserId);
         modelBuilder.Entity<HistoricoPericia>().HasQueryFilter(e => e.UsuarioId == CurrentUserId);
         modelBuilder.Entity<ConfiguracaoPerito>().HasQueryFilter(e => e.UsuarioId == CurrentUserId);
+        modelBuilder.Entity<UnidadeForense>().HasQueryFilter(e => e.UsuarioId == CurrentUserId);
         modelBuilder.Entity<ModeloLaudo>().HasQueryFilter(e => e.UsuarioId == CurrentUserId);
     }
 }

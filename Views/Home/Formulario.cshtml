@@ -4,7 +4,7 @@
 <header class="page-heading"><div><a asp-action="Index" class="back-link">← Voltar para perícias</a><partial name="_PageTitle" model='new PageHeadingViewModel("CADASTRO", editar ? "Editar perícia" : "Nova perícia", "Preencha os dados para organizar o acompanhamento.")' /></div></header>
 @if (TempData["Mensagem"] is string mensagemDocumento) { <div class="alert alert-success">@mensagemDocumento</div> }
 @if (TempData["Erro"] is string erroDocumento) { <div class="alert alert-danger">@erroDocumento</div> }
-<form asp-action="@(editar ? "Editar" : "Criar")" asp-route-id="@Model.Id" method="post" class="form-panel">
+<form asp-action="@(editar ? "Editar" : "Criar")" asp-route-id="@Model.Id" method="post" class="form-panel" data-catalogo-foros="@ViewBag.CatalogoForosJson">
  @if (!editar && ViewBag.AbrirLaudoDepois is true) { <input type="hidden" name="abrirLaudoDepois" value="true" /> }
  <div asp-validation-summary="All" class="text-danger"></div>
  <div class="form-section-title"><span>01</span><div><h2>Identificação</h2><p>Informações do processo pericial.</p></div></div>
@@ -12,7 +12,7 @@
   <div class="col-12"><label asp-for="Numero" class="form-label"></label><input asp-for="Numero" class="form-control" placeholder="Ex.: 0001234-56.2025" /><span asp-validation-for="Numero" class="text-danger"></span></div>
 
   <div class="col-md-6"><label asp-for="TipoPericia" class="form-label"></label><input asp-for="TipoPericia" class="form-control" placeholder="Ex.: médica, contábil, engenharia" /></div>
-  <div class="col-md-4"><label asp-for="Comarca" class="form-label"></label><input asp-for="Comarca" class="form-control" /></div>
+  <div class="col-md-4"><label asp-for="Comarca" class="form-label"></label><input asp-for="Comarca" list="comarcas-tjrs" class="form-control" /><datalist id="comarcas-tjrs">@foreach (var foro in (IEnumerable<Sistemas_para_pericias.Services.ForoTjrs>)(ViewBag.CatalogoForos ?? Array.Empty<Sistemas_para_pericias.Services.ForoTjrs>())) { <option value="@foro.Comarca">@foro.Codigo · @foro.Foro</option> }</datalist><div class="form-text">No TJRS, o código final reconhecido preenche este campo automaticamente. Você pode ajustar ou digitar outro nome.</div></div>
   <div class="col-md-4"><label asp-for="Vara" class="form-label"></label><input asp-for="Vara" class="form-control" /></div>
   <div class="col-md-4"><label asp-for="Magistrado" class="form-label"></label><input asp-for="Magistrado" class="form-control" /></div>
   <div class="col-12">
@@ -96,6 +96,22 @@
  <partial name="_ValidationScriptsPartial" />
  <script>
   (() => {
+   const cadastro = document.querySelector('form[data-catalogo-foros]');
+   if (cadastro) {
+    const catalogo = JSON.parse(cadastro.dataset.catalogoForos || '{}');
+    const numero = cadastro.querySelector('#Numero');
+    const comarca = cadastro.querySelector('#Comarca');
+    let comarcaPreenchidaPeloCodigo = '';
+    const preencherComarca = () => {
+     const codigo = numero?.value.match(/\.8\.21\.(\d{4})(?:\/RS)?$/i)?.[1];
+     const nome = codigo ? catalogo[codigo] : null;
+     if (!nome || (comarca?.value && comarca.value !== comarcaPreenchidaPeloCodigo)) return;
+     comarca.value = nome;
+     comarcaPreenchidaPeloCodigo = nome;
+    };
+    numero?.addEventListener('input', preencherComarca);
+    if (!comarca?.value) preencherComarca();
+   }
    const container = document.getElementById('periciados-container');
    const template = document.getElementById('modelo-periciado');
    const addButton = document.getElementById('adicionar-periciado');

@@ -9,6 +9,7 @@ using System.Security.Claims;
 using System.Text;
 using Sistemas_para_pericias.Data;
 using Sistemas_para_pericias.Models;
+using Sistemas_para_pericias.Services;
 
 namespace Sistemas_para_pericias.Controllers;
 
@@ -153,6 +154,7 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
     public async Task<IActionResult> Configuracoes()
     {
         ViewBag.EmailConta = User.FindFirstValue(ClaimTypes.Email);
+        await PrepararCatalogoForenseAsync();
         return View(await db.ConfiguracoesPerito.AsNoTracking().FirstOrDefaultAsync() ?? new ConfiguracaoPerito());
     }
     [HttpPost, ValidateAntiForgeryToken]
@@ -163,6 +165,7 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
         if (!ModelState.IsValid)
         {
             ViewBag.EmailConta = User.FindFirstValue(ClaimTypes.Email);
+            await PrepararCatalogoForenseAsync();
             return View("Configuracoes", configuracao);
         }
         var atual = await db.ConfiguracoesPerito.FirstOrDefaultAsync();
@@ -177,6 +180,78 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
         await db.SaveChangesAsync();
         TempData["MensagemConfiguracao"] = "Preferências salvas.";
         return RedirectToAction(nameof(Configuracoes));
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> AdicionarUnidadeForense(UnidadeForenseInputDto input)
+    {
+        input.Codigo = (input.Codigo ?? "").Trim();
+        input.Comarca = (input.Comarca ?? "").Trim();
+        input.Foro = input.Foro?.Trim();
+        if (!ModelState.IsValid)
+        {
+            TempData["ErroCatalogoForense"] = "Confira o código de quatro dígitos e o nome da comarca.";
+            return RedirectToAction(nameof(Configuracoes));
+        }
+
+        var existente = await db.UnidadesForenses.FirstOrDefaultAsync(u => u.Tribunal == "TJRS" && u.Uf == "RS" && u.Codigo == input.Codigo);
+        if (existente is null)
+        {
+            db.UnidadesForenses.Add(new UnidadeForense { Codigo = input.Codigo, Comarca = input.Comarca, Foro = input.Foro });
+        }
+        else
+        {
+            existente.Comarca = input.Comarca;
+            existente.Foro = input.Foro;
+        }
+        await db.SaveChangesAsync();
+        TempData["MensagemCatalogoForense"] = "Código do TJRS salvo no seu catálogo.";
+        return RedirectToAction(nameof(Configuracoes));
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> RemoverUnidadeForense(int id)
+    {
+        var unidade = await db.UnidadesForenses.FirstOrDefaultAsync(u => u.Id == id);
+        if (unidade is not null)
+        {
+            db.UnidadesForenses.Remove(unidade);
+            await db.SaveChangesAsync();
+        }
+        return RedirectToAction(nameof(Configuracoes));
+    }
+
+    private async Task PrepararCatalogoForenseAsync()
+    {
+        var personalizados = await db.UnidadesForenses.AsNoTracking().Where(u => u.Tribunal == "TJRS" && u.Uf == "RS").ToListAsync();
+        ViewBag.UnidadesForenses = personalizados.OrderBy(u => u.Codigo).ToList();
+        var catalogoUnico = CatalogoTjrs.ListaBase.GroupBy(u => u.Codigo).Where(g => g.Count() == 1)
+            .ToDictionary(g => g.Key, g => g.Single());
+        var catalogo = CatalogoTjrs.ListaBase.ToList();
+        foreach (var unidade in personalizados)
+        {
+            catalogo.RemoveAll(u => u.Codigo == unidade.Codigo);
+            catalogo.Add(new ForoTjrs(unidade.Codigo, unidade.Comarca, unidade.Foro ?? $"Foro de {unidade.Comarca}"));
+        }
+        ViewBag.CatalogoForos = catalogo.OrderBy(u => u.Comarca).ThenBy(u => u.Codigo).ToList();
+        ViewBag.CatalogoForosCodigosPersonalizados = personalizados.Select(u => u.Codigo).ToHashSet();
+        var codigos = catalogoUnico.Where(kv => CatalogoTjrs.IdentificaForoDeComarca(kv.Key))
+            .ToDictionary(kv => kv.Key, kv => kv.Value.Comarca);
+        foreach (var unidade in personalizados.Where(u => CatalogoTjrs.IdentificaForoDeComarca(u.Codigo)))
+            codigos[unidade.Codigo] = unidade.Comarca;
+        ViewBag.CatalogoForosJson = System.Text.Json.JsonSerializer.Serialize(codigos);
+    }
+
+    private async Task AplicarComarcaDoCodigoTjrsAsync(PericiaFormInputDto input)
+    {
+        if (!string.IsNullOrWhiteSpace(input.Comarca)) return;
+        var codigo = CatalogoTjrs.ExtrairCodigo(input.Numero);
+        if (codigo is null || !CatalogoTjrs.IdentificaForoDeComarca(codigo)) return;
+        var comarca = await db.UnidadesForenses.AsNoTracking().Where(u => u.Tribunal == "TJRS" && u.Uf == "RS" && u.Codigo == codigo)
+            .Select(u => u.Comarca).FirstOrDefaultAsync();
+        input.Comarca = comarca ?? (CatalogoTjrs.ListaBase.Count(u => u.Codigo == codigo) == 1
+            ? CatalogoTjrs.ListaBase.Single(u => u.Codigo == codigo).Comarca
+            : null);
     }
 
     public async Task<IActionResult> Processos(string? busca, string? comarca, StatusPericia? status, string? financeiro,
@@ -625,7 +700,7 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
         await using var conexao = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = caminhoBanco }.ToString());
         await conexao.OpenAsync();
         await using var transacao = (SqliteTransaction)await conexao.BeginTransactionAsync();
-        foreach (var tabela in new[] { "VersoesLaudo", "PagamentosHonorarios", "HistoricoPericias", "EventosAgenda", "DocumentosPericia", "LaudosPericia", "Periciados", "Pericias", "ConfiguracoesPerito", "ModelosLaudo" })
+        foreach (var tabela in new[] { "VersoesLaudo", "PagamentosHonorarios", "HistoricoPericias", "EventosAgenda", "DocumentosPericia", "LaudosPericia", "Periciados", "Pericias", "ConfiguracoesPerito", "UnidadesForenses", "ModelosLaudo" })
         {
             await using var comando = conexao.CreateCommand();
             comando.Transaction = transacao;
@@ -643,16 +718,27 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
         await transacao.CommitAsync();
     }
 
-    public IActionResult Criar(bool abrirLaudoDepois = false)
+    public async Task<IActionResult> Criar(bool abrirLaudoDepois = false)
     {
         ViewBag.AbrirLaudoDepois = abrirLaudoDepois;
-        return View("Formulario", new Pericia { DataEnvio = DateTime.Today });
+        await PrepararCatalogoForenseAsync();
+        var tipoPadrao = await db.ConfiguracoesPerito.AsNoTracking()
+            .Select(c => c.Especialidade)
+            .FirstOrDefaultAsync();
+        return View("Formulario", new Pericia { DataEnvio = DateTime.Today, TipoPericia = tipoPadrao });
     }
 
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Criar(PericiaFormInputDto input, bool abrirLaudoDepois = false)
     {
         input.Periciados ??= [];
+        await AplicarComarcaDoCodigoTjrsAsync(input);
+        if (string.IsNullOrWhiteSpace(input.TipoPericia))
+        {
+            input.TipoPericia = await db.ConfiguracoesPerito.AsNoTracking()
+                .Select(c => c.Especialidade)
+                .FirstOrDefaultAsync();
+        }
         var pericia = input.ToEntity();
         ValidarPericiados(input.Periciados);
         if (input.Periciados.Any(p => p.Id.HasValue))
@@ -663,6 +749,7 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
         if (!ModelState.IsValid)
         {
             ViewBag.AbrirLaudoDepois = abrirLaudoDepois;
+            await PrepararCatalogoForenseAsync();
             return View("Formulario", pericia);
         }
         pericia.CriadaEm = DateTime.Now;
@@ -678,6 +765,7 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
     {
         var pericia = await db.Pericias.Include(p => p.Documentos).Include(p => p.Periciados).Include(p => p.Laudos).ThenInclude(l => l.Periciado).FirstOrDefaultAsync(p => p.Id == id);
         if (pericia is null) return NotFound();
+        await PrepararCatalogoForenseAsync();
         return View("Formulario", pericia);
     }
 
@@ -685,6 +773,7 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
     public async Task<IActionResult> Editar([FromRoute] int id, PericiaFormInputDto input)
     {
         input.Periciados ??= [];
+        await AplicarComarcaDoCodigoTjrsAsync(input);
         var pericia = input.ToEntity();
         pericia.Id = id;
         var atual = await db.Pericias.Include(p => p.Periciados).FirstOrDefaultAsync(p => p.Id == id);
@@ -699,6 +788,7 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
             ModelState.AddModelError(nameof(pericia.Numero), "Esse número de perícia já está cadastrado.");
         if (!ModelState.IsValid)
         {
+            await PrepararCatalogoForenseAsync();
             pericia.ValorRecebido = await db.Pericias.AsNoTracking().Where(p => p.Id == id).Select(p => p.ValorRecebido).FirstOrDefaultAsync();
             pericia.Documentos = await db.DocumentosPericia.Where(d => d.PericiaId == id).ToListAsync();
             pericia.Laudos = await db.LaudosPericia.Include(l => l.Periciado).Where(l => l.PericiaId == id).OrderBy(l => l.NumeroLaudo).ToListAsync();

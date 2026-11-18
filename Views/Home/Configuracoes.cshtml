@@ -1,5 +1,6 @@
 @model Sistemas_para_pericias.Models.ConfiguracaoPerito
-@{ ViewData["Title"] = "Configurações"; }
+@using Sistemas_para_pericias.Services
+@{ ViewData["Title"] = "Configurações"; var catalogoForos = (IEnumerable<ForoTjrs>)(ViewBag.CatalogoForos ?? Array.Empty<ForoTjrs>()); var forosPersonalizados = (IEnumerable<UnidadeForense>)(ViewBag.UnidadesForenses ?? Array.Empty<UnidadeForense>()); var codigosPersonalizados = (HashSet<string>)(ViewBag.CatalogoForosCodigosPersonalizados ?? new HashSet<string>()); }
 <header class="page-heading"><partial name="_PageTitle" model='new PageHeadingViewModel("PREFERÊNCIAS", "Configurações", "Seu perfil, seus lembretes e seus dados.")' /></header>
 @if (TempData["MensagemConfiguracao"] is string mensagem) { <div class="alert alert-success">@mensagem</div> }
 <form asp-action="SalvarConfiguracoes" method="post" class="form-panel mb-3">
@@ -7,7 +8,7 @@
  <p class="muted">O perfil é privado nesta conta.</p>
  <div class="row g-3">
   <div class="col-md-6"><label asp-for="NomeProfissional" class="form-label">Nome do perito</label><input asp-for="NomeProfissional" class="form-control" maxlength="160"/></div>
-  <div class="col-md-6"><label asp-for="Especialidade" class="form-label"></label><input asp-for="Especialidade" class="form-control" maxlength="120"/></div>
+  <div class="col-md-6"><label asp-for="Especialidade" class="form-label">Especialidade padrão das perícias</label><input asp-for="Especialidade" class="form-control" maxlength="120" placeholder="Ex.: medicina, engenharia, contabilidade"/><div class="form-text">Será preenchida automaticamente ao cadastrar uma nova perícia; você poderá alterá-la no cadastro.</div></div>
   <div class="col-md-4"><label asp-for="RegistroProfissional" class="form-label">Registro profissional</label><input asp-for="RegistroProfissional" class="form-control" maxlength="80"/></div>
   <div class="col-md-4"><label asp-for="EmailContato" class="form-label">E-mail para contato</label><input asp-for="EmailContato" type="email" class="form-control" maxlength="200"/></div>
   <div class="col-md-4"><label asp-for="Telefone" class="form-label"></label><input asp-for="Telefone" class="form-control" maxlength="40"/></div>
@@ -19,5 +20,26 @@
   <div class="col-12"><button class="btn btn-primary">Salvar preferências</button></div>
  </div>
 </form>
+<details class="form-panel mb-3">
+ <summary class="h5 mb-0">Catálogo de foros do TJRS</summary>
+ <p class="muted mt-3">A lista inicial vem da relação oficial de códigos publicada em 2009. Adicione ou corrija códigos que você descobrir; seus ajustes valem para esta conta e substituem a entrada inicial.</p>
+ @if (TempData["MensagemCatalogoForense"] is string mensagemCatalogo) { <div class="alert alert-success">@mensagemCatalogo</div> }
+ @if (TempData["ErroCatalogoForense"] is string erroCatalogo) { <div class="alert alert-danger">@erroCatalogo</div> }
+ <form asp-action="AdicionarUnidadeForense" method="post" class="row g-2 align-items-end mb-4">
+  <div class="col-sm-2"><label class="form-label" for="Codigo">Código OOOO</label><input id="Codigo" name="Codigo" class="form-control" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" required placeholder="0132" /></div>
+  <div class="col-sm-4"><label class="form-label" for="Comarca">Comarca</label><input id="Comarca" name="Comarca" class="form-control" maxlength="120" required /></div>
+  <div class="col-sm-4"><label class="form-label" for="Foro">Foro/unidade (opcional)</label><input id="Foro" name="Foro" class="form-control" maxlength="120" placeholder="Foro de Sapiranga" /></div>
+  <div class="col-sm-2"><button class="btn btn-primary w-100">Salvar código</button></div>
+ </form>
+ <div class="table-responsive" style="max-height: 32rem; overflow-y: auto">
+  <table class="table table-sm align-middle"><thead><tr><th>Código</th><th>Comarca</th><th>Foro/unidade</th><th>Origem</th><th></th></tr></thead><tbody>
+   @foreach (var foro in catalogoForos)
+   {
+    var personalizado = codigosPersonalizados.Contains(foro.Codigo);
+    <tr><td>@foro.Codigo</td><td>@foro.Comarca</td><td>@foro.Foro</td><td>@(personalizado ? "Seu catálogo" : "Lista de 2009")</td><td>@if (personalizado) { var unidade = forosPersonalizados.FirstOrDefault(u => u.Codigo == foro.Codigo); if (unidade is not null) { <form asp-action="RemoverUnidadeForense" method="post"><input type="hidden" name="id" value="@unidade.Id"/><button class="btn btn-sm btn-outline-danger">Restaurar padrão</button></form> } }</td></tr>
+   }
+  </tbody></table>
+ </div>
+</details>
 <section class="form-panel mb-3"><partial name="_PanelTitle" model='new PanelHeadingViewModel("Sua conta")' /><p>Conta autenticada: <strong>@ViewBag.EmailConta</strong>. Os registros e arquivos são separados por conta.</p><a asp-controller="Conta" asp-action="AlterarSenha" class="btn btn-outline-secondary">Alterar senha</a></section>
 <section class="form-panel"><partial name="_PanelTitle" model='new PanelHeadingViewModel("Exportar seus dados")' /><p>O arquivo inclui apenas os dados e anexos desta conta. Para proteger os dados dos demais clientes, restauração e edição direta do banco não estão disponíveis nesta versão.</p><a asp-action="Backup" class="btn btn-outline-primary">Baixar exportação da conta (.zip)</a></section>
