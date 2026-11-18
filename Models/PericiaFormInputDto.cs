@@ -5,8 +5,7 @@ namespace Sistemas_para_pericias.Models;
 /// <summary>Campos que o formulário de cadastro/edição está autorizado a alterar.</summary>
 public sealed class PericiaFormInputDto
 {
-    [Required, StringLength(160, MinimumLength = 2)] public string NomePericiado { get; set; } = "";
-    [StringLength(8049)] public string? OutrosPericiados { get; set; }
+    [MaxLength(50)] public List<PericiadoFormInputDto> Periciados { get; set; } = [];
     [Required, StringLength(80)] public string Numero { get; set; } = "";
     [StringLength(80)] public string? NumeroProcesso { get; set; }
     [StringLength(120)] public string? Comarca { get; set; }
@@ -27,8 +26,14 @@ public sealed class PericiaFormInputDto
 
     public Pericia ToEntity() => new()
     {
-        NomePericiado = (NomePericiado ?? string.Empty).Trim(),
-        OutrosPericiados = OutrosPericiados ?? "",
+        NomePericiado = "",
+        Periciados = (Periciados ?? []).Select(p => new Periciado
+        {
+            Id = p.Id ?? 0,
+            Nome = p.Nome?.Trim() ?? "",
+            Contato = p.Telefone?.Trim(),
+            RegistroEntrevista = p.Observacoes?.Trim()
+        }).ToList(),
         Numero = (Numero ?? string.Empty).Trim(),
         NumeroProcesso = NumeroProcesso?.Trim(),
         Comarca = Comarca?.Trim(),
@@ -47,4 +52,18 @@ public sealed class PericiaFormInputDto
         Status = Status,
         Observacoes = Observacoes?.Trim()
     };
+}
+
+public sealed class PericiadoFormInputDto
+{
+    public int? Id { get; set; }
+
+    [Required, StringLength(160, MinimumLength = 2)]
+    public string Nome { get; set; } = "";
+
+    [StringLength(200)]
+    public string? Telefone { get; set; }
+
+    [StringLength(4000)]
+    public string? Observacoes { get; set; }
 }

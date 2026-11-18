@@ -31,32 +31,19 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
     private IQueryable<Pericia> ConsultaArquivadas() => db.Pericias.AsNoTracking().Where(p =>
         (p.Status == StatusPericia.Cancelada || p.Status == StatusPericia.Concluida || p.Status == StatusPericia.Recusada) && p.ValorRecebido >= p.ValorHonorarios);
 
-    private static List<string> ObterNomesPericiados(string nomePrincipal, string? outrosNomes) =>
-        new[] { nomePrincipal }
-            .Concat((outrosNomes ?? "").Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries))
-            .Select(nome => nome.Trim())
-            .Where(nome => nome.Length > 0)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
-
-    private void ValidarNomesPericiados(IReadOnlyCollection<string> nomes)
+    private void ValidarPericiados(IReadOnlyCollection<PericiadoFormInputDto> periciados)
     {
-        if (nomes.Count > 50)
-            ModelState.AddModelError(nameof(Pericia.OutrosPericiados), "Cadastre no máximo 50 periciados por perícia.");
-        if (nomes.Any(nome => nome.Length > 160))
-            ModelState.AddModelError(nameof(Pericia.OutrosPericiados), "Cada nome deve ter no máximo 160 caracteres.");
-    }
-
-    private static void PrepararOutrosNomes(Pericia pericia)
-    {
-        pericia.OutrosPericiados = string.Join(Environment.NewLine,
-            pericia.Periciados.Where(p => !string.Equals(p.Nome, pericia.NomePericiado, StringComparison.OrdinalIgnoreCase))
-                .Select(p => p.Nome));
+        periciados ??= [];
+        if (periciados.Count > 50)
+            ModelState.AddModelError(nameof(PericiaFormInputDto.Periciados), "Adicione no máximo 50 periciados por perícia.");
+        if (periciados.Select(p => p.Nome?.Trim() ?? "").Where(nome => nome.Length > 0)
+            .Distinct(StringComparer.OrdinalIgnoreCase).Count() != periciados.Count(p => !string.IsNullOrWhiteSpace(p.Nome)))
+            ModelState.AddModelError(nameof(PericiaFormInputDto.Periciados), "Não repita o mesmo nome de periciado nesta perícia.");
     }
 
     private static void AtualizarCamposEditaveis(Pericia destino, Pericia origem)
     {
-        destino.NomePericiado = origem.NomePericiado;
+        destino.NomePericiado = "";
         destino.Numero = origem.Numero;
         destino.NumeroProcesso = origem.NumeroProcesso;
         destino.Comarca = origem.Comarca;
@@ -134,7 +121,7 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
         var visaoGeral = ConsultaVisaoGeral();
         IQueryable<Pericia> query = visaoGeral.Include(p => p.Periciados).Include(p => p.Laudos);
         if (!string.IsNullOrWhiteSpace(busca))
-            query = query.Where(p => p.NomePericiado.Contains(busca) || p.Numero.Contains(busca) || (p.NumeroProcesso != null && p.NumeroProcesso.Contains(busca)) || (p.Comarca != null && p.Comarca.Contains(busca)) || (p.Vara != null && p.Vara.Contains(busca)) || p.Periciados.Any(pessoa => pessoa.Nome.Contains(busca)) || p.Laudos.Any(l => l.NumeroLaudo.Contains(busca)));
+            query = query.Where(p => p.Numero.Contains(busca) || (p.NumeroProcesso != null && p.NumeroProcesso.Contains(busca)) || (p.Comarca != null && p.Comarca.Contains(busca)) || (p.Vara != null && p.Vara.Contains(busca)) || p.Periciados.Any(pessoa => pessoa.Nome.Contains(busca)) || p.Laudos.Any(l => l.NumeroLaudo.Contains(busca)));
         if (status.HasValue) query = query.Where(p => p.Status == status.Value);
         if (!string.IsNullOrWhiteSpace(comarca)) query = query.Where(p => p.Comarca == comarca);
         if (prazoDe.HasValue) query = query.Where(p => p.PrazoLaudo != null && p.PrazoLaudo >= prazoDe.Value);
@@ -232,34 +219,36 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
     }
 
     [HttpPost, ValidateAntiForgeryToken]
-    public async Task<IActionResult> AdicionarPericiado(int id, string nome, string? papel, string? relacao, string? contato)
+    public async Task<IActionResult> AdicionarPericiado(int id, string? nome, string? telefone, string? observacoes)
     {
         var pericia = await db.Pericias.Include(p => p.Periciados).FirstOrDefaultAsync(p => p.Id == id);
         if (pericia is null) return NotFound();
-        nome = nome.Trim();
-        if (nome.Length < 2 || nome.Length > 160 || pericia.Periciados.Count >= 50 || pericia.Periciados.Any(p => p.Nome.Equals(nome, StringComparison.OrdinalIgnoreCase)))
+        nome = nome?.Trim() ?? "";
+        if (nome.Length < 2 || nome.Length > 160 || pericia.Periciados.Count >= 50 || pericia.Periciados.Any(p => p.Nome.Equals(nome, StringComparison.OrdinalIgnoreCase)) ||
+            telefone?.Length > 200 || observacoes?.Length > 4000)
         {
             TempData["ErroPericiado"] = "Informe um nome válido, não repetido; o limite é 50 pessoas por perícia.";
             return RedirectToAction(nameof(Processo), new { id });
         }
-        pericia.Periciados.Add(new Periciado { Nome = nome, Papel = papel?.Trim(), Relacao = relacao?.Trim(), Contato = contato?.Trim() });
+        pericia.Periciados.Add(new Periciado { Nome = nome, Contato = telefone?.Trim(), RegistroEntrevista = observacoes?.Trim() });
         RegistrarHistorico(id, "Periciado", "Periciado adicionado ao processo.");
         await db.SaveChangesAsync();
         return RedirectToAction(nameof(Processo), new { id });
     }
 
     [HttpPost, ValidateAntiForgeryToken]
-    public async Task<IActionResult> AtualizarPericiado(int id, int periciadoId, string nome, string? papel, string? relacao, string? contato, string? registroEntrevista)
+    public async Task<IActionResult> AtualizarPericiado(int id, int periciadoId, string? nome, string? telefone, string? observacoes)
     {
         var pessoa = await db.Periciados.FirstOrDefaultAsync(p => p.Id == periciadoId && p.PericiaId == id);
         if (pessoa is null) return NotFound();
-        nome = nome.Trim();
-        if (nome.Length < 2 || nome.Length > 160 || await db.Periciados.AnyAsync(p => p.PericiaId == id && p.Id != periciadoId && p.Nome == nome))
+        nome = nome?.Trim() ?? "";
+        if (nome.Length < 2 || nome.Length > 160 || telefone?.Length > 200 || observacoes?.Length > 4000 ||
+            await db.Periciados.AnyAsync(p => p.PericiaId == id && p.Id != periciadoId && p.Nome == nome))
         {
             TempData["ErroPericiado"] = "Nome inválido ou já cadastrado nesta perícia.";
             return RedirectToAction(nameof(Processo), new { id });
         }
-        pessoa.Nome = nome; pessoa.Papel = papel?.Trim(); pessoa.Relacao = relacao?.Trim(); pessoa.Contato = contato?.Trim(); pessoa.RegistroEntrevista = registroEntrevista?.Trim();
+        pessoa.Nome = nome; pessoa.Contato = telefone?.Trim(); pessoa.RegistroEntrevista = observacoes?.Trim();
         RegistrarHistorico(id, "Periciado", "Dados de um periciado atualizados.");
         await db.SaveChangesAsync();
         return RedirectToAction(nameof(Processo), new { id });
@@ -288,9 +277,9 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
         var proximo = modo == "dia" ? inicio.AddDays(1) : modo == "semana" ? inicio.AddDays(7) : inicio.AddMonths(1);
         ViewBag.Mes = inicio; ViewBag.InicioAgenda = inicio; ViewBag.FimAgenda = fim; ViewBag.Anterior = anterior; ViewBag.Proximo = proximo; ViewBag.Modo = modo;
         ViewBag.TituloPeriodo = modo == "dia" ? inicio.ToString("dd 'de' MMMM yyyy", new CultureInfo("pt-BR")) : modo == "semana" ? $"{inicio:dd/MM} – {fim.AddDays(-1):dd/MM/yyyy}" : inicio.ToString("MMMM yyyy", new CultureInfo("pt-BR"));
-        ViewBag.Pericias = await ConsultaVisaoGeral().OrderBy(p => p.Numero).Select(p => new { p.Id, p.Numero, p.NomePericiado }).ToListAsync();
+        ViewBag.Pericias = await ConsultaVisaoGeral().OrderBy(p => p.Numero).Select(p => new { p.Id, p.Numero }).ToListAsync();
         ViewBag.Marcos = await db.Pericias.AsNoTracking().Where(p => p.DataEnvio != null || p.DataAceite != null || p.PrazoLaudo != null)
-            .Select(p => new { p.Id, p.Numero, p.NomePericiado, p.DataEnvio, p.DataAceite, p.PrazoLaudo }).ToListAsync();
+            .Select(p => new { p.Id, p.Numero, p.DataEnvio, p.DataAceite, p.PrazoLaudo }).ToListAsync();
         ViewBag.MarcosEntrega = await db.LaudosPericia.AsNoTracking().Where(l => l.EntregueEm != null)
             .Select(l => new { l.EntregueEm, l.NumeroLaudo, l.Pericia.Numero }).ToListAsync();
         ViewBag.Pessoas = await db.Periciados.AsNoTracking().Select(p => new { p.Id, p.PericiaId, p.Nome }).OrderBy(p => p.Nome).ToListAsync();
@@ -453,7 +442,7 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
             .Include(laudo => laudo.Periciado);
         if (!string.IsNullOrWhiteSpace(busca))
             query = query.Where(laudo => laudo.NumeroLaudo.Contains(busca) || laudo.Pericia.Numero.Contains(busca) ||
-                (laudo.Pericia.NumeroProcesso != null && laudo.Pericia.NumeroProcesso.Contains(busca)) || laudo.Pericia.NomePericiado.Contains(busca) || laudo.Pericia.Periciados.Any(pessoa => pessoa.Nome.Contains(busca)));
+                (laudo.Pericia.NumeroProcesso != null && laudo.Pericia.NumeroProcesso.Contains(busca)) || laudo.Pericia.Periciados.Any(pessoa => pessoa.Nome.Contains(busca)));
         if (status.HasValue) query = query.Where(l => l.Status == status.Value);
         if (prazoAte.HasValue) query = query.Where(l => l.Prazo != null && l.Prazo <= prazoAte.Value);
         ViewBag.Busca = busca;
@@ -555,7 +544,7 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
         var linhas = new List<string> { "Periciado;Numero;DataEnvio;DataAceite;PrazoLaudo;Honorarios;ValorRecebido;Status;Observacoes" };
         linhas.AddRange(registros.Select(p => string.Join(';', new[]
         {
-            Campo(string.Join(" | ", p.Periciados.Select(pessoa => pessoa.Nome).Prepend(p.NomePericiado).Distinct(StringComparer.OrdinalIgnoreCase))), Campo(p.Numero), Campo(p.DataEnvio?.ToString("dd/MM/yyyy")),
+            Campo(string.Join(" | ", p.Periciados.Select(pessoa => pessoa.Nome))), Campo(p.Numero), Campo(p.DataEnvio?.ToString("dd/MM/yyyy")),
             Campo(p.DataAceite?.ToString("dd/MM/yyyy")), Campo(p.PrazoLaudo?.ToString("dd/MM/yyyy")),
             Campo(p.ValorHonorarios.ToString("0.00", CultureInfo.InvariantCulture)),
             Campo(p.ValorRecebido.ToString("0.00", CultureInfo.InvariantCulture)),
@@ -664,9 +653,11 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Criar(PericiaFormInputDto input, bool abrirLaudoDepois = false)
     {
+        input.Periciados ??= [];
         var pericia = input.ToEntity();
-        var nomes = ObterNomesPericiados(pericia.NomePericiado, pericia.OutrosPericiados);
-        ValidarNomesPericiados(nomes);
+        ValidarPericiados(input.Periciados);
+        if (input.Periciados.Any(p => p.Id.HasValue))
+            ModelState.AddModelError(nameof(input.Periciados), "Não é possível vincular pessoas existentes a uma nova perícia.");
         if (!Enum.IsDefined(pericia.Status)) ModelState.AddModelError(nameof(pericia.Status), "Selecione um status válido.");
         if (await db.Pericias.AnyAsync(p => p.Numero == pericia.Numero))
             ModelState.AddModelError(nameof(pericia.Numero), "Esse número de perícia já está cadastrado.");
@@ -676,7 +667,6 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
             return View("Formulario", pericia);
         }
         pericia.CriadaEm = DateTime.Now;
-        pericia.Periciados = nomes.Select(nome => new Periciado { Nome = nome }).ToList();
         db.Pericias.Add(pericia);
         await db.SaveChangesAsync();
         RegistrarHistorico(pericia.Id, "Processo", "Perícia cadastrada.");
@@ -689,17 +679,22 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
     {
         var pericia = await db.Pericias.Include(p => p.Documentos).Include(p => p.Periciados).Include(p => p.Laudos).ThenInclude(l => l.Periciado).FirstOrDefaultAsync(p => p.Id == id);
         if (pericia is null) return NotFound();
-        PrepararOutrosNomes(pericia);
         return View("Formulario", pericia);
     }
 
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Editar([FromRoute] int id, PericiaFormInputDto input)
     {
+        input.Periciados ??= [];
         var pericia = input.ToEntity();
         pericia.Id = id;
-        var nomes = ObterNomesPericiados(pericia.NomePericiado, pericia.OutrosPericiados);
-        ValidarNomesPericiados(nomes);
+        var atual = await db.Pericias.Include(p => p.Periciados).FirstOrDefaultAsync(p => p.Id == id);
+        if (atual is null) return NotFound();
+        ValidarPericiados(input.Periciados);
+        var idsEnviados = input.Periciados.Where(p => p.Id.HasValue).Select(p => p.Id!.Value).ToList();
+        if (idsEnviados.Distinct().Count() != idsEnviados.Count ||
+            input.Periciados.Any(p => p.Id.HasValue && !atual.Periciados.Any(existente => existente.Id == p.Id.Value)))
+            ModelState.AddModelError(nameof(input.Periciados), "A lista contém um periciado inválido para esta perícia.");
         if (!Enum.IsDefined(pericia.Status)) ModelState.AddModelError(nameof(pericia.Status), "Selecione um status válido.");
         if (await db.Pericias.AnyAsync(p => p.Numero == pericia.Numero && p.Id != id))
             ModelState.AddModelError(nameof(pericia.Numero), "Esse número de perícia já está cadastrado.");
@@ -707,21 +702,24 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
         {
             pericia.ValorRecebido = await db.Pericias.AsNoTracking().Where(p => p.Id == id).Select(p => p.ValorRecebido).FirstOrDefaultAsync();
             pericia.Documentos = await db.DocumentosPericia.Where(d => d.PericiaId == id).ToListAsync();
-            pericia.Periciados = await db.Periciados.Where(p => p.PericiaId == id).ToListAsync();
             pericia.Laudos = await db.LaudosPericia.Include(l => l.Periciado).Where(l => l.PericiaId == id).OrderBy(l => l.NumeroLaudo).ToListAsync();
             return View("Formulario", pericia);
         }
-        var atual = await db.Pericias.Include(p => p.Periciados).FirstOrDefaultAsync(p => p.Id == id);
-        if (atual is null) return NotFound();
         AtualizarCamposEditaveis(atual, pericia);
-        foreach (var pessoa in atual.Periciados.ToList())
+        foreach (var existente in atual.Periciados.ToList())
         {
-            if (!nomes.Contains(pessoa.Nome, StringComparer.OrdinalIgnoreCase))
-                db.Periciados.Remove(pessoa);
+            if (!idsEnviados.Contains(existente.Id)) db.Periciados.Remove(existente);
         }
-        var nomesExistentes = atual.Periciados.Select(p => p.Nome).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        foreach (var nome in nomes.Where(nome => !nomesExistentes.Contains(nome)))
-            atual.Periciados.Add(new Periciado { PericiaId = id, Nome = nome });
+        foreach (var pessoaInput in input.Periciados)
+        {
+            var pessoa = pessoaInput.Id.HasValue
+                ? atual.Periciados.Single(p => p.Id == pessoaInput.Id.Value)
+                : new Periciado { PericiaId = id };
+            pessoa.Nome = pessoaInput.Nome.Trim();
+            pessoa.Contato = pessoaInput.Telefone?.Trim();
+            pessoa.RegistroEntrevista = pessoaInput.Observacoes?.Trim();
+            if (!pessoaInput.Id.HasValue) atual.Periciados.Add(pessoa);
+        }
         RegistrarHistorico(id, "Processo", "Cadastro do processo ou dados dos periciados atualizados.");
         await db.SaveChangesAsync();
         TempData["Mensagem"] = "Perícia atualizada.";
@@ -867,7 +865,7 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
         Prazo = laudo.Prazo,
         PericiadoId = laudo.PericiadoId,
         Periciados = laudo.Pericia.Periciados.OrderBy(p => p.Nome).ToList(),
-        NomePericiado = laudo.Periciado?.Nome ?? laudo.Pericia.NomePericiado,
+        NomePericiado = laudo.Periciado?.Nome ?? "Não associado",
         Numero = laudo.Pericia.Numero,
         ConteudoHtml = laudo.ConteudoHtml,
         AtualizadoEm = laudo.AtualizadoEm,

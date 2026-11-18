@@ -9,7 +9,7 @@
 <section class="form-panel mb-3">
  <partial name="_PanelTitle" model='new PanelHeadingViewModel("Novo compromisso")' />
  <form asp-action="CriarEvento" method="post" class="row g-3 align-items-end">
-  <div class="col-md-4"><label class="form-label">Processo/perícia</label><select name="periciaId" class="form-select" required>@foreach (var p in ViewBag.Pericias) { <option value="@p.Id">@p.Numero · @p.NomePericiado</option> }</select></div>
+  <div class="col-md-4"><label class="form-label">Processo/perícia</label><select name="periciaId" class="form-select" required>@foreach (var p in ViewBag.Pericias) { <option value="@p.Id">@p.Numero</option> }</select></div>
   <div class="col-md-4"><label class="form-label">Título</label><input name="titulo" class="form-control" maxlength="160" required placeholder="Entrevista, avaliação..."/></div>
   <div class="col-md-2"><label class="form-label">Início</label><input type="datetime-local" name="inicio" class="form-control" required/></div>
   <div class="col-md-2"><label class="form-label">Fim</label><input type="datetime-local" name="fim" class="form-control"/></div>

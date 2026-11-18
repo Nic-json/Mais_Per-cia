@@ -6,17 +6,35 @@
 @if (TempData["Erro"] is string erroDocumento) { <div class="alert alert-danger">@erroDocumento</div> }
 <form asp-action="@(editar ? "Editar" : "Criar")" asp-route-id="@Model.Id" method="post" class="form-panel">
  @if (!editar && ViewBag.AbrirLaudoDepois is true) { <input type="hidden" name="abrirLaudoDepois" value="true" /> }
- <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+ <div asp-validation-summary="All" class="text-danger"></div>
  <div class="form-section-title"><span>01</span><div><h2>Identificação</h2><p>Informações do processo pericial.</p></div></div>
  <div class="row g-3">
-  <div class="col-md-7"><label asp-for="NomePericiado" class="form-label">Periciado principal</label><input asp-for="NomePericiado" class="form-control" placeholder="Nome completo" /><span asp-validation-for="NomePericiado" class="text-danger"></span></div>
-  <div class="col-md-5"><label asp-for="Numero" class="form-label"></label><input asp-for="Numero" class="form-control" placeholder="Ex.: 0001234-56.2025" /><span asp-validation-for="Numero" class="text-danger"></span></div>
+  <div class="col-12"><label asp-for="Numero" class="form-label"></label><input asp-for="Numero" class="form-control" placeholder="Ex.: 0001234-56.2025" /><span asp-validation-for="Numero" class="text-danger"></span></div>
   <div class="col-md-6"><label asp-for="NumeroProcesso" class="form-label"></label><input asp-for="NumeroProcesso" class="form-control" placeholder="Número CNJ, se disponível" /></div>
   <div class="col-md-6"><label asp-for="TipoPericia" class="form-label"></label><input asp-for="TipoPericia" class="form-control" placeholder="Ex.: médica, contábil, engenharia" /></div>
   <div class="col-md-4"><label asp-for="Comarca" class="form-label"></label><input asp-for="Comarca" class="form-control" /></div>
   <div class="col-md-4"><label asp-for="Vara" class="form-label"></label><input asp-for="Vara" class="form-control" /></div>
   <div class="col-md-4"><label asp-for="Magistrado" class="form-label"></label><input asp-for="Magistrado" class="form-control" /></div>
-  <div class="col-12"><label asp-for="OutrosPericiados" class="form-label">Outros periciados</label><textarea asp-for="OutrosPericiados" class="form-control" rows="3" placeholder="Digite um nome por linha"></textarea><div class="form-text">Você pode cadastrar até 50 periciados nesta perícia.</div><span asp-validation-for="OutrosPericiados" class="text-danger"></span></div>
+  <div class="col-12">
+   <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2"><div><label class="form-label mb-0">Periciados <span class="text-muted fw-normal">(opcional)</span></label><div class="form-text">A perícia pode ser cadastrada sem periciados. Você pode adicionar até 50 pessoas.</div></div><button type="button" id="adicionar-periciado" class="btn btn-outline-secondary">+ Adicionar periciado</button></div>
+   <div asp-validation-for="Periciados" class="text-danger"></div>
+   <div id="periciados-container" class="d-grid gap-3">
+    @for (var i = 0; i < Model.Periciados.Count; i++)
+    {
+     var pessoa = Model.Periciados[i];
+     <div class="border rounded p-3 periciado-item">
+      <input type="hidden" name="Periciados[@i].Id" value="@(pessoa.Id == 0 ? "" : pessoa.Id.ToString())" />
+      <div class="row g-3 align-items-start">
+       <div class="col-md-5"><label class="form-label" for="Periciados_@(i)__Nome">Nome</label><input id="Periciados_@(i)__Nome" name="Periciados[@i].Nome" value="@pessoa.Nome" class="form-control" maxlength="160" required/><span class="text-danger" data-valmsg-for="Periciados[@i].Nome"></span></div>
+       <div class="col-md-4"><label class="form-label" for="Periciados_@(i)__Telefone">Telefone</label><input id="Periciados_@(i)__Telefone" name="Periciados[@i].Telefone" value="@pessoa.Contato" type="tel" class="form-control" maxlength="200" placeholder="(00) 00000-0000"/><span class="text-danger" data-valmsg-for="Periciados[@i].Telefone"></span></div>
+       <div class="col-md-3 d-flex justify-content-md-end"><button type="button" class="btn btn-sm btn-outline-danger remover-periciado">Remover</button></div>
+       <div class="col-12"><label class="form-label" for="Periciados_@(i)__Observacoes">Observações</label><textarea id="Periciados_@(i)__Observacoes" name="Periciados[@i].Observacoes" class="form-control" rows="2" maxlength="4000">@pessoa.RegistroEntrevista</textarea><span class="text-danger" data-valmsg-for="Periciados[@i].Observacoes"></span></div>
+      </div>
+     </div>
+    }
+   </div>
+   <template id="modelo-periciado"><div class="border rounded p-3 periciado-item"><input type="hidden" name="Periciados[__index__].Id" value=""/><div class="row g-3 align-items-start"><div class="col-md-5"><label class="form-label" for="Periciados___index____Nome">Nome</label><input id="Periciados___index____Nome" name="Periciados[__index__].Nome" class="form-control" maxlength="160" required/><span class="text-danger" data-valmsg-for="Periciados[__index__].Nome"></span></div><div class="col-md-4"><label class="form-label" for="Periciados___index____Telefone">Telefone</label><input id="Periciados___index____Telefone" name="Periciados[__index__].Telefone" type="tel" class="form-control" maxlength="200" placeholder="(00) 00000-0000"/><span class="text-danger" data-valmsg-for="Periciados[__index__].Telefone"></span></div><div class="col-md-3 d-flex justify-content-md-end"><button type="button" class="btn btn-sm btn-outline-danger remover-periciado">Remover</button></div><div class="col-12"><label class="form-label" for="Periciados___index____Observacoes">Observações</label><textarea id="Periciados___index____Observacoes" name="Periciados[__index__].Observacoes" class="form-control" rows="2" maxlength="4000"></textarea><span class="text-danger" data-valmsg-for="Periciados[__index__].Observacoes"></span></div></div></div></template>
+  </div>
   <div class="col-md-4"><label asp-for="DataEnvio" class="form-label"></label><input asp-for="DataEnvio" class="form-control" /><span asp-validation-for="DataEnvio" class="text-danger"></span></div>
   <div class="col-md-4"><label asp-for="DataAceite" class="form-label"></label><input asp-for="DataAceite" class="form-control" /><span asp-validation-for="DataAceite" class="text-danger"></span></div>
   <div class="col-md-4"><label asp-for="PrazoLaudo" class="form-label"></label><input asp-for="PrazoLaudo" class="form-control" /><span asp-validation-for="PrazoLaudo" class="text-danger"></span></div>
@@ -74,4 +92,33 @@
   else { <p class="muted mt-4 mb-0">Nenhum documento anexado ainda.</p> }
  </section>
 }
-@section Scripts { <partial name="_ValidationScriptsPartial" /> }
+@section Scripts {
+ <partial name="_ValidationScriptsPartial" />
+ <script>
+  (() => {
+   const container = document.getElementById('periciados-container');
+   const template = document.getElementById('modelo-periciado');
+   const addButton = document.getElementById('adicionar-periciado');
+   if (!container || !template || !addButton) return;
+   const renumber = () => container.querySelectorAll('.periciado-item').forEach((item, index) => {
+    item.querySelectorAll('[name]').forEach(el => el.name = el.name.replace(/Periciados\[\d+\]/g, `Periciados[${index}]`));
+    item.querySelectorAll('[id]').forEach(el => el.id = el.id.replace(/Periciados_\d+__/g, `Periciados_${index}__`));
+    item.querySelectorAll('[for]').forEach(el => el.htmlFor = el.htmlFor.replace(/Periciados_\d+__/g, `Periciados_${index}__`));
+    item.querySelectorAll('[data-valmsg-for]').forEach(el => el.dataset.valmsgFor = el.dataset.valmsgFor.replace(/Periciados\[\d+\]/g, `Periciados[${index}]`));
+   });
+   addButton.addEventListener('click', () => {
+    if (container.querySelectorAll('.periciado-item').length >= 50) return;
+    const index = container.querySelectorAll('.periciado-item').length;
+    const html = template.innerHTML.replaceAll('__index__', String(index));
+    container.insertAdjacentHTML('beforeend', html);
+    container.lastElementChild?.querySelector('input[name$=".Nome"]')?.focus();
+   });
+   container.addEventListener('click', event => {
+    const button = event.target.closest('.remover-periciado');
+    if (!button) return;
+    button.closest('.periciado-item')?.remove();
+    renumber();
+   });
+  })();
+ </script>
+}

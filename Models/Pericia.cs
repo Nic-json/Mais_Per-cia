@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Sistemas_para_pericias.Models;
 
@@ -19,12 +18,9 @@ public class Pericia : IUsuarioDono
     public int Id { get; set; }
     public int UsuarioId { get; set; }
 
-    [Required, StringLength(160, MinimumLength = 2)]
-    [Display(Name = "Nome do periciado")]
+    // Campo legado mantido para compatibilidade; os dados atuais ficam em Periciados.
+    [StringLength(160)]
     public string NomePericiado { get; set; } = "";
-
-    [NotMapped, Display(Name = "Outros periciados (um por linha)")]
-    public string OutrosPericiados { get; set; } = "";
 
     [Required, StringLength(80)]
     [Display(Name = "Número da perícia")]
