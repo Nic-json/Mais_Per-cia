@@ -134,7 +134,7 @@
 body{color:var(--ink);background:var(--bg);font-size:14px}
 .sidebar,.topbar,.stat-card,.list-panel,.form-panel{background:#fff}
 .sidebar{border-color:var(--line)}
-.brand-mark{border-radius:9px;background:#eaf0f2;color:#587487;box-shadow:none}
+.brand-mark{display:block;flex:0 0 auto;border-radius:9px;background:transparent;color:transparent;box-shadow:none;object-fit:contain;padding:0}
 .brand-light,.side-link.active,.side-link:hover{color:#587487}
 .side-link{border-radius:7px;color:#69737a}
 .side-link.active,.side-link:hover{background:#f0f4f5}
@@ -292,8 +292,9 @@ body{color:var(--ink);background:var(--bg);font-size:14px}
 .honorarios-filter-actions .btn{height:39px;padding:8px 15px;font-size:11px;white-space:nowrap}
 .honorarios-table{width:100%;min-width:0;table-layout:fixed;white-space:normal}
 .honorarios-table th,.honorarios-table td{vertical-align:middle;overflow-wrap:anywhere}
-.honorarios-table th:nth-child(1){width:48%}.honorarios-table th:nth-child(2){width:11%}.honorarios-table th:nth-child(3){width:10%}.honorarios-table th:nth-child(4){width:9%}.honorarios-table th:nth-child(5){width:14%}.honorarios-table th:nth-child(6){width:8%}
+.honorarios-table th:nth-child(1){width:45%}.honorarios-table th:nth-child(2){width:10%}.honorarios-table th:nth-child(3){width:9%}.honorarios-table th:nth-child(4){width:9%}.honorarios-table th:nth-child(5){width:15%}.honorarios-table th:nth-child(6){width:12%}
 .honorarios-table td:nth-child(2),.honorarios-table td:nth-child(3),.honorarios-table td:nth-child(4){white-space:nowrap}
+.honorarios-table td:last-child .btn{min-width:82px;white-space:nowrap}
 .honorarios-table .case-number{line-height:1.45}
 .process-section-nav{gap:7px}
 .process-section-nav .nav-link{padding:8px 12px;border:1px solid var(--line);border-radius:7px;background:#fff;color:#59646a;font-size:12px;font-weight:500;text-decoration:none;transition:background-color .15s ease,border-color .15s ease,color .15s ease}

@@ -550,7 +550,7 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
             return RedirectToAction(nameof(Editar), new { id = periciaId });
         }
 
-        var numerosLaudos = await db.LaudosPericia.Where(l => l.PericiaId == periciaId).Select(l => l.NumeroLaudo).ToListAsync();
+        var numerosLaudos = await db.LaudosPericia.Select(l => l.NumeroLaudo).ToListAsync();
         var maiorNumero = numerosLaudos
             .Select(numero => int.TryParse(numero, NumberStyles.None, CultureInfo.InvariantCulture, out var valor) ? valor : 0)
             .DefaultIfEmpty(0)
@@ -788,7 +788,7 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
             pericia.ValorRecebido = await db.Pericias.AsNoTracking().Where(p => p.Id == id).Select(p => p.ValorRecebido).FirstOrDefaultAsync();
             pericia.Pagamentos = await db.PagamentosHonorarios.Where(p => p.PericiaId == id).OrderByDescending(p => p.DataRecebimento).ToListAsync();
             pericia.Documentos = await db.DocumentosPericia.Where(d => d.PericiaId == id).ToListAsync();
-            pericia.Laudos = await db.LaudosPericia.Include(l => l.Periciado).Where(l => l.PericiaId == id).OrderBy(l => l.NumeroLaudo).ToListAsync();
+            pericia.Laudos = await db.LaudosPericia.Include(l => l.Periciado).Where(l => l.PericiaId == id).OrderBy(l => l.Id).ToListAsync();
             return View("Formulario", pericia);
         }
         AtualizarCamposEditaveis(atual, pericia);
@@ -972,17 +972,10 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
     }
 
     [HttpPost, ValidateAntiForgeryToken, RequestSizeLimit(512 * 1024)]
-    public async Task<IActionResult> SalvarLaudo(int id, int laudoId, string? numeroLaudo, int? periciadoId, string? conteudoHtml, string? tipoLaudo, DateTime? prazo, bool previsualizar = false)
+    public async Task<IActionResult> SalvarLaudo(int id, int laudoId, int? periciadoId, string? conteudoHtml, string? tipoLaudo, DateTime? prazo, bool previsualizar = false)
     {
         var laudo = await db.LaudosPericia.FirstOrDefaultAsync(l => l.Id == laudoId && l.PericiaId == id);
         if (laudo is null) return NotFound();
-        numeroLaudo = numeroLaudo?.Trim();
-        if (string.IsNullOrWhiteSpace(numeroLaudo) || numeroLaudo.Length > 80 ||
-            await db.LaudosPericia.AnyAsync(l => l.PericiaId == id && l.Id != laudoId && l.NumeroLaudo == numeroLaudo))
-        {
-            TempData["ErroLaudo"] = "Informe um número de laudo válido e ainda não utilizado nesta perícia.";
-            return RedirectToAction(nameof(EditorLaudo), new { id, laudoId });
-        }
         if (periciadoId.HasValue && !await db.Periciados.AnyAsync(p => p.Id == periciadoId.Value && p.PericiaId == id))
         {
             TempData["ErroLaudo"] = "O periciado selecionado não pertence a esta perícia.";
@@ -996,9 +989,8 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
 
         var tipoNormalizado = string.IsNullOrWhiteSpace(tipoLaudo) ? null : tipoLaudo.Trim();
         var conteudoNormalizado = sanitizer.Sanitize(conteudoHtml ?? "");
-        if (laudo.NumeroLaudo != numeroLaudo || laudo.PericiadoId != periciadoId || laudo.Tipo != tipoNormalizado || laudo.Prazo != prazo || laudo.ConteudoHtml != conteudoNormalizado)
+        if (laudo.PericiadoId != periciadoId || laudo.Tipo != tipoNormalizado || laudo.Prazo != prazo || laudo.ConteudoHtml != conteudoNormalizado)
             db.VersoesLaudo.Add(new VersaoLaudo { LaudoId = laudo.Id, NumeroLaudo = laudo.NumeroLaudo, Tipo = laudo.Tipo, Status = laudo.Status, Prazo = laudo.Prazo, ConteudoHtml = laudo.ConteudoHtml, Responsavel = User.Identity?.Name, SalvoEm = DateTime.UtcNow });
-        laudo.NumeroLaudo = numeroLaudo;
         laudo.PericiadoId = periciadoId;
         laudo.Tipo = tipoNormalizado;
         laudo.Prazo = prazo;
@@ -1019,7 +1011,7 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
         var versao = await db.VersoesLaudo.FirstOrDefaultAsync(v => v.Id == versaoId && v.LaudoId == laudoId);
         if (laudo is null || versao is null) return NotFound();
         db.VersoesLaudo.Add(new VersaoLaudo { LaudoId = laudo.Id, NumeroLaudo = laudo.NumeroLaudo, Tipo = laudo.Tipo, Status = laudo.Status, Prazo = laudo.Prazo, ConteudoHtml = laudo.ConteudoHtml, Responsavel = User.Identity?.Name, SalvoEm = DateTime.UtcNow });
-        laudo.NumeroLaudo = versao.NumeroLaudo; laudo.Tipo = versao.Tipo; laudo.Status = versao.Status; laudo.Prazo = versao.Prazo; laudo.ConteudoHtml = sanitizer.Sanitize(versao.ConteudoHtml); laudo.AtualizadoEm = DateTime.UtcNow;
+        laudo.Tipo = versao.Tipo; laudo.Status = versao.Status; laudo.Prazo = versao.Prazo; laudo.ConteudoHtml = sanitizer.Sanitize(versao.ConteudoHtml); laudo.AtualizadoEm = DateTime.UtcNow;
         RegistrarHistorico(id, "Laudo", $"Versão salva em {versao.SalvoEm.ToLocalTime():dd/MM/yyyy HH:mm} restaurada.");
         await db.SaveChangesAsync();
         return RedirectToAction(nameof(EditorLaudo), new { id, laudoId });

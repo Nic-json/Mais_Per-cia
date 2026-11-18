@@ -13,10 +13,9 @@
 <form asp-action="SalvarLaudo" asp-route-id="@Model.PericiaId" asp-route-laudoId="@Model.LaudoId" method="post" id="form-laudo" class="laudo-editor-panel">
  <input type="hidden" name="conteudoHtml" id="conteudo-html" />
  <div class="row g-3 p-3 border-bottom bg-light">
-  <div class="col-md-4"><label for="numeroLaudo" class="form-label">Número do laudo</label><input id="numeroLaudo" name="numeroLaudo" value="@Model.NumeroLaudo" maxlength="80" required class="form-control" /></div>
   <div class="col-md-4"><label for="tipoLaudo" class="form-label">Tipo do laudo</label><input id="tipoLaudo" name="tipoLaudo" value="@Model.TipoLaudo" class="form-control" maxlength="80" placeholder="Principal, complementar..." /></div>
   <div class="col-md-4"><label for="prazo" class="form-label">Prazo</label><input id="prazo" name="prazo" value="@Model.Prazo?.ToString("yyyy-MM-dd")" type="date" class="form-control" /></div>
-  <div class="col-md-8"><label for="periciadoId" class="form-label">Periciado relacionado</label><select id="periciadoId" name="periciadoId" class="form-select"><option value="">Sem associação</option>@foreach (var pessoa in Model.Periciados.OrderBy(p => p.Nome)) { <option value="@pessoa.Id" selected="@(Model.PericiadoId == pessoa.Id)">@pessoa.Nome</option> }</select></div>
+  <div class="col-md-4"><label for="periciadoId" class="form-label">Periciado relacionado</label><select id="periciadoId" name="periciadoId" class="form-select"><option value="">Sem associação</option>@foreach (var pessoa in Model.Periciados.OrderBy(p => p.Nome)) { <option value="@pessoa.Id" selected="@(Model.PericiadoId == pessoa.Id)">@pessoa.Nome</option> }</select></div>
  </div>
  <div class="laudo-toolbar" role="toolbar" aria-label="Formatação do laudo">
   <div class="toolbar-group">
@@ -34,8 +33,17 @@
   </div>
   <span class="toolbar-divider"></span>
   <div class="toolbar-group">
+   <label class="visually-hidden" for="laudo-font-color">Cor do texto</label>
+   <select id="laudo-font-color" class="toolbar-select toolbar-color" data-editor-action="foreColor" aria-label="Cor do texto"><option value="#202a30">Cor do texto</option><option value="#b42318">Vermelho</option><option value="#1d4ed8">Azul</option><option value="#15803d">Verde</option></select>
+   <label class="visually-hidden" for="laudo-highlight">Realce do texto</label>
+   <select id="laudo-highlight" class="toolbar-select toolbar-color" data-editor-action="hiliteColor" aria-label="Realce do texto"><option value="#fff2a8">Realçar</option><option value="#d8f0dc">Verde claro</option><option value="#dce9ff">Azul claro</option><option value="#ffdce2">Rosa claro</option></select>
+  </div>
+  <span class="toolbar-divider"></span>
+  <div class="toolbar-group">
    <label class="visually-hidden" for="laudo-block">Estilo do parágrafo</label>
    <select id="laudo-block" class="toolbar-select" data-command="formatBlock" aria-label="Estilo do parágrafo"><option value="p" selected>Parágrafo</option><option value="h1">Título 1</option><option value="h2">Título 2</option><option value="h3">Título 3</option><option value="blockquote">Citação</option></select>
+   <label class="visually-hidden" for="laudo-spacing">Espaçamento entre linhas</label>
+   <select id="laudo-spacing" class="toolbar-select toolbar-spacing" data-editor-action="lineSpacing" aria-label="Espaçamento entre linhas"><option value="1">Simples</option><option value="1.15" selected>1,15</option><option value="1.5">1,5</option><option value="2">Duplo</option></select>
    <button type="button" data-command="justifyLeft" aria-label="Alinhar à esquerda" title="Alinhar à esquerda">☰</button>
    <button type="button" data-command="justifyCenter" aria-label="Centralizar" title="Centralizar">≡</button>
    <button type="button" data-command="justifyRight" aria-label="Alinhar à direita" title="Alinhar à direita">☷</button>
@@ -47,6 +55,13 @@
    <button type="button" data-command="insertOrderedList" aria-label="Lista numerada" title="Lista numerada">1. Lista</button>
    <button type="button" data-command="outdent" aria-label="Diminuir recuo" title="Diminuir recuo">⇤</button>
    <button type="button" data-command="indent" aria-label="Aumentar recuo" title="Aumentar recuo">⇥</button>
+  </div>
+  <span class="toolbar-divider"></span>
+  <div class="toolbar-group">
+   <button type="button" data-editor-action="createLink" aria-label="Inserir link" title="Inserir link">Link</button>
+   <button type="button" data-editor-action="insertTable" aria-label="Inserir tabela" title="Inserir tabela">Tabela</button>
+   <button type="button" data-command="insertHorizontalRule" aria-label="Inserir linha horizontal" title="Inserir linha horizontal">―</button>
+   <button type="button" data-command="removeFormat" aria-label="Limpar formatação" title="Limpar formatação">Limpar</button>
   </div>
   <span class="toolbar-divider"></span>
   <div class="toolbar-group">
@@ -81,6 +96,8 @@
  .laudo-toolbar button:hover,.laudo-toolbar button:focus-visible,.toolbar-select:hover,.toolbar-select:focus-visible{background:#e9edef;border-color:#d7dfe3;outline:none}
  .toolbar-select{min-width:112px;border-color:#d8dfe3;background:#fff}
  .toolbar-size{min-width:64px;width:64px}
+ .toolbar-color{min-width:104px;width:104px}
+ .toolbar-spacing{min-width:96px;width:96px}
  .toolbar-divider{height:24px;border-left:1px solid #d5dce0;margin:0 3px}
  .laudo-page-workspace{padding:30px 20px;background:#edf0f2}
  .laudo-editable{width:min(100%,816px);min-height:1120px;margin:0 auto;padding:96px 88px;outline:none;border:1px solid #e1e4e6;background:#fff;box-shadow:0 2px 12px rgba(31,47,56,.12);font-family:Georgia,'Times New Roman',serif;font-size:16px;line-height:1.75;color:#202a30;overflow-wrap:anywhere}
@@ -91,6 +108,10 @@
  .laudo-editable h1{font-size:1.7em}.laudo-editable h2{font-size:1.4em}.laudo-editable h3{font-size:1.15em}
  .laudo-editable blockquote{margin:1em 0;padding-left:1em;border-left:3px solid #8aa9b8;color:#59656c}
  .laudo-editable ul,.laudo-editable ol{padding-left:2em;margin:0 0 1em}
+ .laudo-editable a{color:#315f83;text-decoration:underline}
+ .laudo-editable table{width:100%;margin:1em 0;border-collapse:collapse;table-layout:fixed}
+ .laudo-editable th,.laudo-editable td{min-width:48px;padding:7px;border:1px solid #89949a;vertical-align:top}
+ .laudo-editable th{background:#f0f3f5;font-weight:700}
  .laudo-editable font[size="2"]{font-size:10pt}.laudo-editable font[size="3"]{font-size:12pt}.laudo-editable font[size="4"]{font-size:14pt}.laudo-editable font[size="5"]{font-size:18pt}.laudo-editable font[size="6"]{font-size:24pt}
  .laudo-editor-status{display:flex;justify-content:space-between;gap:12px;padding:7px 16px;background:#f7f8f9;border-top:1px solid #dfe4e8;color:#78838a;font-size:11px}
  .laudo-editor-footer{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;border-top:1px solid #dfe4e8}
@@ -121,6 +142,42 @@
     const words = editor.innerText.trim().match(/\S+/g) || [];
     wordCount.textContent = `${words.length} ${words.length === 1 ? 'palavra' : 'palavras'}`;
    };
+   const applyEditorAction = (action, value) => {
+    if (action === 'lineSpacing') {
+     const selection = window.getSelection();
+     const node = selection?.anchorNode;
+     const element = node?.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+     const block = element?.closest('p,h1,h2,h3,li,blockquote,div') || editor;
+     block.style.lineHeight = value;
+     return;
+    }
+    if (action === 'createLink') {
+     let address = prompt('Cole o endereço do link:');
+     if (!address?.trim()) return;
+     address = address.trim();
+     if (!/^(https?:|mailto:)/i.test(address)) address = `https://${address}`;
+     try {
+      const url = new URL(address);
+      if (!['http:', 'https:', 'mailto:'].includes(url.protocol)) throw new Error('Protocolo inválido');
+      document.execCommand('createLink', false, url.href);
+     } catch { alert('Informe um endereço válido, começando com http://, https:// ou mailto:.'); }
+     return;
+    }
+    if (action === 'insertTable') {
+     const rows = Number.parseInt(prompt('Quantas linhas? (1 a 10)', '3'), 10);
+     const columns = Number.parseInt(prompt('Quantas colunas? (1 a 10)', '3'), 10);
+     if (!Number.isInteger(rows) || !Number.isInteger(columns) || rows < 1 || rows > 10 || columns < 1 || columns > 10) {
+      alert('Use um número entre 1 e 10 para linhas e colunas.');
+      return;
+     }
+     const cells = '<td><br></td>'.repeat(columns);
+     const table = `<table><tbody>${Array.from({ length: rows }, () => `<tr>${cells}</tr>`).join('')}</tbody></table><p><br></p>`;
+     document.execCommand('insertHTML', false, table);
+     updateWordCount();
+     return;
+    }
+    document.execCommand(action, false, value);
+   };
    editor.addEventListener('keyup', rememberSelection);
    editor.addEventListener('mouseup', rememberSelection);
    editor.addEventListener('input', () => { rememberSelection(); updateWordCount(); });
@@ -137,6 +194,24 @@
     select.addEventListener('change', () => {
      restoreSelection();
      document.execCommand(select.dataset.command, false, select.value);
+     editor.focus();
+     rememberSelection();
+    });
+   });
+   document.querySelectorAll('.laudo-toolbar button[data-editor-action]').forEach(button => {
+    button.addEventListener('mousedown', event => { rememberSelection(); event.preventDefault(); });
+    button.addEventListener('click', () => {
+     restoreSelection();
+     applyEditorAction(button.dataset.editorAction);
+     editor.focus();
+     rememberSelection();
+    });
+   });
+   document.querySelectorAll('.laudo-toolbar select[data-editor-action]').forEach(select => {
+    select.addEventListener('mousedown', rememberSelection);
+    select.addEventListener('change', () => {
+     restoreSelection();
+     applyEditorAction(select.dataset.editorAction, select.value);
      editor.focus();
      rememberSelection();
     });
