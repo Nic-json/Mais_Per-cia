@@ -48,7 +48,6 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
         destino.Numero = origem.Numero;
         destino.Comarca = origem.Comarca;
         destino.Vara = origem.Vara;
-        destino.TipoPericia = origem.TipoPericia;
         destino.DataEnvio = origem.DataEnvio;
         destino.DataAceite = origem.DataAceite;
         destino.PrazoLaudo = origem.PrazoLaudo;
@@ -146,7 +145,6 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
             ? await visaoGeral.CountAsync(p => p.PrazoLaudo >= DateTime.Today && p.PrazoLaudo <= DateTime.Today.AddDays(config.AntecedenciaPrazoDias))
             : 0;
         ViewBag.AntecedenciaPrazoDias = config?.AntecedenciaPrazoDias ?? 7;
-        ViewBag.TotalRecebido = await visaoGeral.SumAsync(p => (decimal?)p.ValorRecebido) ?? 0m;
         return View(await query.OrderBy(p => p.PrazoLaudo == null).ThenBy(p => p.PrazoLaudo).ThenBy(p => p.ValorRecebido >= p.ValorHonorarios).ThenBy(p => p.DataHonorariosSolicitados ?? p.DataEnvio).ThenBy(p => p.DataEnvio).Skip((pagina - 1) * 20).Take(20).ToListAsync());
     }
 
@@ -721,10 +719,7 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
     {
         ViewBag.AbrirLaudoDepois = abrirLaudoDepois;
         await PrepararCatalogoForenseAsync();
-        var tipoPadrao = await db.ConfiguracoesPerito.AsNoTracking()
-            .Select(c => c.Especialidade)
-            .FirstOrDefaultAsync();
-        return View("Formulario", new Pericia { DataEnvio = DateTime.Today, TipoPericia = tipoPadrao });
+        return View("Formulario", new Pericia { DataEnvio = DateTime.Today });
     }
 
     [HttpPost, ValidateAntiForgeryToken]

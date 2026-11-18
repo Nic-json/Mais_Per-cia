@@ -4,7 +4,7 @@ Atualizado em 18/11/2026. Resumo operacional para orientar mudanças sem exigir 
 
 ## Produto e arquitetura
 
-Aplicação privada em português para um perito judicial organizar processos/perícias, periciados, laudos, prazos, compromissos, honorários e documentos.
+Mais Perícias é uma aplicação privada em português para um perito judicial organizar processos/perícias, periciados, laudos, prazos, compromissos, honorários e documentos. A assinatura visual usa o descritor “Gestão pericial”.
 
 - ASP.NET Core MVC em .NET 10, Razor views, Entity Framework Core e SQLite.
 - Interface responsiva com Bootstrap, CSS e JavaScript/jQuery; não é uma SPA React.
@@ -14,19 +14,20 @@ Aplicação privada em português para um perito judicial organizar processos/pe
 
 ## Funcionalidades no código local
 
-- Painel com casos em acompanhamento, laudos não entregues, prazos próximos/vencidos e honorários pendentes. Busca por número da perícia, laudo, comarca, vara e pessoa; filtros por status, comarca, prazo e situação de pagamento; paginação e prioridade por prazo/saldo.
+- Painel com casos em acompanhamento, laudos não entregues, prazos próximos/vencidos e honorários a receber. O total já recebido fica nas áreas de Honorários e Relatórios. Busca por número da perícia, laudo, comarca, vara e pessoa; filtros por status, comarca, prazo e situação de pagamento; paginação e prioridade por prazo/saldo.
 - Lista completa de processos com filtros de comarca, status técnico/financeiro, datas de envio, faixas de honorários e quantidade de laudos; status permite recusar, e recusa não esconde saldo pendente.
 - Detalhe da perícia com número da perícia como identificador principal, comarca, vara, tipo, datas, observações, periciados, laudos, agenda, honorários, documentos e atividade recente. As colunas legadas de CNJ e magistrado permanecem no SQLite por compatibilidade; os campos não são editados, buscados, exibidos nem exportados.
 - Uma perícia pode ter zero ou vários periciados e zero ou vários laudos numerados; não existe periciado principal. No cadastro, periciados são adicionados individualmente por botão, com nome, telefone e observações. O telefone e as observações usam as colunas legadas `Contato` e `RegistroEntrevista`, preservando o banco existente; as propriedades antigas `Papel` e `Relacao` permanecem por compatibilidade, mas não são editadas neste formulário. Laudos têm tipo, prazo, estados, histórico de versões restauráveis e o editor atual; o HTML do laudo é sanitizado ao salvar, ao restaurar versões e antes de renderizar no editor/pré-visualização.
 - Modelos de laudo reutilizáveis. Cada novo laudo começa com uma cópia do modelo; edição posterior não altera o modelo nem os outros laudos.
 - Agenda com consultas por mês, semana ou dia; compromissos ligados a processo e opcionalmente a pessoa; edição/reagendamento/cancelamento; envio, aceite e prazo aparecem como marcos automáticos.
 - Honorários com valores e datas de fixação, solicitação e liberação; pagamentos parciais, data de recebimento, observações e associação opcional a um documento já anexado. Saldo calculado; pagamentos não mudam automaticamente o status técnico do processo.
-- Configurações de perfil profissional e antecedência dos lembretes do painel. A especialidade do perfil define automaticamente o tipo nas novas perícias e não é editável durante a criação; em perícias existentes, o campo pode ser alterado na edição. O cadastro do TJRS inicia com a relação histórica oficial de foros/códigos de 2009; cada conta pode adicionar ou corrigir códigos próprios. Números completos no padrão CNJ do TJRS (8.21) preenchem a comarca quando o código OOOO é conhecido; código ausente/ambíguo não impede salvar e a comarca pode ser informada manualmente.
+- Configurações de perfil profissional e antecedência dos lembretes do painel. A especialidade do perfil define automaticamente o tipo nas novas perícias; o tipo não aparece no formulário de cadastro/edição e é preservado em perícias existentes. O cadastro do TJRS inicia com a relação histórica oficial de foros/códigos de 2009; cada conta pode adicionar ou corrigir códigos próprios. Números completos no padrão CNJ do TJRS (8.21) preenchem a comarca quando o código OOOO é conhecido; código ausente/ambíguo não impede salvar e a comarca pode ser informada manualmente.
 - Relatórios filtrados por período, comarca, vara e tipo, com totais, estimativa de dias entre entrega e primeiro pagamento quando há dados, exportação CSV e impressão/salvamento em PDF pelo navegador.
 - Anexos privados (PDF, DOC/DOCX, JPEG/PNG até 25 MB), download autenticado e exportação ZIP por conta com manifesto, banco filtrado e apenas seus anexos. Restauração total e edição/importação SQLite estão desativadas no SaaS multi-conta.
 - Layout adaptado a smartphones. Navegação: Visão geral como página principal; processos com abas de acompanhamento e arquivadas; laudos no menu principal; exportação de dados individuais dentro de Configurações.
 - Cadastro e edição de perícia organizam cada campo em uma linha, com rótulo à esquerda e controle à direita; validações e ajudas ficam abaixo do controle. Em telas estreitas, o rótulo passa para cima.
-- No cadastro/edição, o bloco financeiro mostra honorários, status, data do SEI (campo legado `DataEnvio`), pagamentos registrados e total recebido. Valores e datas históricos de honorários solicitados/liberados continuam preservados, mas não são editáveis nesse formulário; pagamentos são geridos na seção Honorários do processo.
+- A área de periciados usa uma linha de largura completa: título/ajuda à esquerda e botão de adicionar à direita.
+- No cadastro/edição, o bloco financeiro mostra honorários, status, data do SEI (campo legado `DataEnvio`) e uma área única de pagamentos, com total recebido e lançamentos detalhados. Valores e datas históricos de honorários solicitados/liberados continuam preservados, mas não são editáveis nesse formulário; pagamentos são geridos na seção Honorários do processo.
 - A identidade visual usa paleta neutra e componentes Razor compartilhados para títulos de páginas (`_PageTitle`) e títulos de seções/painéis (`_PanelTitle`), definidos por `PageHeadingViewModel` e `PanelHeadingViewModel`. Os seletores das páginas usam um dropdown compartilhado com pesquisa, lista rolável e suporte a teclado; os valores continuam sendo enviados pelos elementos de formulário existentes. A comarca tem sugestões customizadas e aceita texto manual.
 
 ## Limites e decisões ainda pendentes do plano
