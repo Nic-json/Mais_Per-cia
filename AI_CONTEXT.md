@@ -8,6 +8,7 @@ Perito em Dia é uma aplicação privada em português para um perito judicial o
 
 - ASP.NET Core MVC em .NET 10, Razor views, Entity Framework Core e SQLite.
 - Interface responsiva com Bootstrap, CSS e JavaScript/jQuery; não é uma SPA React.
+- A marca usa o símbolo SVG `wwwroot/images/perito-em-dia-mark.svg` no menu, login, assinatura e páginas públicas; o nome e o descritor permanecem em texto HTML para legibilidade.
 - Desenvolvimento local com `dotnet run`; produção em Docker Compose + Caddy com HTTPS.
 - Cadastro individual e login com senha em hash ASP.NET Identity PasswordHasher, cookie seguro e limite por IP. Checkout mensal configurável via Asaas; antes de gerar cobrança, a aplicação consulta e provisiona o webhook Asaas. Somente webhook com token autenticado confirma pagamento e libera acesso, exceto a conta inicial ID 1. `Admin__Email`/`Admin__Password` bootstrap criam a conta inicial ID 1.
 - Todo registro operacional tem `UsuarioId`; filtros globais no `PericiasContext` e preenchimento automático em `SaveChanges` isolam as contas. Dados antigos migram para a conta inicial ID 1.
@@ -26,7 +27,9 @@ Perito em Dia é uma aplicação privada em português para um perito judicial o
 - Anexos privados (PDF, DOC/DOCX, JPEG/PNG até 25 MB), download autenticado e exportação ZIP por conta com manifesto, banco filtrado e apenas seus anexos. Restauração total e edição/importação SQLite estão desativadas no SaaS multi-conta.
 - Layout adaptado a smartphones. Navegação: Visão geral como página principal; processos com abas de acompanhamento e arquivadas; laudos no menu principal; exportação de dados individuais dentro de Configurações.
 - As tabelas de Visão geral e Processos usam largura fixa com quebra de nomes e conteúdo nas células; em smartphone elas se ajustam à largura disponível sem rolagem horizontal.
+- Os filtros da Visão geral usam uma grade responsiva: busca com espaço maior, seletores e datas alinhados, ações agrupadas na última coluna.
 - Os paginadores de Visão geral e Processos permitem escolher 10, 20, 25, 50 ou 100 itens por página em um seletor sem rótulo visível; filtros e quantidade selecionada são preservados na navegação.
+- O rodapé desses cards alinha o seletor nativo de itens à esquerda e uma faixa compacta de até cinco páginas à direita, sem resumo textual de página atual.
 - Ações em links de tabela e limpeza de filtros usam estilo de botão compartilhado com contorno; ações de busca usam o rótulo “Pesquisar”. Variantes primária/secundária conservam a hierarquia visual.
 - Cadastro e edição de perícia organizam cada campo em uma linha, com rótulo à esquerda e controle à direita; validações e ajudas ficam abaixo do controle. Em telas estreitas, o rótulo passa para cima.
 - A área de periciados usa uma linha de largura completa: título/ajuda à esquerda e botão de adicionar à direita.

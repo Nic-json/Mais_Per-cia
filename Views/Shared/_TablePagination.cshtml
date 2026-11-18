@@ -1,0 +1,33 @@
+@model Sistemas_para_pericias.Models.PaginationViewModel
+@{
+    var paginaInicial = Math.Max(1, Math.Min(Model.Pagina - 2, Model.TotalPaginas - 4));
+    var paginaFinal = Math.Min(Model.TotalPaginas, paginaInicial + 4);
+    var tamanhosPagina = new[] { 10, 20, 25, 50, 100 };
+}
+<nav class="table-pagination" aria-label="Paginação">
+    <form method="get" asp-controller="Home" asp-action="@Model.Action" class="page-size-form">
+        @foreach (var filtro in Model.Filtros)
+        {
+            <input type="hidden" name="@filtro.Key" value="@filtro.Value" />
+        }
+        <select name="porPagina" class="page-size-select" aria-label="Itens por página" onchange="this.form.submit()">
+            @foreach (var tamanho in tamanhosPagina)
+            {
+                <option value="@tamanho" selected="@(Model.TamanhoPagina == tamanho)">@tamanho</option>
+            }
+        </select>
+    </form>
+    <ul class="pagination">
+        @for (var pagina = paginaInicial; pagina <= paginaFinal; pagina++)
+        {
+            var rota = new Dictionary<string, string>(Model.Filtros)
+            {
+                ["pagina"] = pagina.ToString(),
+                ["porPagina"] = Model.TamanhoPagina.ToString()
+            };
+            <li class="page-item @(pagina == Model.Pagina ? "active" : "")">
+                <a class="page-link" asp-controller="Home" asp-action="@Model.Action" asp-all-route-data="rota" aria-current="@(pagina == Model.Pagina ? "page" : null)">@pagina</a>
+            </li>
+        }
+    </ul>
+</nav>
