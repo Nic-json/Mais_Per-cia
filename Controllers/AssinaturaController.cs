@@ -127,7 +127,7 @@ public sealed class AssinaturaController(PericiasContext db, IConfiguration conf
             var checkout = root.TryGetProperty("checkout", out var checkoutObj) ? checkoutObj : default;
             var subscription = root.TryGetProperty("subscription", out var subObj) ? subObj : default;
             var payment = root.TryGetProperty("payment", out var payObj) ? payObj : default;
-            var checkoutId = String(checkout, "id");
+            var checkoutId = String(checkout, "id") ?? String(payment, "checkoutSession");
             var subscriptionId = String(subscription, "id") ?? String(payment, "subscription");
             var customerId = String(checkout, "customer") ?? String(subscription, "customer") ?? String(payment, "customer");
             var externalRef = String(checkout, "externalReference") ?? String(subscription, "externalReference") ?? String(payment, "externalReference");
