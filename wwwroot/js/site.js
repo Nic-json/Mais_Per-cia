@@ -4,6 +4,45 @@
 // Write your JavaScript code.
 
 (() => {
+    const currencyFormat = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const currencyTarget = input => {
+        const targetId = input.dataset.currencyTarget;
+        return targetId ? input.form?.querySelector(`#${CSS.escape(targetId)}`) || document.getElementById(targetId) : null;
+    };
+    const parseBrazilianAmount = value => {
+        const normalized = (value ?? '').toString().trim().replace(/\./g, '').replace(',', '.');
+        const amount = Number(normalized);
+        return Number.isFinite(amount) ? amount : 0;
+    };
+    const syncCurrencyInput = input => {
+        const target = currencyTarget(input);
+        const digits = input.value.replace(/\D/g, '').slice(0, 11);
+        if (!digits) {
+            input.value = '';
+            if (target) target.value = '';
+            return;
+        }
+        const amount = Number(digits) / 100;
+        input.value = currencyFormat.format(amount);
+        if (target) target.value = amount.toFixed(2).replace('.', ',');
+    };
+    const initializeCurrencyMasks = root => {
+        root.querySelectorAll('[data-currency-mask]').forEach(input => {
+            if (input.dataset.currencyMaskReady === 'true') return;
+            input.dataset.currencyMaskReady = 'true';
+            const target = currencyTarget(input);
+            const initial = target?.value || input.value;
+            if (initial) {
+                const cents = Math.round(parseBrazilianAmount(initial) * 100);
+                input.value = currencyFormat.format(cents / 100);
+                if (target) target.value = (cents / 100).toFixed(2).replace('.', ',');
+            }
+            input.addEventListener('input', () => syncCurrencyInput(input));
+            input.form?.addEventListener('submit', () => syncCurrencyInput(input));
+        });
+    };
+    initializeCurrencyMasks(document);
+
     document.addEventListener('click', event => {
         const openButton = event.target.closest('[data-app-modal-open]');
         if (openButton) {
@@ -13,6 +52,7 @@
             if (!dialog || !template || !body) return;
 
             body.replaceChildren(template.content.cloneNode(true));
+            initializeCurrencyMasks(body);
             dialog.showModal();
             requestAnimationFrame(() => body.querySelector('input:not([type="hidden"]), select, textarea')?.focus({ preventScroll: true }));
             return;
