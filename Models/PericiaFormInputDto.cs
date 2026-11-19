@@ -10,7 +10,6 @@ public sealed class PericiaFormInputDto
     [StringLength(120)] public string? Comarca { get; set; }
     [StringLength(120)] public string? Vara { get; set; }
     [StringLength(120)] public string? TipoPericia { get; set; }
-    public DateTime? DataEnvio { get; set; }
     public DateTime? DataAceite { get; set; }
     public DateTime? PrazoLaudo { get; set; }
     [Range(0, 999999999)] public decimal ValorHonorarios { get; set; }
@@ -36,7 +35,6 @@ public sealed class PericiaFormInputDto
         Comarca = Comarca?.Trim(),
         Vara = Vara?.Trim(),
         TipoPericia = TipoPericia?.Trim(),
-        DataEnvio = DataEnvio,
         DataAceite = DataAceite,
         PrazoLaudo = PrazoLaudo,
         ValorHonorarios = ValorHonorarios,

@@ -18,7 +18,7 @@
     <div class="side-caption">MENU PRINCIPAL</div>
     <a asp-controller="Home" asp-action="Index" class="side-link @(actionAtual == "Index" || actionAtual == "Criar" || actionAtual == "Editar" ? "active" : "")"><span>⌂</span> Visão geral</a>
     <a asp-controller="Home" asp-action="Processos" asp-route-arquivadas="false" class="side-link @(actionAtual == "Processos" || actionAtual == "Processo" || actionAtual == "Arquivadas" ? "active" : "")"><span>▤</span> Processos</a>
-    <a asp-controller="Home" asp-action="Laudos" class="side-link @(actionAtual == "Laudos" || actionAtual == "NovoLaudo" || actionAtual == "EditorLaudo" || actionAtual == "ModelosLaudo" ? "active" : "")"><span>▧</span> Laudos</a>
+    <a asp-controller="Home" asp-action="Laudos" class="side-link @(actionAtual == "Laudos" || actionAtual == "LaudosDaPericia" || actionAtual == "EditorLaudo" || actionAtual == "ModelosLaudo" ? "active" : "")"><span>▧</span> Laudos</a>
     <a asp-controller="Home" asp-action="Agenda" class="side-link @(actionAtual == "Agenda" ? "active" : "")"><span>◷</span> Agenda</a>
     <a asp-controller="Home" asp-action="Honorarios" class="side-link @(actionAtual == "Honorarios" ? "active" : "")"><span>R$</span> Honorários</a>
     <a asp-controller="Home" asp-action="Relatorios" class="side-link @(actionAtual == "Relatorios" ? "active" : "")"><span>▥</span> Relatórios</a>

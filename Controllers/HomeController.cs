@@ -50,7 +50,6 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
         destino.Numero = origem.Numero;
         destino.Comarca = origem.Comarca;
         destino.Vara = origem.Vara;
-        destino.DataEnvio = origem.DataEnvio;
         destino.DataAceite = origem.DataAceite;
         destino.PrazoLaudo = origem.PrazoLaudo;
         destino.ValorHonorarios = origem.ValorHonorarios;
@@ -295,53 +294,6 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
         return View(pericia);
     }
 
-    [HttpPost, ValidateAntiForgeryToken]
-    public async Task<IActionResult> AdicionarPericiado(int id, string? nome, string? telefone, string? observacoes)
-    {
-        var pericia = await db.Pericias.Include(p => p.Periciados).FirstOrDefaultAsync(p => p.Id == id);
-        if (pericia is null) return NotFound();
-        nome = nome?.Trim() ?? "";
-        if (nome.Length < 2 || nome.Length > 160 || pericia.Periciados.Count >= 50 || pericia.Periciados.Any(p => p.Nome.Equals(nome, StringComparison.OrdinalIgnoreCase)) ||
-            telefone?.Length > 200 || observacoes?.Length > 4000)
-        {
-            TempData["ErroPericiado"] = "Informe um nome válido, não repetido; o limite é 50 pessoas por perícia.";
-            return RedirectToAction(nameof(Processo), new { id });
-        }
-        pericia.Periciados.Add(new Periciado { Nome = nome, Contato = telefone?.Trim(), RegistroEntrevista = observacoes?.Trim() });
-        RegistrarHistorico(id, "Periciado", "Periciado adicionado ao processo.");
-        await db.SaveChangesAsync();
-        return RedirectToAction(nameof(Processo), new { id });
-    }
-
-    [HttpPost, ValidateAntiForgeryToken]
-    public async Task<IActionResult> AtualizarPericiado(int id, int periciadoId, string? nome, string? telefone, string? observacoes)
-    {
-        var pessoa = await db.Periciados.FirstOrDefaultAsync(p => p.Id == periciadoId && p.PericiaId == id);
-        if (pessoa is null) return NotFound();
-        nome = nome?.Trim() ?? "";
-        if (nome.Length < 2 || nome.Length > 160 || telefone?.Length > 200 || observacoes?.Length > 4000 ||
-            await db.Periciados.AnyAsync(p => p.PericiaId == id && p.Id != periciadoId && p.Nome == nome))
-        {
-            TempData["ErroPericiado"] = "Nome inválido ou já cadastrado nesta perícia.";
-            return RedirectToAction(nameof(Processo), new { id });
-        }
-        pessoa.Nome = nome; pessoa.Contato = telefone?.Trim(); pessoa.RegistroEntrevista = observacoes?.Trim();
-        RegistrarHistorico(id, "Periciado", "Dados de um periciado atualizados.");
-        await db.SaveChangesAsync();
-        return RedirectToAction(nameof(Processo), new { id });
-    }
-
-    [HttpPost, ValidateAntiForgeryToken]
-    public async Task<IActionResult> ExcluirPericiado(int id, int periciadoId)
-    {
-        var pessoa = await db.Periciados.FirstOrDefaultAsync(p => p.Id == periciadoId && p.PericiaId == id);
-        if (pessoa is null) return NotFound();
-        db.Periciados.Remove(pessoa);
-        RegistrarHistorico(id, "Periciado", "Periciado removido do processo.");
-        await db.SaveChangesAsync();
-        return RedirectToAction(nameof(Processo), new { id });
-    }
-
     public async Task<IActionResult> Agenda(DateTime? data, string? modo)
     {
         modo = modo is "dia" or "semana" ? modo : "mes";
@@ -425,22 +377,40 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
     }
 
     [HttpPost, ValidateAntiForgeryToken]
-    public async Task<IActionResult> RegistrarPagamento(int id, decimal valor, DateTime? dataRecebimento, int? documentoPericiaId, string? observacoes)
+    public async Task<IActionResult> RegistrarPagamento(int id, decimal valor, DateTime? dataRecebimento, string? observacoes)
     {
         var pericia = await db.Pericias.FirstOrDefaultAsync(p => p.Id == id);
         if (pericia is null) return NotFound();
-        if (valor <= 0 || valor > Math.Max(0m, pericia.ValorHonorarios - pericia.ValorRecebido) ||
-            (documentoPericiaId.HasValue && !await db.DocumentosPericia.AnyAsync(d => d.Id == documentoPericiaId && d.PericiaId == id)))
+        if (valor <= 0 || valor > Math.Max(0m, pericia.ValorHonorarios - pericia.ValorRecebido))
         {
-            TempData["ErroFinanceiro"] = "Informe um valor positivo dentro do saldo e selecione um comprovante deste processo.";
+            TempData["ErroFinanceiro"] = "Informe um valor positivo dentro do saldo disponível.";
             return RedirectToAction(nameof(Processo), new { id });
         }
-        db.PagamentosHonorarios.Add(new PagamentoHonorario { PericiaId = id, Valor = valor, DataRecebimento = dataRecebimento, DocumentoPericiaId = documentoPericiaId, Observacoes = observacoes?.Trim() });
+        db.PagamentosHonorarios.Add(new PagamentoHonorario { PericiaId = id, Valor = valor, DataRecebimento = dataRecebimento, Observacoes = observacoes?.Trim() });
         RegistrarHistorico(id, "Honorários", "Pagamento recebido registrado.");
         pericia.ValorRecebido += valor;
         await db.SaveChangesAsync();
         TempData["MensagemFinanceira"] = "Pagamento registrado.";
         return RedirectToAction(nameof(Processo), new { id });
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> AtualizarDataSei(int id, DateTime? dataSei)
+    {
+        var pericia = await db.Pericias.FirstOrDefaultAsync(p => p.Id == id);
+        if (pericia is null) return NotFound();
+
+        if (pericia.DataEnvio != dataSei)
+        {
+            pericia.DataEnvio = dataSei;
+            RegistrarHistorico(id, "Processo", dataSei.HasValue
+                ? $"Data do SEI registrada: {dataSei.Value:dd/MM/yyyy}."
+                : "Data do SEI removida.");
+            await db.SaveChangesAsync();
+            TempData["MensagemFinanceira"] = dataSei.HasValue ? "Data do SEI registrada." : "Data do SEI removida.";
+        }
+
+        return RedirectToAction(nameof(Processo), new { id, fragment = "honorarios" });
     }
 
     [HttpPost, ValidateAntiForgeryToken]
@@ -456,21 +426,6 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
         RegistrarHistorico(periciaId, "Honorários", "Registro de pagamento removido.");
         await db.SaveChangesAsync();
         return RedirectToAction(nameof(Processo), new { id = periciaId });
-    }
-
-    [HttpPost, ValidateAntiForgeryToken]
-    public async Task<IActionResult> RegistrarAtualizacao(int id, string? descricao)
-    {
-        if (!await db.Pericias.AnyAsync(p => p.Id == id)) return NotFound();
-        if (string.IsNullOrWhiteSpace(descricao) || descricao.Trim().Length > 900)
-        {
-            TempData["ErroFinanceiro"] = "Escreva uma atualização de até 900 caracteres.";
-            return RedirectToAction(nameof(Processo), new { id });
-        }
-        RegistrarHistorico(id, "Atualização", descricao.Trim());
-        await db.SaveChangesAsync();
-        TempData["MensagemFinanceira"] = "Atualização adicionada ao histórico.";
-        return RedirectToAction(nameof(Processo), new { id, fragment = "historico" });
     }
 
     public async Task<IActionResult> Relatorios(DateTime? inicio, DateTime? fim, string? comarca, string? vara, string? tipo)
@@ -530,14 +485,15 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
         return View(await query.OrderByDescending(pericia => pericia.Laudos.Max(laudo => (DateTime?)laudo.AtualizadoEm)).ToListAsync());
     }
 
-    public async Task<IActionResult> NovoLaudo()
+    public async Task<IActionResult> LaudosDaPericia(int id)
     {
-        var pericias = await ConsultaVisaoGeral()
+        var pericia = await db.Pericias.AsNoTracking()
             .Include(p => p.Periciados)
-            .OrderBy(p => p.Numero)
-            .ToListAsync();
+            .Include(p => p.Laudos).ThenInclude(l => l.Periciado)
+            .FirstOrDefaultAsync(p => p.Id == id);
+        if (pericia is null) return NotFound();
         ViewBag.Modelos = await db.ModelosLaudo.AsNoTracking().OrderBy(m => m.Nome).ToListAsync();
-        return View(pericias);
+        return View(pericia);
     }
 
     [HttpPost, ValidateAntiForgeryToken]
@@ -548,7 +504,7 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
         if (periciadoId.HasValue && !pericia.Periciados.Any(p => p.Id == periciadoId.Value))
         {
             TempData["Erro"] = "O periciado selecionado não pertence a esta perícia.";
-            return RedirectToAction(nameof(Editar), new { id = periciaId });
+            return RedirectToAction(nameof(LaudosDaPericia), new { id = periciaId });
         }
 
         var numerosLaudos = await db.LaudosPericia.Select(l => l.NumeroLaudo).ToListAsync();
@@ -721,15 +677,14 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
         await transacao.CommitAsync();
     }
 
-    public async Task<IActionResult> Criar(bool abrirLaudoDepois = false)
+    public async Task<IActionResult> Criar()
     {
-        ViewBag.AbrirLaudoDepois = abrirLaudoDepois;
         await PrepararCatalogoForenseAsync();
-        return View("Formulario", new Pericia { DataEnvio = DateTime.Today });
+        return View("Formulario", new Pericia());
     }
 
     [HttpPost, ValidateAntiForgeryToken]
-    public async Task<IActionResult> Criar(PericiaFormInputDto input, bool abrirLaudoDepois = false)
+    public async Task<IActionResult> Criar(PericiaFormInputDto input)
     {
         input.Periciados ??= [];
         await AplicarComarcaDoCodigoTjrsAsync(input);
@@ -745,7 +700,6 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
             ModelState.AddModelError(nameof(pericia.Numero), "Esse número de perícia já está cadastrado.");
         if (!ModelState.IsValid)
         {
-            ViewBag.AbrirLaudoDepois = abrirLaudoDepois;
             await PrepararCatalogoForenseAsync();
             return View("Formulario", pericia);
         }
@@ -755,12 +709,11 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
         RegistrarHistorico(pericia.Id, "Processo", "Perícia cadastrada.");
         await db.SaveChangesAsync();
         TempData["Mensagem"] = "Perícia cadastrada com sucesso.";
-        if (abrirLaudoDepois) return RedirectToAction(nameof(Editar), new { id = pericia.Id });
         return RedirectToAction(nameof(Index));
     }
     public async Task<IActionResult> Editar(int id)
     {
-        var pericia = await db.Pericias.Include(p => p.Documentos).Include(p => p.Periciados).Include(p => p.Pagamentos).Include(p => p.Laudos).ThenInclude(l => l.Periciado).FirstOrDefaultAsync(p => p.Id == id);
+        var pericia = await db.Pericias.Include(p => p.Documentos).Include(p => p.Periciados).Include(p => p.Pagamentos).FirstOrDefaultAsync(p => p.Id == id);
         if (pericia is null) return NotFound();
         await PrepararCatalogoForenseAsync();
         return View("Formulario", pericia);
@@ -789,7 +742,6 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
             pericia.ValorRecebido = await db.Pericias.AsNoTracking().Where(p => p.Id == id).Select(p => p.ValorRecebido).FirstOrDefaultAsync();
             pericia.Pagamentos = await db.PagamentosHonorarios.Where(p => p.PericiaId == id).OrderByDescending(p => p.DataRecebimento).ToListAsync();
             pericia.Documentos = await db.DocumentosPericia.Where(d => d.PericiaId == id).ToListAsync();
-            pericia.Laudos = await db.LaudosPericia.Include(l => l.Periciado).Where(l => l.PericiaId == id).OrderBy(l => l.Id).ToListAsync();
             return View("Formulario", pericia);
         }
         AtualizarCamposEditaveis(atual, pericia);
@@ -1029,7 +981,12 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
         laudo.AtualizadoEm = DateTime.UtcNow;
         RegistrarHistorico(id, "Laudo", $"Status do laudo {laudo.NumeroLaudo} alterado para {status}.");
         await db.SaveChangesAsync();
-        return origem == "laudos" ? RedirectToAction(nameof(Laudos)) : RedirectToAction(nameof(Processo), new { id });
+        return origem switch
+        {
+            "laudos-pericia" => RedirectToAction(nameof(LaudosDaPericia), new { id }),
+            "laudos" => RedirectToAction(nameof(Laudos)),
+            _ => RedirectToAction(nameof(Processo), new { id })
+        };
     }
 
     public async Task<IActionResult> VisualizarLaudo(int id, int laudoId)
@@ -1055,7 +1012,7 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
         db.LaudosPericia.Remove(laudo);
         await db.SaveChangesAsync();
         TempData["Mensagem"] = $"Laudo {laudo.NumeroLaudo} removido.";
-        return RedirectToAction(nameof(Editar), new { id });
+        return RedirectToAction(nameof(LaudosDaPericia), new { id });
     }
 
     [HttpPost, ValidateAntiForgeryToken]

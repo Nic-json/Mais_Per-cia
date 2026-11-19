@@ -5,7 +5,6 @@
 @if (TempData["Mensagem"] is string mensagemDocumento) { <div class="alert alert-success">@mensagemDocumento</div> }
 @if (TempData["Erro"] is string erroDocumento) { <div class="alert alert-danger">@erroDocumento</div> }
 <form asp-action="@(editar ? "Editar" : "Criar")" asp-route-id="@Model.Id" method="post" class="form-panel pericia-form" data-catalogo-foros="@ViewBag.CatalogoForosJson">
- @if (!editar && ViewBag.AbrirLaudoDepois is true) { <input type="hidden" name="abrirLaudoDepois" value="true" /> }
  <div asp-validation-summary="All" class="text-danger"></div>
  <input asp-for="DataHonorariosFixados" type="hidden" /><input asp-for="ValorHonorariosSolicitados" type="hidden" /><input asp-for="DataHonorariosSolicitados" type="hidden" />
  <input asp-for="ValorHonorariosLiberados" type="hidden" /><input asp-for="DataHonorariosLiberados" type="hidden" />
@@ -43,7 +42,6 @@
   <div class="row g-3 pericia-fields">
   <div class="col-md-4"><label asp-for="ValorHonorarios" class="form-label"></label><div class="input-group"><span class="input-group-text">R$</span><input asp-for="ValorHonorarios" class="form-control" type="number" step="0.01" min="0" /></div><span asp-validation-for="ValorHonorarios" class="text-danger"></span></div>
   <div class="col-md-4"><label asp-for="Status" class="form-label"></label><select asp-for="Status" asp-items="Html.GetEnumSelectList<StatusPericia>()" class="form-select"></select></div>
-  <div class="col-md-4"><label class="form-label" for="DataEnvio">Data do SEI</label><input asp-for="DataEnvio" class="form-control" /><span asp-validation-for="DataEnvio" class="text-danger"></span></div>
   <div class="col-12"><label class="form-label">Pagamentos</label><div class="form-control-plaintext fw-semibold">Total recebido: @Model.ValorRecebido.ToString("C")</div>@if (Model.Pagamentos.Count > 0) { <div class="d-grid gap-1">@foreach (var pagamento in Model.Pagamentos.OrderByDescending(p => p.DataRecebimento)) { <div class="form-control-plaintext">@(pagamento.DataRecebimento?.ToString("dd/MM/yyyy") ?? "Data n&#227;o informada") · @pagamento.Valor.ToString("C")</div> }</div> } else { <div class="form-text">Nenhum pagamento detalhado registrado.</div> }@if (editar) { <a asp-action="Processo" asp-route-id="@Model.Id" asp-fragment="honorarios" class="action-link">Gerenciar pagamentos</a> }</div>
  </div>
  <div class="form-actions"><button type="submit" class="btn btn-primary btn-lg">@(editar ? "Salvar alterações" : "Cadastrar perícia")</button><a asp-action="Index" class="btn btn-light btn-lg">Cancelar</a>@if (editar) { <button type="submit" form="delete-form" class="btn btn-link text-danger ms-auto" data-confirm-message="Remover esta perícia? Esta ação não pode ser desfeita.">Excluir perícia</button> }</div>
@@ -51,25 +49,8 @@
 @if (editar) { <form id="delete-form" asp-action="Excluir" asp-route-id="@Model.Id" method="post"></form> }
 @if (editar)
 {
- <section class="form-panel mt-4">
-  <div class="form-section-title"><span>03</span><div><h2>Laudos desta perícia</h2><p>Cada laudo recebe número sequencial automático; associe a pessoa correspondente.</p></div></div>
-  @if (Model.Laudos.Count > 0)
-  {
-   <div class="table-responsive mb-4"><table class="table align-middle"><thead><tr><th>Número do laudo</th><th>Periciado</th><th>Última alteração</th><th></th></tr></thead><tbody>
-   @foreach (var laudo in Model.Laudos.OrderBy(l => l.Id))
-   {
-    <tr><td><strong>@laudo.NumeroLaudo</strong></td><td>@(laudo.Periciado?.Nome ?? "Não associado")</td><td>@(string.IsNullOrWhiteSpace(laudo.ConteudoHtml) ? "Rascunho vazio" : laudo.AtualizadoEm.ToLocalTime().ToString("dd/MM/yyyy HH:mm"))</td><td class="text-end"><a asp-action="EditorLaudo" asp-route-id="@Model.Id" asp-route-laudoId="@laudo.Id" class="action-link">@(string.IsNullOrWhiteSpace(laudo.ConteudoHtml) ? "Escrever" : "Abrir")</a><form asp-action="ExcluirLaudo" asp-route-id="@Model.Id" asp-route-laudoId="@laudo.Id" method="post" class="d-inline"><button type="submit" class="btn btn-link text-danger p-0 ms-3" data-confirm-message="Excluir este laudo?">Excluir</button></form></td></tr>
-   }
-   </tbody></table></div>
-  }
-  else { <p class="muted">Nenhum laudo cadastrado nesta perícia.</p> }
-  <form asp-action="CriarLaudo" asp-route-periciaId="@Model.Id" method="post" class="row g-3 align-items-end">
-      <div class="col-md-8"><label class="form-label" for="periciadoId">Periciado relacionado</label><select id="periciadoId" name="periciadoId" class="form-select"><option value="">Sem associação</option>@foreach (var pessoa in Model.Periciados.OrderBy(p => p.Nome)) { <option value="@pessoa.Id">@pessoa.Nome</option> }</select></div>
-   <div class="col-md-4"><button type="submit" class="btn btn-primary">＋ Criar laudo</button></div>
-  </form>
- </section>
  <section class="form-panel document-panel mt-4">
-  <div class="form-section-title"><span>04</span><div><h2>Laudos e documentos</h2><p>Arquivos privados desta perícia, acessíveis apenas após login.</p></div></div>
+  <div class="form-section-title"><span>03</span><div><h2>Laudos e documentos</h2><p>Arquivos privados desta perícia, acessíveis apenas após login.</p></div></div>
   <form asp-action="AnexarDocumento" asp-route-id="@Model.Id" method="post" enctype="multipart/form-data" class="row g-3 align-items-end">
    <div class="col-md-8"><label for="arquivo" class="form-label">Selecionar arquivo</label><input id="arquivo" name="arquivo" type="file" class="form-control" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" required /><div class="form-text">PDF, Word (DOC/DOCX), JPG ou PNG. Limite de 25 MB por arquivo.</div></div>
    <div class="col-md-4"><button type="submit" class="btn btn-primary">Anexar documento</button></div>

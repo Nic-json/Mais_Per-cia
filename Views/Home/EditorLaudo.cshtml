@@ -4,7 +4,7 @@
 }
 
 <header class="page-heading">
- <div><a asp-action="Editar" asp-route-id="@Model.PericiaId" class="back-link">← Voltar para a perícia</a><partial name="_PageTitle" model='new PageHeadingViewModel("LAUDO PERICIAL", "Editor do laudo", $"Laudo nº {Model.NumeroLaudo} · Perícia nº {Model.Numero} · {Model.NomePericiado}")' /></div>
+ <div><a asp-action="LaudosDaPericia" asp-route-id="@Model.PericiaId" class="back-link">← Voltar aos laudos</a><partial name="_PageTitle" model='new PageHeadingViewModel("LAUDO PERICIAL", "Editor do laudo", $"Laudo nº {Model.NumeroLaudo} · Perícia nº {Model.Numero} · {Model.NomePericiado}")' /></div>
 </header>
 
 @if (TempData["MensagemLaudo"] is string mensagem) { <div class="alert alert-success">@mensagem</div> }
