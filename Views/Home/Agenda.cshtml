@@ -10,6 +10,7 @@
 <header class="page-heading">
     <partial name="_PageTitle" model='new PageHeadingViewModel("COMPROMISSOS E PRAZOS", "Agenda", "Compromissos vinculados às perícias.")' />
     <div class="heading-actions agenda-period-navigation">
+        <button type="button" class="btn btn-primary agenda-create-trigger" data-app-modal-open="#agenda-create-modal" data-app-modal-template="#agenda-create-template"><span class="plus">+</span>Novo compromisso</button>
         <a class="btn btn-outline-secondary" asp-action="Agenda" asp-route-data="@(((DateTime)ViewBag.Anterior).ToString("yyyy-MM-dd"))" asp-route-modo="@modo">← Anterior</a>
         <strong>@ViewBag.TituloPeriodo</strong>
         <a class="btn btn-outline-secondary" asp-action="Agenda" asp-route-data="@(((DateTime)ViewBag.Proximo).ToString("yyyy-MM-dd"))" asp-route-modo="@modo">Próximo →</a>
@@ -22,6 +23,20 @@
 </form>
 @if (TempData["MensagemAgenda"] is string msg) { <div class="alert alert-success">@msg</div> }
 @if (TempData["ErroAgenda"] is string erro) { <div class="alert alert-danger">@erro</div> }
+<partial name="_AppModal" model='new AppModalViewModel("agenda-create-modal", "Novo compromisso", "Vincule o compromisso a uma perícia e informe data, horário e local.")' />
+<template id="agenda-create-template">
+    <form asp-action="CriarEvento" method="post" class="app-modal-form agenda-create-form">
+        <label class="agenda-field-wide">Processo/perícia<select name="periciaId" class="form-select" required>@foreach (var p in ViewBag.Pericias) { <option value="@p.Id">@p.Numero</option> }</select></label>
+        <label class="agenda-field-wide">Título<input name="titulo" class="form-control" maxlength="160" required placeholder="Entrevista, avaliação..." /></label>
+        <label>Início<input type="datetime-local" name="inicio" class="form-control" required /></label>
+        <label>Fim<input type="datetime-local" name="fim" class="form-control" /></label>
+        <label>Periciado<select name="periciadoId" class="form-select"><option value="">Sem vínculo individual</option>@foreach (var pessoa in ViewBag.Pessoas) { <option value="@pessoa.Id" data-pericia="@pessoa.PericiaId">@pessoa.Nome</option> }</select></label>
+        <label>Modalidade<select name="modalidade" class="form-select"><option value="">Não definida</option><option>Presencial</option><option>Online</option><option>Telefone</option></select></label>
+        <label>Local<input name="local" class="form-control" maxlength="240" /></label>
+        <label>Observações<input name="observacoes" class="form-control" maxlength="2000" /></label>
+        <div class="agenda-modal-actions"><button type="button" class="btn btn-outline-secondary" data-app-modal-close>Cancelar</button><button class="btn btn-primary">Adicionar</button></div>
+    </form>
+</template>
 <section class="list-panel agenda-calendar-section mb-3" aria-label="Calendário da agenda">
     @if (modo == "mes")
     {
@@ -60,20 +75,6 @@
         }
     </div>
 </section>
-<section class="form-panel mb-3">
-    <partial name="_PanelTitle" model='new PanelHeadingViewModel("Novo compromisso")' />
-    <form asp-action="CriarEvento" method="post" class="row g-3 align-items-end">
-        <div class="col-md-4"><label class="form-label">Processo/perícia</label><select name="periciaId" class="form-select" required>@foreach (var p in ViewBag.Pericias) { <option value="@p.Id">@p.Numero</option> }</select></div>
-        <div class="col-md-4"><label class="form-label">Título</label><input name="titulo" class="form-control" maxlength="160" required placeholder="Entrevista, avaliação..." /></div>
-        <div class="col-md-2"><label class="form-label">Início</label><input type="datetime-local" name="inicio" class="form-control" required /></div>
-        <div class="col-md-2"><label class="form-label">Fim</label><input type="datetime-local" name="fim" class="form-control" /></div>
-        <div class="col-md-3"><label class="form-label">Periciado</label><select name="periciadoId" class="form-select"><option value="">Sem vínculo individual</option>@foreach (var pessoa in ViewBag.Pessoas) { <option value="@pessoa.Id" data-pericia="@pessoa.PericiaId">@pessoa.Nome</option> }</select></div>
-        <div class="col-md-3"><label class="form-label">Local</label><input name="local" class="form-control" maxlength="240" /></div>
-        <div class="col-md-2"><label class="form-label">Modalidade</label><select name="modalidade" class="form-select"><option value="">Não definida</option><option>Presencial</option><option>Online</option><option>Telefone</option></select></div>
-        <div class="col-md-3"><label class="form-label">Observações</label><input name="observacoes" class="form-control" maxlength="2000" /></div>
-        <div class="col-md-1"><button class="btn btn-primary">Adicionar</button></div>
-    </form>
-</section>
 <section class="list-panel">
     <partial name="_PanelTitle" model='new PanelHeadingViewModel("Compromissos do período")' />
     @if (!Model.Any()) { <p class="muted">Nenhum compromisso cadastrado neste período.</p> }
@@ -90,19 +91,22 @@
 @section Scripts {
 <script>
 (() => {
- const form = document.querySelector('form[action*="CriarEvento"]');
- const process = form?.querySelector('select[name="periciaId"]');
- const person = form?.querySelector('select[name="periciadoId"]');
- if (!process || !person) return;
- const filter = () => {
-  for (const option of person.options) {
-   if (!option.value) continue;
-   option.hidden = option.dataset.pericia !== process.value;
-   if (option.hidden && option.selected) person.value = "";
-  }
- };
- process.addEventListener('change', filter);
- filter();
+ const trigger = document.querySelector('.agenda-create-trigger');
+ trigger?.addEventListener('click', () => {
+  const form = document.querySelector('#agenda-create-modal form[action*="CriarEvento"]');
+  const process = form?.querySelector('select[name="periciaId"]');
+  const person = form?.querySelector('select[name="periciadoId"]');
+  if (!process || !person) return;
+  const filter = () => {
+   for (const option of person.options) {
+    if (!option.value) continue;
+    option.hidden = option.dataset.pericia !== process.value;
+    if (option.hidden && option.selected) person.value = "";
+   }
+  };
+  process.addEventListener('change', filter);
+  filter();
+ });
 })();
 </script>
 }
