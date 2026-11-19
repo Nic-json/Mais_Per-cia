@@ -56,13 +56,13 @@ public sealed class AssinaturaController(PericiasContext db, IConfiguration conf
 
         var payload = new
         {
-            billingTypes = new[] { "PIX", "CREDIT_CARD" },
+            billingTypes = new[] { "CREDIT_CARD" },
             chargeTypes = new[] { "RECURRENT" },
             minutesToExpire = 1440,
             externalReference = userId.ToString(CultureInfo.InvariantCulture),
             callback = new { successUrl = $"{site}/Assinatura/Retorno", cancelUrl = $"{site}/Assinatura", expiredUrl = $"{site}/Assinatura" },
             items = new[] { new { name = "Assinatura Perícia Clara", description = "Acesso mensal ao Perícia Clara", quantity = 1, value = price } },
-            subscription = new { cycle = "MONTHLY", nextDueDate = DateTime.UtcNow.AddDays(1).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), description = "Assinatura mensal Perícia Clara", externalReference = userId.ToString(CultureInfo.InvariantCulture) }
+            subscription = new { cycle = "MONTHLY", nextDueDate = Sistemas_para_pericias.Utilities.BrasiliaTime.Now.AddDays(1).ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture), description = "Assinatura mensal Perícia Clara", externalReference = userId.ToString(CultureInfo.InvariantCulture) }
         };
 
         try
@@ -73,7 +73,8 @@ public sealed class AssinaturaController(PericiasContext db, IConfiguration conf
             using var response = await clients.CreateClient("Asaas").SendAsync(request, HttpContext.RequestAborted);
             if (!response.IsSuccessStatusCode)
             {
-                logger.LogWarning("Asaas checkout creation returned HTTP {StatusCode}", (int)response.StatusCode);
+                var responseBody = await response.Content.ReadAsStringAsync(HttpContext.RequestAborted);
+                logger.LogWarning("Asaas checkout creation returned HTTP {StatusCode}: {Errors}", (int)response.StatusCode, SummarizeApiErrors(responseBody));
                 TempData["ErroAssinatura"] = "Não foi possível abrir o checkout agora. Tente novamente mais tarde.";
                 return RedirectToAction(nameof(Index));
             }
@@ -269,6 +270,29 @@ public sealed class AssinaturaController(PericiasContext db, IConfiguration conf
     private static string? String(JsonElement element, string name) => element.ValueKind == JsonValueKind.Object && element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
     private static DateTime? ParseDate(string? value) => DateTime.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var result) ? result : null;
     private static DateTime Max(DateTime? current, DateTime proposed) => current is null || proposed > current ? proposed : current.Value;
+    private static string SummarizeApiErrors(string responseBody)
+    {
+        try
+        {
+            using var json = JsonDocument.Parse(responseBody);
+            if (json.RootElement.TryGetProperty("errors", out var errors) && errors.ValueKind == JsonValueKind.Array)
+            {
+                var descriptions = errors.EnumerateArray()
+                    .Select(error => String(error, "description") ?? String(error, "message"))
+                    .Where(message => !string.IsNullOrWhiteSpace(message))
+                    .Take(3)
+                    .ToArray();
+                if (descriptions.Length > 0)
+                {
+                    var summary = string.Join(" | ", descriptions);
+                    return summary.Length <= 500 ? summary : summary[..500];
+                }
+            }
+        }
+        catch (JsonException) { }
+
+        return "No error details returned";
+    }
     private static bool SameSecret(string expected, string supplied)
     {
         var a = Encoding.UTF8.GetBytes(expected); var b = Encoding.UTF8.GetBytes(supplied);
