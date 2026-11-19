@@ -11,6 +11,7 @@ services:
       Admin__Email: ${ADMIN_EMAIL:?Configure ADMIN_EMAIL no arquivo .env}
       Admin__Password: ${ADMIN_PASSWORD:?Configure ADMIN_PASSWORD no arquivo .env}
       Billing__MonthlyPrice: ${BILLING_MONTHLY_PRICE:-49.90}
+      Public__BaseUrl: https://${APP_DOMAIN:?Configure APP_DOMAIN no arquivo .env}
       Asaas__ApiKey: ${ASAAS_API_KEY:-}
       Asaas__WebhookToken: ${ASAAS_WEBHOOK_TOKEN:-}
       Asaas__BaseUrl: ${ASAAS_BASE_URL:-https://api-sandbox.asaas.com/v3}

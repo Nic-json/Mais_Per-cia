@@ -25,7 +25,9 @@ public sealed class AssinaturaController(PericiasContext db, IConfiguration conf
             ValorMensal = decimal.TryParse(config["Billing:MonthlyPrice"], CultureInfo.InvariantCulture, out var price) && price > 0 ? price : null,
             Status = sub?.Status ?? "Pendente",
             AcessoAte = sub?.AcessoAte,
-            CheckoutUrl = sub?.CheckoutId is { Length: > 0 } checkoutId ? CheckoutUrl(checkoutId) : null,
+            CheckoutUrl = sub?.CheckoutId is { Length: > 0 } checkoutId
+                ? sub.CheckoutLink ?? CheckoutFallbackUrl(checkoutId, config["Asaas:BaseUrl"])
+                : null,
             CheckoutConfigurado = CredenciaisOk() && decimal.TryParse(config["Billing:MonthlyPrice"], CultureInfo.InvariantCulture, out var monthly) && monthly > 0
         };
         return View(model);
@@ -47,7 +49,7 @@ public sealed class AssinaturaController(PericiasContext db, IConfiguration conf
             return RedirectToAction("Index", "Home");
 
         var baseUrl = config["Asaas:BaseUrl"]?.TrimEnd('/') ?? "https://api-sandbox.asaas.com/v3";
-        var site = $"{Request.Scheme}://{Request.Host}";
+        var site = config["Public:BaseUrl"]?.TrimEnd('/') ?? $"{Request.Scheme}://{Request.Host}";
         if (!await GarantirWebhookAsync(baseUrl, site))
         {
             TempData["ErroAssinatura"] = "Não foi possível configurar a confirmação automática do pagamento. Nenhuma cobrança foi iniciada; tente novamente mais tarde.";
@@ -82,14 +84,16 @@ public sealed class AssinaturaController(PericiasContext db, IConfiguration conf
             if (!json.RootElement.TryGetProperty("id", out var idElement) || string.IsNullOrWhiteSpace(idElement.GetString()))
                 throw new InvalidOperationException("Asaas response did not contain checkout id.");
             var checkoutId = idElement.GetString()!;
+            var checkoutUrl = GetCheckoutUrl(json.RootElement, checkoutId, baseUrl);
             existing ??= await db.Assinaturas.SingleOrDefaultAsync(x => x.UsuarioId == userId, HttpContext.RequestAborted);
             existing ??= new AssinaturaConta { UsuarioId = userId };
             existing.CheckoutId = checkoutId;
+            existing.CheckoutLink = checkoutUrl;
             existing.Status = "Checkout aberto";
             existing.AtualizadoEm = DateTime.UtcNow;
             if (db.Entry(existing).State == EntityState.Detached) db.Assinaturas.Add(existing);
             await db.SaveChangesAsync(HttpContext.RequestAborted);
-            return Redirect(CheckoutUrl(checkoutId));
+            return Redirect(checkoutUrl);
         }
         catch (Exception ex) when (ex is HttpRequestException or JsonException or InvalidOperationException)
         {
@@ -266,7 +270,22 @@ public sealed class AssinaturaController(PericiasContext db, IConfiguration conf
         }
     }
 
-    private static string CheckoutUrl(string id) => $"https://asaas.com/checkoutSession/show?id={Uri.EscapeDataString(id)}";
+    private static string GetCheckoutUrl(JsonElement checkout, string id, string baseUrl)
+    {
+        if (checkout.TryGetProperty("link", out var linkElement) && Uri.TryCreate(linkElement.GetString(), UriKind.Absolute, out var link) &&
+            link.Scheme == Uri.UriSchemeHttps && (link.Host.Equals("sandbox.asaas.com", StringComparison.OrdinalIgnoreCase) || link.Host.Equals("asaas.com", StringComparison.OrdinalIgnoreCase)))
+            return link.AbsoluteUri;
+
+        return CheckoutFallbackUrl(id, baseUrl);
+    }
+
+    private static string CheckoutFallbackUrl(string id, string? baseUrl)
+    {
+        var escapedId = Uri.EscapeDataString(id);
+        return baseUrl?.Contains("api-sandbox.asaas.com", StringComparison.OrdinalIgnoreCase) == true
+            ? $"https://sandbox.asaas.com/000/checkoutSession/show/{escapedId}"
+            : $"https://asaas.com/checkoutSession/show?id={escapedId}";
+    }
     private static string? String(JsonElement element, string name) => element.ValueKind == JsonValueKind.Object && element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
     private static DateTime? ParseDate(string? value) => DateTime.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var result) ? result : null;
     private static DateTime Max(DateTime? current, DateTime proposed) => current is null || proposed > current ? proposed : current.Value;

@@ -17,7 +17,7 @@ public static class SqliteSchema
             !HasColumn(connection, "Pericias", "Comarca") || !HasColumn(connection, "Pericias", "Vara") || !HasColumn(connection, "Pericias", "Magistrado") || !HasColumn(connection, "Pericias", "TipoPericia") ||
             !HasColumn(connection, "Periciados", "Papel") || !HasColumn(connection, "Periciados", "Relacao") || !HasColumn(connection, "Periciados", "Contato") || !HasColumn(connection, "Periciados", "RegistroEntrevista") ||
             !HasColumn(connection, "LaudosPericia", "NumeroLaudo") ||
-            !HasColumn(connection, "LaudosPericia", "PericiadoId") || !HasColumn(connection, "LaudosPericia", "Status") || !HasColumn(connection, "LaudosPericia", "Tipo") || !HasColumn(connection, "LaudosPericia", "Prazo") || !HasColumn(connection, "LaudosPericia", "EntregueEm");
+            !HasColumn(connection, "LaudosPericia", "PericiadoId") || !HasColumn(connection, "LaudosPericia", "Status") || !HasColumn(connection, "LaudosPericia", "Tipo") || !HasColumn(connection, "LaudosPericia", "Prazo") || !HasColumn(connection, "LaudosPericia", "EntregueEm") || !HasColumn(connection, "AssinaturasContas", "CheckoutLink");
         if (criarBackupAntesMigracao && precisaMigrar && TemPericias(connection))
             CriarPontoRestauracao(connection);
 
@@ -38,6 +38,7 @@ public static class SqliteSchema
                 "UsuarioId" INTEGER NOT NULL,
                 "Status" TEXT NOT NULL DEFAULT 'Pendente',
                 "CheckoutId" TEXT NULL,
+                "CheckoutLink" TEXT NULL,
                 "CustomerId" TEXT NULL,
                 "SubscriptionId" TEXT NULL,
                 "AcessoAte" TEXT NULL,
@@ -83,6 +84,9 @@ public static class SqliteSchema
                     FOREIGN KEY ("PericiadoId") REFERENCES "Periciados" ("Id") ON DELETE SET NULL
             );
             """);
+
+        if (!HasColumn(connection, transaction, "AssinaturasContas", "CheckoutLink"))
+            Execute(connection, transaction, "ALTER TABLE \"AssinaturasContas\" ADD COLUMN \"CheckoutLink\" TEXT NULL;");
 
         if (!HasColumn(connection, transaction, "LaudosPericia", "NumeroLaudo"))
             Execute(connection, transaction, "ALTER TABLE \"LaudosPericia\" ADD COLUMN \"NumeroLaudo\" TEXT NOT NULL DEFAULT '1';");
