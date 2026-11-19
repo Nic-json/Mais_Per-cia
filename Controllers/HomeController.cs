@@ -79,9 +79,14 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
             await db.Database.OpenConnectionAsync();
             try
             {
-                await using var destino = new SqliteConnection($"Data Source={caminhoBanco}");
+                await using var destino = new SqliteConnection(new SqliteConnectionStringBuilder
+                {
+                    DataSource = caminhoBanco,
+                    Pooling = false
+                }.ToString());
                 await destino.OpenAsync();
                 ((SqliteConnection)db.Database.GetDbConnection()).BackupDatabase(destino);
+                await destino.CloseAsync();
             }
             finally
             {
@@ -637,15 +642,19 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
             await db.Database.OpenConnectionAsync();
             try
             {
-                await using var destino = new SqliteConnection($"Data Source={caminhoBanco}");
+                await using var destino = new SqliteConnection(new SqliteConnectionStringBuilder
+                {
+                    DataSource = caminhoBanco,
+                    Pooling = false
+                }.ToString());
                 await destino.OpenAsync();
                 ((SqliteConnection)db.Database.GetDbConnection()).BackupDatabase(destino);
+                await destino.CloseAsync();
             }
             finally
             {
                 await db.Database.CloseConnectionAsync();
             }
-
             var usuarioId = UsuarioAtualId();
             await LimparCopiaParaContaAsync(caminhoBanco, usuarioId);
 
@@ -694,15 +703,25 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
     private static async Task LimparCopiaParaContaAsync(string caminhoBanco, int usuarioId)
     {
         if (usuarioId <= 0) throw new InvalidOperationException("Não foi possível identificar a conta dona do backup.");
-        await using var conexao = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = caminhoBanco }.ToString());
+        await using var conexao = new SqliteConnection(new SqliteConnectionStringBuilder
+        {
+            DataSource = caminhoBanco,
+            Pooling = false
+        }.ToString());
         await conexao.OpenAsync();
         await using var transacao = (SqliteTransaction)await conexao.BeginTransactionAsync();
-        foreach (var tabela in new[] { "VersoesLaudo", "PagamentosHonorarios", "HistoricoPericias", "EventosAgenda", "DocumentosPericia", "LaudosPericia", "Periciados", "Pericias", "ConfiguracoesPerito", "UnidadesForenses", "ModelosLaudo" })
+        foreach (var tabela in new[] { "AssinaturasContas", "VersoesLaudo", "PagamentosHonorarios", "HistoricoPericias", "EventosAgenda", "DocumentosPericia", "LaudosPericia", "Periciados", "Pericias", "ConfiguracoesPerito", "UnidadesForenses", "ModelosLaudo" })
         {
             await using var comando = conexao.CreateCommand();
             comando.Transaction = transacao;
             comando.CommandText = $"DELETE FROM \"{tabela}\" WHERE \"UsuarioId\" <> $usuarioId;";
             comando.Parameters.AddWithValue("$usuarioId", usuarioId);
+            await comando.ExecuteNonQueryAsync();
+        }
+        await using (var comando = conexao.CreateCommand())
+        {
+            comando.Transaction = transacao;
+            comando.CommandText = "DELETE FROM \"EventosAsaas\";";
             await comando.ExecuteNonQueryAsync();
         }
         await using (var comando = conexao.CreateCommand())

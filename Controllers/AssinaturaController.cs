@@ -69,6 +69,7 @@ public sealed class AssinaturaController(PericiasContext db, IConfiguration conf
         {
             using var request = new HttpRequestMessage(HttpMethod.Post, $"{baseUrl}/checkouts") { Content = JsonContent.Create(payload) };
             request.Headers.Add("access_token", config["Asaas:ApiKey"]);
+            request.Headers.UserAgent.ParseAdd("PeritoEmDia/1.0");
             using var response = await clients.CreateClient("Asaas").SendAsync(request, HttpContext.RequestAborted);
             if (!response.IsSuccessStatusCode)
             {
@@ -100,7 +101,7 @@ public sealed class AssinaturaController(PericiasContext db, IConfiguration conf
     [HttpGet("Retorno")]
     public IActionResult Retorno() => RedirectToAction(nameof(Index));
 
-    [HttpPost("/webhooks/asaas"), AllowAnonymous, IgnoreAntiforgeryToken]
+    [HttpPost("/webhooks/asaas"), AllowAnonymous, IgnoreAntiforgeryToken, RequestSizeLimit(131072)]
     public async Task<IActionResult> Webhook()
     {
         var expected = config["Asaas:WebhookToken"];
@@ -153,20 +154,36 @@ public sealed class AssinaturaController(PericiasContext db, IConfiguration conf
                 accountSub.Status = "Ativa";
                 accountSub.AcessoAte = Max(accountSub.AcessoAte, paidAt.AddDays(35));
             }
-            else if (eventName is "PAYMENT_REFUNDED" or "PAYMENT_CHARGEBACK_REQUESTED" or "PAYMENT_RECEIVED_IN_CASH_UNDONE")
+            else if (eventName is "PAYMENT_REFUNDED" or "PAYMENT_PARTIALLY_REFUNDED" or "PAYMENT_CHARGEBACK_REQUESTED" or "PAYMENT_RECEIVED_IN_CASH_UNDONE")
             {
                 accountSub.Status = "Suspensa";
                 accountSub.AcessoAte = DateTime.UtcNow;
             }
-            else if (eventName == "PAYMENT_OVERDUE" && accountSub.AcessoAte < DateTime.UtcNow)
+            else if (eventName is "PAYMENT_OVERDUE" or "PAYMENT_CREDIT_CARD_CAPTURE_REFUSED"
+                && (accountSub.AcessoAte is null || accountSub.AcessoAte < DateTime.UtcNow))
             {
                 accountSub.Status = "Pendente";
             }
-            else if (eventName is "SUBSCRIPTION_CREATED" or "SUBSCRIPTION_UPDATED") accountSub.Status = "Ativa";
+            else if (eventName is "CHECKOUT_CANCELED" or "CHECKOUT_EXPIRED")
+            {
+                if (accountSub.AcessoAte is null || accountSub.AcessoAte < DateTime.UtcNow)
+                    accountSub.Status = eventName == "CHECKOUT_CANCELED" ? "Checkout cancelado" : "Checkout expirado";
+            }
+            else if (eventName is "SUBSCRIPTION_CREATED" or "SUBSCRIPTION_UPDATED")
+                accountSub.Status = accountSub.AcessoAte >= DateTime.UtcNow ? "Ativa" : "Pagamento pendente";
             else if (eventName is "SUBSCRIPTION_INACTIVATED" or "SUBSCRIPTION_DELETED") accountSub.Status = "Cancelada";
 
             db.EventosAsaas.Add(new EventoAsaas { Id = eventId });
-            await db.SaveChangesAsync(HttpContext.RequestAborted);
+            try
+            {
+                await db.SaveChangesAsync(HttpContext.RequestAborted);
+            }
+            catch (DbUpdateException)
+            {
+                // A entrega pode ser repetida enquanto outro pedido grava o mesmo ID.
+                if (await db.EventosAsaas.AnyAsync(e => e.Id == eventId, HttpContext.RequestAborted)) return Ok();
+                throw;
+            }
             return Ok();
         }
     }
@@ -198,6 +215,7 @@ public sealed class AssinaturaController(PericiasContext db, IConfiguration conf
                 "CHECKOUT_CREATED", "CHECKOUT_PAID", "CHECKOUT_CANCELED", "CHECKOUT_EXPIRED",
                 "SUBSCRIPTION_CREATED", "SUBSCRIPTION_UPDATED", "SUBSCRIPTION_INACTIVATED", "SUBSCRIPTION_DELETED",
                 "PAYMENT_CONFIRMED", "PAYMENT_RECEIVED", "PAYMENT_OVERDUE", "PAYMENT_REFUNDED",
+                "PAYMENT_PARTIALLY_REFUNDED", "PAYMENT_CREDIT_CARD_CAPTURE_REFUSED",
                 "PAYMENT_CHARGEBACK_REQUESTED", "PAYMENT_RECEIVED_IN_CASH_UNDONE"
             }
         };
@@ -206,6 +224,7 @@ public sealed class AssinaturaController(PericiasContext db, IConfiguration conf
         {
             var request = new HttpRequestMessage(method, $"{baseUrl}{endpoint}");
             request.Headers.Add("access_token", config["Asaas:ApiKey"]);
+            request.Headers.UserAgent.ParseAdd("PeritoEmDia/1.0");
             if (content is not null) request.Content = JsonContent.Create(content);
             return await client.SendAsync(request, HttpContext.RequestAborted);
         }
