@@ -64,7 +64,7 @@ public sealed class AssinaturaController(PericiasContext db, IConfiguration conf
             externalReference = userId.ToString(CultureInfo.InvariantCulture),
             callback = new { successUrl = $"{site}/Assinatura/Retorno", cancelUrl = $"{site}/Assinatura", expiredUrl = $"{site}/Assinatura" },
             items = new[] { new { name = "Assinatura Perícia Clara", description = "Acesso mensal ao Perícia Clara", quantity = 1, value = price } },
-            subscription = new { cycle = "MONTHLY", nextDueDate = Sistemas_para_pericias.Utilities.BrasiliaTime.Now.AddDays(1).ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture), description = "Assinatura mensal Perícia Clara", externalReference = userId.ToString(CultureInfo.InvariantCulture) }
+            subscription = new { cycle = "MONTHLY", nextDueDate = Sistemas_para_pericias.Utilities.BrasiliaTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture), description = "Assinatura mensal Perícia Clara", externalReference = userId.ToString(CultureInfo.InvariantCulture) }
         };
 
         try
