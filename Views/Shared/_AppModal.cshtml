@@ -1,0 +1,13 @@
+@model Sistemas_para_pericias.Models.AppModalViewModel
+<dialog id="@Model.Id" class="app-modal" aria-labelledby="@(Model.Id + "-title")" aria-describedby="@(Model.Id + "-description")">
+    <div class="app-modal-surface">
+        <header class="app-modal-header">
+            <div>
+                <h2 id="@(Model.Id + "-title")">@Model.Title</h2>
+                <p id="@(Model.Id + "-description")">@Model.Description</p>
+            </div>
+            <button type="button" class="app-modal-close" data-app-modal-close aria-label="Fechar">&times;</button>
+        </header>
+        <div class="app-modal-body" data-app-modal-body></div>
+    </div>
+</dialog>

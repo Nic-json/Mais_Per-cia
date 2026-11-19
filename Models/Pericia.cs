@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Sistemas_para_pericias.Utilities;
 
 namespace Sistemas_para_pericias.Models;
 
@@ -80,7 +81,7 @@ public class Pericia : IUsuarioDono
     public string? Observacoes { get; set; }
 
     [Display(Name = "Cadastrada em")]
-    public DateTime CriadaEm { get; set; } = DateTime.Now;
+    public DateTime CriadaEm { get; set; } = DateTime.UtcNow;
 
     public List<DocumentoPericia> Documentos { get; set; } = [];
 
@@ -215,7 +216,7 @@ public class PagamentoHonorario : IUsuarioDono
     public int UsuarioId { get; set; }
     public int PericiaId { get; set; }
     [Range(0.01, 999999999)] public decimal Valor { get; set; }
-    [DataType(DataType.Date)] public DateTime? DataRecebimento { get; set; } = DateTime.Today;
+    [DataType(DataType.Date)] public DateTime? DataRecebimento { get; set; } = BrasiliaTime.Today;
     public int? DocumentoPericiaId { get; set; }
     [StringLength(2000)] public string? Observacoes { get; set; }
     public DateTime CriadoEm { get; set; } = DateTime.UtcNow;

@@ -10,13 +10,15 @@ using System.Text;
 using Sistemas_para_pericias.Data;
 using Sistemas_para_pericias.Models;
 using Sistemas_para_pericias.Services;
+using Sistemas_para_pericias.Utilities;
 
 namespace Sistemas_para_pericias.Controllers;
 
 public class HomeController(PericiasContext db, IConfiguration configuration, IWebHostEnvironment environment, HtmlSanitizer sanitizer) : Controller
 {
     private sealed record ManifestoBackup(string Aplicacao, int VersaoFormato, int VersaoEsquema, DateTime CriadoEmUtc, int QuantidadeDocumentos);
-    private const long TamanhoMaximoDocumento = 25 * 1024 * 1024;
+    private sealed record MarcoAgenda(string Numero, DateTime? DataEnvio, DateTime? DataAceite, DateTime? PrazoLaudo);
+    private sealed record EntregaAgenda(DateTime? EntregueEm, string NumeroLaudo, string Numero);
     private readonly string diretorioDocumentos = configuration["Documentos:Diretorio"]
         ?? Path.Combine(environment.ContentRootPath, "App_Data", "uploads");
 
@@ -68,7 +70,7 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
 
     public async Task<IActionResult> BaixarBanco()
     {
-        var nomeArquivo = $"pericias-{DateTime.Now:yyyy-MM-dd-HHmm}.db";
+        var nomeArquivo = $"pericias-{BrasiliaTime.Now:yyyy-MM-dd-HHmm}.db";
         var diretorioTemporario = Path.Combine(Path.GetTempPath(), $"pericias-db-{Guid.NewGuid():N}");
         var caminhoBanco = Path.Combine(diretorioTemporario, nomeArquivo);
         Directory.CreateDirectory(diretorioTemporario);
@@ -143,9 +145,9 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
         ViewBag.Ativas = await visaoGeral.CountAsync(p => p.Status == StatusPericia.EmAndamento || p.Status == StatusPericia.LaudoEnviado);
         ViewBag.AguardandoPagamento = await visaoGeral.CountAsync(p => p.ValorRecebido < p.ValorHonorarios);
         ViewBag.HonorariosAReceber = await visaoGeral.SumAsync(p => (decimal?)Math.Max(0m, p.ValorHonorarios - p.ValorRecebido)) ?? 0m;
-        ViewBag.PrazosVencidos = await visaoGeral.CountAsync(p => p.PrazoLaudo < DateTime.Today && p.Status != StatusPericia.Concluida && p.Status != StatusPericia.Cancelada && p.Status != StatusPericia.Recusada);
+        ViewBag.PrazosVencidos = await visaoGeral.CountAsync(p => p.PrazoLaudo < BrasiliaTime.Today && p.Status != StatusPericia.Concluida && p.Status != StatusPericia.Cancelada && p.Status != StatusPericia.Recusada);
         ViewBag.PrazosProximos = config?.AvisarPrazosNoPainel == true
-            ? await visaoGeral.CountAsync(p => p.PrazoLaudo >= DateTime.Today && p.PrazoLaudo <= DateTime.Today.AddDays(config.AntecedenciaPrazoDias))
+            ? await visaoGeral.CountAsync(p => p.PrazoLaudo >= BrasiliaTime.Today && p.PrazoLaudo <= BrasiliaTime.Today.AddDays(config.AntecedenciaPrazoDias))
             : 0;
         ViewBag.AntecedenciaPrazoDias = config?.AntecedenciaPrazoDias ?? 7;
         return View(await query.OrderBy(p => p.PrazoLaudo == null).ThenBy(p => p.PrazoLaudo).ThenBy(p => p.ValorRecebido >= p.ValorHonorarios).ThenBy(p => p.DataHonorariosSolicitados ?? p.DataEnvio).ThenBy(p => p.DataEnvio).Skip((pagina - 1) * porPagina).Take(porPagina).ToListAsync());
@@ -297,7 +299,7 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
     public async Task<IActionResult> Agenda(DateTime? data, string? modo)
     {
         modo = modo is "dia" or "semana" ? modo : "mes";
-        var referencia = data ?? DateTime.Today;
+        var referencia = data ?? BrasiliaTime.Today;
         var inicio = modo == "dia" ? referencia.Date : modo == "semana"
             ? referencia.Date.AddDays(-(((int)referencia.DayOfWeek + 6) % 7))
             : new DateTime(referencia.Year, referencia.Month, 1);
@@ -307,13 +309,50 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
         ViewBag.Mes = inicio; ViewBag.InicioAgenda = inicio; ViewBag.FimAgenda = fim; ViewBag.Anterior = anterior; ViewBag.Proximo = proximo; ViewBag.Modo = modo;
         ViewBag.TituloPeriodo = modo == "dia" ? inicio.ToString("dd 'de' MMMM yyyy", new CultureInfo("pt-BR")) : modo == "semana" ? $"{inicio:dd/MM} – {fim.AddDays(-1):dd/MM/yyyy}" : inicio.ToString("MMMM yyyy", new CultureInfo("pt-BR"));
         ViewBag.Pericias = await ConsultaVisaoGeral().OrderBy(p => p.Numero).Select(p => new { p.Id, p.Numero }).ToListAsync();
-        ViewBag.Marcos = await db.Pericias.AsNoTracking().Where(p => p.DataEnvio != null || p.DataAceite != null || p.PrazoLaudo != null)
-            .Select(p => new { p.Id, p.Numero, p.DataEnvio, p.DataAceite, p.PrazoLaudo }).ToListAsync();
-        ViewBag.MarcosEntrega = await db.LaudosPericia.AsNoTracking().Where(l => l.EntregueEm != null)
-            .Select(l => new { l.EntregueEm, l.NumeroLaudo, l.Pericia.Numero }).ToListAsync();
+        var marcos = await db.Pericias.AsNoTracking().Where(p => p.DataEnvio != null || p.DataAceite != null || p.PrazoLaudo != null)
+            .Select(p => new MarcoAgenda(p.Numero, p.DataEnvio, p.DataAceite, p.PrazoLaudo)).ToListAsync();
+        var entregas = await db.LaudosPericia.AsNoTracking().Where(l => l.EntregueEm != null)
+            .Select(l => new EntregaAgenda(l.EntregueEm, l.NumeroLaudo, l.Pericia.Numero)).ToListAsync();
         ViewBag.Pessoas = await db.Periciados.AsNoTracking().Select(p => new { p.Id, p.PericiaId, p.Nome }).OrderBy(p => p.Nome).ToListAsync();
-        return View(await db.EventosAgenda.AsNoTracking().Include(e => e.Pericia).Include(e => e.Periciado)
-            .Where(e => !e.Cancelado && e.Inicio >= inicio && e.Inicio < fim).OrderBy(e => e.Inicio).ToListAsync());
+        var eventos = await db.EventosAgenda.AsNoTracking().Include(e => e.Pericia).Include(e => e.Periciado)
+            .Where(e => !e.Cancelado && e.Inicio >= inicio && e.Inicio < fim).OrderBy(e => e.Inicio).ToListAsync();
+
+        var entradas = eventos.Select(e => new AgendaCalendarEntryViewModel(
+            e.Inicio.Date, e.Titulo, "compromisso", e.Inicio.ToString("HH:mm"), e.Pericia.Numero, e.Id)).ToList();
+        foreach (var marco in marcos)
+        {
+            if (marco.DataEnvio is DateTime enviado && enviado >= inicio && enviado < fim)
+                entradas.Add(new AgendaCalendarEntryViewModel(enviado.Date, "Perícia recebida", "recebida", NumeroPericia: marco.Numero));
+            if (marco.DataAceite is DateTime aceite && aceite >= inicio && aceite < fim)
+                entradas.Add(new AgendaCalendarEntryViewModel(aceite.Date, "Perícia aceita", "aceite", NumeroPericia: marco.Numero));
+            if (marco.PrazoLaudo is DateTime prazo && prazo >= inicio && prazo < fim)
+                entradas.Add(new AgendaCalendarEntryViewModel(prazo.Date, "Prazo de laudo", "prazo", NumeroPericia: marco.Numero));
+        }
+        foreach (var entrega in entregas)
+        {
+            if (entrega.EntregueEm is DateTime entregue)
+            {
+                var dataBrasilia = BrasiliaTime.ToBrasilia(entregue);
+                if (dataBrasilia >= inicio && dataBrasilia < fim)
+                    entradas.Add(new AgendaCalendarEntryViewModel(dataBrasilia.Date, $"Laudo {entrega.NumeroLaudo} entregue", "entrega", dataBrasilia.ToString("HH:mm"), entrega.Numero));
+            }
+        }
+
+        var primeiroDia = modo == "mes"
+            ? inicio.AddDays(-(((int)inicio.DayOfWeek + 6) % 7))
+            : inicio;
+        var quantidadeDias = modo == "mes"
+            ? (int)Math.Ceiling((((int)inicio.DayOfWeek + 6) % 7 + (fim - inicio).Days) / 7d) * 7
+            : (fim - inicio).Days;
+        var entradasPorDia = entradas.GroupBy(e => e.Data.Date).ToDictionary(g => g.Key, g => (IReadOnlyList<AgendaCalendarEntryViewModel>)g.OrderBy(e => e.Hora ?? "").ThenBy(e => e.Categoria).ToList());
+        ViewBag.DiasAgenda = Enumerable.Range(0, quantidadeDias).Select(offset =>
+        {
+            var dia = primeiroDia.AddDays(offset);
+            return new AgendaCalendarDayViewModel(dia, dia >= inicio && dia < fim, dia.Date == BrasiliaTime.Today,
+                entradasPorDia.GetValueOrDefault(dia.Date) ?? []);
+        }).ToList();
+
+        return View(eventos);
     }
 
     [HttpPost, ValidateAntiForgeryToken]
@@ -384,14 +423,14 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
         if (valor <= 0 || valor > Math.Max(0m, pericia.ValorHonorarios - pericia.ValorRecebido))
         {
             TempData["ErroFinanceiro"] = "Informe um valor positivo dentro do saldo disponível.";
-            return RedirectToAction(nameof(Processo), new { id });
+            return RedirectToAction(nameof(Processo), new { id, fragment = "honorarios" });
         }
         db.PagamentosHonorarios.Add(new PagamentoHonorario { PericiaId = id, Valor = valor, DataRecebimento = dataRecebimento, Observacoes = observacoes?.Trim() });
         RegistrarHistorico(id, "Honorários", "Pagamento recebido registrado.");
         pericia.ValorRecebido += valor;
         await db.SaveChangesAsync();
         TempData["MensagemFinanceira"] = "Pagamento registrado.";
-        return RedirectToAction(nameof(Processo), new { id });
+        return RedirectToAction(nameof(Processo), new { id, fragment = "honorarios" });
     }
 
     [HttpPost, ValidateAntiForgeryToken]
@@ -430,7 +469,7 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
 
     public async Task<IActionResult> Relatorios(DateTime? inicio, DateTime? fim, string? comarca, string? vara, string? tipo)
     {
-        inicio ??= new DateTime(DateTime.Today.Year, 1, 1); fim ??= DateTime.Today;
+        inicio ??= new DateTime(BrasiliaTime.Today.Year, 1, 1); fim ??= BrasiliaTime.Today;
         var query = db.Pericias.AsNoTracking().AsQueryable();
         if (!string.IsNullOrWhiteSpace(comarca)) query = query.Where(p => p.Comarca == comarca);
         if (!string.IsNullOrWhiteSpace(vara)) query = query.Where(p => p.Vara == vara);
@@ -453,7 +492,7 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
 
     public async Task<IActionResult> ExportarRelatorio(DateTime? inicio, DateTime? fim, string? comarca, string? vara, string? tipo)
     {
-        inicio ??= new DateTime(DateTime.Today.Year, 1, 1); fim ??= DateTime.Today;
+        inicio ??= new DateTime(BrasiliaTime.Today.Year, 1, 1); fim ??= BrasiliaTime.Today;
         var query = db.Pericias.AsNoTracking().Include(p => p.Periciados).AsQueryable();
         if (!string.IsNullOrWhiteSpace(comarca)) query = query.Where(p => p.Comarca == comarca);
         if (!string.IsNullOrWhiteSpace(vara)) query = query.Where(p => p.Vara == vara);
@@ -462,7 +501,7 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
         static string Q(string? v) => $"\"{(v ?? "").Replace("\"", "\"\"")}\"";
         var lines = new List<string> { "NumeroPericia;Periciados;Comarca;Vara;Status;HonorariosFixados;DataFixacao;HonorariosSolicitados;DataSolicitacao;HonorariosLiberados;DataLiberacao;Recebido;Saldo" };
         lines.AddRange(rows.Select(p => string.Join(';', new[] { Q(p.Numero), Q(string.Join(" | ", p.Periciados.Select(x => x.Nome))), Q(p.Comarca), Q(p.Vara), Q(p.Status.ToString()), Q(p.ValorHonorarios.ToString("0.00", CultureInfo.InvariantCulture)), Q(p.DataHonorariosFixados?.ToString("dd/MM/yyyy")), Q(p.ValorHonorariosSolicitados.ToString("0.00", CultureInfo.InvariantCulture)), Q(p.DataHonorariosSolicitados?.ToString("dd/MM/yyyy")), Q(p.ValorHonorariosLiberados.ToString("0.00", CultureInfo.InvariantCulture)), Q(p.DataHonorariosLiberados?.ToString("dd/MM/yyyy")), Q(p.ValorRecebido.ToString("0.00", CultureInfo.InvariantCulture)), Q(Math.Max(0m, p.ValorHonorarios - p.ValorRecebido).ToString("0.00", CultureInfo.InvariantCulture)) })));
-        return File(Encoding.UTF8.GetPreamble().Concat(Encoding.UTF8.GetBytes(string.Join("\r\n", lines))).ToArray(), "text/csv; charset=utf-8", $"relatorio-pericial-{DateTime.Today:yyyy-MM-dd}.csv");
+        return File(Encoding.UTF8.GetPreamble().Concat(Encoding.UTF8.GetBytes(string.Join("\r\n", lines))).ToArray(), "text/csv; charset=utf-8", $"relatorio-pericial-{BrasiliaTime.Today:yyyy-MM-dd}.csv");
     }
 
     public IActionResult Arquivadas(string? busca) => RedirectToAction(nameof(Processos), new { busca, arquivadas = true });
@@ -584,12 +623,12 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
             Campo(p.Status.ToString()), Campo(p.Observacoes)
         })));
         var conteudo = Encoding.UTF8.GetPreamble().Concat(Encoding.UTF8.GetBytes(string.Join("\r\n", linhas))).ToArray();
-        return File(conteudo, "text/csv; charset=utf-8", $"pericias-{DateTime.Today:yyyy-MM-dd}.csv");
+        return File(conteudo, "text/csv; charset=utf-8", $"pericias-{BrasiliaTime.Today:yyyy-MM-dd}.csv");
     }
 
     public async Task<IActionResult> Backup()
     {
-        var nomeArquivo = $"pericias-backup-{DateTime.Now:yyyy-MM-dd-HHmm}.zip";
+        var nomeArquivo = $"pericias-backup-{BrasiliaTime.Now:yyyy-MM-dd-HHmm}.zip";
         var diretorioTemporario = Path.Combine(Path.GetTempPath(), $"pericias-backup-{Guid.NewGuid():N}");
         var caminhoBanco = Path.Combine(diretorioTemporario, "pericias.db");
         var caminhoZip = Path.Combine(diretorioTemporario, nomeArquivo);
@@ -703,7 +742,7 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
             await PrepararCatalogoForenseAsync();
             return View("Formulario", pericia);
         }
-        pericia.CriadaEm = DateTime.Now;
+        pericia.CriadaEm = DateTime.UtcNow;
         db.Pericias.Add(pericia);
         await db.SaveChangesAsync();
         RegistrarHistorico(pericia.Id, "Processo", "Perícia cadastrada.");
@@ -766,114 +805,6 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
             atual.ValorRecebido >= atual.ValorHonorarios;
         return arquivada ? RedirectToAction(nameof(Processos), new { arquivadas = true }) : RedirectToAction(nameof(Index));
     }
-    [HttpPost, ValidateAntiForgeryToken, RequestSizeLimit(TamanhoMaximoDocumento + 1024 * 1024)]
-    public async Task<IActionResult> AnexarDocumento(int id, IFormFile? arquivo)
-    {
-        var pericia = await db.Pericias.FirstOrDefaultAsync(p => p.Id == id);
-        if (pericia is null) return NotFound();
-
-        if (arquivo is null || arquivo.Length == 0)
-        {
-            TempData["Erro"] = "Selecione um arquivo PDF, Word, JPG ou PNG para anexar.";
-            return RedirectToAction(nameof(Editar), new { id });
-        }
-        if (arquivo.Length > TamanhoMaximoDocumento)
-        {
-            TempData["Erro"] = "O arquivo excede o limite de 25 MB.";
-            return RedirectToAction(nameof(Editar), new { id });
-        }
-
-        var nomeOriginal = Path.GetFileName(arquivo.FileName.Replace('\\', '/')).Trim();
-        nomeOriginal = new string(nomeOriginal.Where(caractere => !char.IsControl(caractere)).ToArray());
-        var extensao = Path.GetExtension(nomeOriginal).ToLowerInvariant();
-        var extensoesPermitidas = new[] { ".pdf", ".doc", ".docx", ".jpg", ".jpeg", ".png" };
-        if (string.IsNullOrWhiteSpace(nomeOriginal) || nomeOriginal.Length > 255 || !extensoesPermitidas.Contains(extensao))
-        {
-            TempData["Erro"] = "Formato não permitido. Envie PDF, DOC, DOCX, JPG ou PNG, com nome de até 255 caracteres.";
-            return RedirectToAction(nameof(Editar), new { id });
-        }
-        if (!await ArquivoCorrespondeAoFormatoAsync(arquivo, extensao))
-        {
-            TempData["Erro"] = "O conteúdo do arquivo não corresponde ao formato informado.";
-            return RedirectToAction(nameof(Editar), new { id });
-        }
-
-        Directory.CreateDirectory(diretorioDocumentos);
-        var nomeArmazenado = $"{Guid.NewGuid():N}{extensao}";
-        var caminho = Path.Combine(diretorioDocumentos, nomeArmazenado);
-        await using (var destino = new FileStream(caminho, FileMode.CreateNew, FileAccess.Write, FileShare.None, 81920, useAsync: true))
-            await arquivo.CopyToAsync(destino);
-
-        db.DocumentosPericia.Add(new DocumentoPericia
-        {
-            PericiaId = id,
-            NomeOriginal = nomeOriginal,
-            NomeArmazenado = nomeArmazenado,
-            TamanhoBytes = arquivo.Length,
-            EnviadoEm = DateTime.UtcNow
-        });
-        RegistrarHistorico(id, "Documento", "Documento anexado ao processo.");
-        try
-        {
-            await db.SaveChangesAsync();
-        }
-        catch
-        {
-            if (System.IO.File.Exists(caminho)) System.IO.File.Delete(caminho);
-            throw;
-        }
-
-        TempData["Mensagem"] = "Documento anexado com sucesso.";
-        return RedirectToAction(nameof(Editar), new { id });
-    }
-
-    private static async Task<bool> ArquivoCorrespondeAoFormatoAsync(IFormFile arquivo, string extensao)
-    {
-        try
-        {
-            await using var stream = arquivo.OpenReadStream();
-            var assinatura = new byte[Math.Min(8, (int)arquivo.Length)];
-            var totalLido = 0;
-            while (totalLido < assinatura.Length)
-            {
-                var lido = await stream.ReadAsync(assinatura.AsMemory(totalLido));
-                if (lido == 0) break;
-                totalLido += lido;
-            }
-            if (totalLido != assinatura.Length) return false;
-
-            return extensao switch
-            {
-                ".pdf" => Encoding.ASCII.GetString(assinatura).StartsWith("%PDF-", StringComparison.Ordinal),
-                ".jpg" or ".jpeg" => assinatura.Length >= 3 && assinatura[0] == 0xFF && assinatura[1] == 0xD8 && assinatura[2] == 0xFF,
-                ".png" => assinatura.SequenceEqual(new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A }),
-                ".doc" => assinatura.SequenceEqual(new byte[] { 0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1 }),
-                ".docx" => EhDocumentoWordModerno(stream, assinatura),
-                _ => false
-            };
-        }
-        catch (InvalidDataException)
-        {
-            return false;
-        }
-        catch (EndOfStreamException)
-        {
-            return false;
-        }
-    }
-
-    private static bool EhDocumentoWordModerno(Stream stream, byte[] assinatura)
-    {
-        if (assinatura.Length < 4 || assinatura[0] != 0x50 || assinatura[1] != 0x4B || assinatura[2] != 0x03 || assinatura[3] != 0x04)
-            return false;
-
-        stream.Position = 0;
-        using var arquivoZip = new ZipArchive(stream, ZipArchiveMode.Read, leaveOpen: true);
-        var temTiposConteudo = arquivoZip.GetEntry("[Content_Types].xml") is not null;
-        var temDocumento = arquivoZip.GetEntry("word/document.xml") is not null;
-        return temTiposConteudo && temDocumento;
-    }
-
     private static string ContentTypeDocumento(string nomeArmazenado) => Path.GetExtension(nomeArmazenado).ToLowerInvariant() switch
     {
         ".pdf" => "application/pdf",
@@ -965,7 +896,7 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
         if (laudo is null || versao is null) return NotFound();
         db.VersoesLaudo.Add(new VersaoLaudo { LaudoId = laudo.Id, NumeroLaudo = laudo.NumeroLaudo, Tipo = laudo.Tipo, Status = laudo.Status, Prazo = laudo.Prazo, ConteudoHtml = laudo.ConteudoHtml, Responsavel = User.Identity?.Name, SalvoEm = DateTime.UtcNow });
         laudo.Tipo = versao.Tipo; laudo.Status = versao.Status; laudo.Prazo = versao.Prazo; laudo.ConteudoHtml = sanitizer.Sanitize(versao.ConteudoHtml); laudo.AtualizadoEm = DateTime.UtcNow;
-        RegistrarHistorico(id, "Laudo", $"Versão salva em {versao.SalvoEm.ToLocalTime():dd/MM/yyyy HH:mm} restaurada.");
+        RegistrarHistorico(id, "Laudo", $"Versão salva em {BrasiliaTime.ToBrasilia(versao.SalvoEm):dd/MM/yyyy HH:mm} restaurada.");
         await db.SaveChangesAsync();
         return RedirectToAction(nameof(EditorLaudo), new { id, laudoId });
     }

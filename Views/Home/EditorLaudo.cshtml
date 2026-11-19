@@ -72,7 +72,7 @@
  <div class="laudo-page-workspace"><div id="editor-laudo" class="laudo-editable" contenteditable="true" lang="pt-BR" spellcheck="true" autocorrect="on" autocapitalize="sentences" role="textbox" aria-label="Texto do laudo" aria-multiline="true" data-placeholder="Escreva o laudo aqui. Use a barra acima para formatar o texto.">@Html.Raw(Model.ConteudoHtml)</div></div>
  <div class="laudo-editor-status"><span>Corretor ortográfico do navegador ativo · Português (Brasil)</span><span id="laudo-word-count">0 palavras</span></div>
  <div class="laudo-editor-footer">
-  <span class="muted">@(Model.AtualizadoEm is DateTime atualizado ? $"Último salvamento: {atualizado.ToLocalTime():dd/MM/yyyy HH:mm}" : "Rascunho ainda não salvo")</span>
+  <span class="muted">@(Model.AtualizadoEm is DateTime atualizado ? $"Último salvamento: {BrasiliaTime.ToBrasilia(atualizado):dd/MM/yyyy HH:mm}" : "Rascunho ainda não salvo")</span>
   <div class="d-flex gap-2">
    <button type="submit" name="previsualizar" value="true" class="btn btn-outline-secondary">Pré-visualizar / PDF</button>
    <button type="submit" class="btn btn-primary">Salvar rascunho</button>
@@ -84,7 +84,7 @@
  <details>
   <summary><strong>Histórico de versões</strong> (@Model.Versoes.Count)</summary>
   @if (!Model.Versoes.Any()) { <p class="muted mt-3">As versões anteriores serão guardadas quando houver uma alteração salva.</p> }
-  else { <div class="table-responsive mt-3"><table class="table align-middle"><thead><tr><th>Salvo em</th><th>Responsável</th><th>Número / status</th><th>Ação</th></tr></thead><tbody>@foreach (var versao in Model.Versoes) { <tr><td>@versao.SalvoEm.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td><td>@versao.Responsavel</td><td>@versao.NumeroLaudo · @versao.Status</td><td><form asp-action="RestaurarVersaoLaudo" asp-route-id="@Model.PericiaId" asp-route-laudoId="@Model.LaudoId" method="post"><input type="hidden" name="versaoId" value="@versao.Id"/><button class="btn btn-sm btn-outline-secondary" data-confirm-message="Restaurar esta versão? O conteúdo atual será salvo no histórico antes da restauração.">Restaurar</button></form></td></tr> }</tbody></table></div> }
+  else { <div class="table-responsive mt-3"><table class="table align-middle"><thead><tr><th>Salvo em</th><th>Responsável</th><th>Número / status</th><th>Ação</th></tr></thead><tbody>@foreach (var versao in Model.Versoes) { <tr><td>@BrasiliaTime.ToBrasilia(versao.SalvoEm).ToString("dd/MM/yyyy HH:mm")</td><td>@versao.Responsavel</td><td>@versao.NumeroLaudo · @versao.Status</td><td><form asp-action="RestaurarVersaoLaudo" asp-route-id="@Model.PericiaId" asp-route-laudoId="@Model.LaudoId" method="post"><input type="hidden" name="versaoId" value="@versao.Id"/><button class="btn btn-sm btn-outline-secondary" data-confirm-message="Restaurar esta versão? O conteúdo atual será salvo no histórico antes da restauração.">Restaurar</button></form></td></tr> }</tbody></table></div> }
  </details>
 </section>
 

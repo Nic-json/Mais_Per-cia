@@ -322,25 +322,28 @@ body{color:var(--ink);background:var(--bg);font-size:14px}
 .process-finance-summary>div{display:grid;gap:5px;min-width:0;padding:13px 15px;border:1px solid var(--line);border-radius:8px;background:#fbfcfc}
 .process-finance-summary span{color:#778187;font-size:10px;font-weight:600}
 .process-finance-summary strong{color:#34434a;font:700 17px/1.35 Manrope,sans-serif}
-.process-payment-entry{padding:17px;border:1px solid var(--line);border-radius:9px;background:#fafbfb}
-.process-payment-heading h3,.process-payment-history h3{margin:0;color:#394247;font:600 13px/1.4 'DM Sans',sans-serif}
-.process-payment-heading p{margin:3px 0 14px;color:#798187;font-size:11px}
-.process-payment-form{display:grid;grid-template-columns:minmax(130px,.8fr) minmax(160px,.9fr) minmax(220px,1.3fr) auto;align-items:end;gap:10px}
-.process-payment-form label{display:grid;gap:5px;min-width:0;margin:0;color:#59646a;font-size:10px;font-weight:600}
-.process-payment-form .form-control,.process-payment-form .form-select{width:100%;min-width:0;height:38px;font-size:11px}
-.process-payment-form>.btn{min-height:38px;padding:7px 12px;font-size:11px;white-space:nowrap}
-.process-sei-form{display:grid;grid-template-columns:minmax(200px,320px) auto;align-items:end;gap:10px}
-.process-sei-form label{display:grid;gap:5px;min-width:0;margin:0;color:#59646a;font-size:10px;font-weight:600}
-.process-sei-form .form-control{height:38px;font-size:11px}
-.process-sei-form .btn{min-height:38px;white-space:nowrap}
+.process-finance-actions{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 4px}
+.app-modal{width:min(520px,calc(100vw - 32px));max-width:none;max-height:min(90vh,760px);padding:0;overflow:auto;border:1px solid var(--line);border-radius:12px;background:#fff;color:#34434a;box-shadow:0 24px 70px rgb(29 48 59 / 22%)}
+.app-modal::backdrop{background:rgb(20 33 40 / 42%);backdrop-filter:blur(2px)}
+.app-modal-surface{padding:22px}
+.app-modal-header{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;padding-bottom:16px;border-bottom:1px solid var(--line)}
+.app-modal-header h2{margin:0;color:#34434a;font:700 18px/1.35 Manrope,sans-serif}
+.app-modal-header p{margin:5px 0 0;color:#778187;font-size:12px;line-height:1.5}
+.app-modal-close{display:grid;flex:0 0 34px;width:34px;height:34px;place-items:center;border:1px solid var(--line);border-radius:8px;background:#fff;color:#58656b;font-size:22px;line-height:1}
+.app-modal-close:hover{background:#f5f7f7}
+.app-modal-body{padding-top:18px}
+.app-modal-form{display:grid;gap:15px}
+.app-modal-form label{display:grid;gap:6px;margin:0;color:#59646a;font-size:12px;font-weight:600}
+.app-modal-form .form-control,.app-modal-form .form-select{min-height:42px;font-size:13px}
+.app-modal-actions{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:9px;padding-top:4px}
+.app-modal-actions .btn{min-height:40px}
 .process-periciados-table{width:100%;min-width:0;table-layout:fixed;white-space:normal}
 .process-periciados-table th:nth-child(1){width:25%}.process-periciados-table th:nth-child(2){width:20%}.process-periciados-table th:nth-child(3){width:55%}
 .process-periciados-table th,.process-periciados-table td{overflow-wrap:anywhere;vertical-align:top}
 .process-payment-history{margin-top:22px}
 .process-payment-history h3{margin-bottom:8px}
 .process-payment-history table{margin:0;font-size:11px}
-@media(max-width:1000px){.process-payment-form{grid-template-columns:repeat(2,minmax(0,1fr))}.process-payment-form>.btn{justify-self:start}}
-@media(max-width:600px){.process-finance-summary{grid-template-columns:1fr;gap:8px;margin:12px 0 16px}.process-finance-summary>div{padding:11px 13px}.process-payment-entry{padding:13px}.process-payment-form,.process-sei-form{grid-template-columns:1fr}.process-payment-form>.btn,.process-sei-form>.btn{width:100%;min-height:42px}}
+@media(max-width:600px){.process-finance-summary{grid-template-columns:1fr;gap:8px;margin:12px 0 16px}.process-finance-summary>div{padding:11px 13px}.process-finance-actions{display:grid;grid-template-columns:1fr}.process-finance-actions .btn{width:100%;min-height:42px}.app-modal-surface{padding:18px}.app-modal-actions{display:grid;grid-template-columns:1fr 1fr}.app-modal-actions .btn{width:100%;min-height:42px}}
 @media(max-width:1000px){.laudos-filters{grid-template-columns:minmax(220px,2fr) minmax(140px,1fr);}.laudos-search{grid-column:1/-1}.laudos-filter-actions{justify-content:flex-end}}
 @media(max-width:700px){.laudos-filters{grid-template-columns:1fr;padding:0 12px 14px;gap:10px}.laudos-search{grid-column:auto}.laudos-filter-actions{display:grid;grid-template-columns:1fr 1fr}.laudos-filter-actions .btn{min-height:42px}.table-responsive:has(>.laudos-table){overflow-x:auto}.laudos-table{min-width:850px}}
 .process-history-list{font-size:12px}
@@ -374,3 +377,146 @@ body{color:var(--ink);background:var(--bg);font-size:14px}
 @media(max-width:700px){.table-responsive:has(>.laudos-process-table){overflow-x:auto}.cases-table.laudos-process-table{min-width:0}.cases-table.laudos-process-table th,.cases-table.laudos-process-table td{padding:8px 5px;font-size:9px}.laudos-process-table .person-name,.laudos-process-table .action-link{font-size:9px}.laudos-process-table td:nth-child(4){font-size:8px}}
 @media(max-width:700px){.pericia-laudos-create-form{grid-template-columns:1fr}.pericia-laudos-create-form>.btn{width:100%;min-height:42px}.pericia-laudos-table{min-width:720px}}
 @media(max-width:700px){.process-periciados-table th,.process-periciados-table td{padding:8px 5px;font-size:10px}}
+.agenda-period-navigation{display:flex;align-items:center;gap:10px}
+.agenda-period-navigation>strong{min-width:130px;text-align:center;color:#39464c;font:700 14px/1.4 Manrope,sans-serif;text-transform:capitalize}
+.agenda-period-filter{display:grid;grid-template-columns:minmax(140px,220px) minmax(220px,1fr) auto;gap:9px;align-items:center}
+.agenda-calendar-section{padding:0;overflow:hidden;background:var(--line)}
+.agenda-calendar-weekdays,.agenda-calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:1px;background:var(--line)}
+.agenda-calendar-weekdays>div{padding:11px 8px;background:#f7f8f8;color:#758087;font-size:10px;font-weight:700;text-align:center}
+.agenda-calendar-day{min-width:0;min-height:128px;padding:8px;background:#fff}
+.agenda-calendar-day--muted{background:#fafbfb;color:#a3aaae}
+.agenda-calendar-day--today{box-shadow:inset 0 0 0 2px #587487}
+.agenda-calendar-day-heading{display:flex;align-items:center;gap:7px;min-height:25px;margin-bottom:5px;color:#4d5a60;font-size:12px;font-weight:700}
+.agenda-calendar-day-heading time{display:grid;width:25px;height:25px;place-items:center;border-radius:50%}
+.agenda-calendar-day--today .agenda-calendar-day-heading time{background:#587487;color:#fff}
+.agenda-calendar-day-heading>span{color:#7d878c;font-size:10px;font-weight:500}
+.agenda-calendar-items{display:grid;align-content:start;gap:4px}
+.agenda-calendar-event{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 5px;min-width:0;padding:5px 6px;border:0;border-left:3px solid #587487;border-radius:4px;background:#edf2f4;color:#3f555f;font-size:10px;line-height:1.3;text-decoration:none;overflow-wrap:anywhere}
+a.agenda-calendar-event:hover{background:#e3ebee;color:#2e444e}
+.agenda-calendar-event>span{min-width:0;font-weight:600}
+.agenda-calendar-event>time{font-size:9px;font-weight:700;white-space:nowrap}
+.agenda-calendar-event>small{grid-column:1/-1;overflow:hidden;color:#748188;font-size:8px;text-overflow:ellipsis;white-space:nowrap}
+.agenda-calendar-event--prazo{border-color:#c97955;background:#fbf0eb;color:#81513c}
+.agenda-calendar-event--aceite,.agenda-calendar-event--recebida{border-color:#8b9b69;background:#f1f4eb;color:#586646}
+.agenda-calendar-event--entrega{border-color:#718aa5;background:#edf2f8;color:#4c627a}
+.agenda-calendar-more{color:#718087;font-size:9px;font-weight:600}
+.agenda-calendar-grid--day{grid-template-columns:minmax(0,1fr)}
+.agenda-calendar-grid--day .agenda-calendar-day{min-height:260px;padding:15px}
+.agenda-calendar-grid--day .agenda-calendar-event{grid-template-columns:auto minmax(0,1fr) auto;align-items:center;max-width:680px;padding:9px 11px;font-size:12px}
+.agenda-calendar-grid--day .agenda-calendar-event>small{grid-column:auto;font-size:10px}
+.agenda-events-table tr:target{scroll-margin-top:90px;background:#f3f7f8}
+@media(max-width:700px){.agenda-period-navigation{gap:5px}.agenda-period-navigation>strong{min-width:0;flex:1;font-size:12px}.agenda-period-navigation .btn{padding:8px 7px;font-size:10px}.agenda-period-filter{grid-template-columns:minmax(0,1fr) auto}.agenda-period-filter .form-select{grid-column:1/-1;width:100%}.agenda-calendar-weekdays{display:none}.agenda-calendar-grid,.agenda-calendar-grid--day{grid-template-columns:minmax(0,1fr);gap:1px}.agenda-calendar-day,.agenda-calendar-grid--day .agenda-calendar-day{display:grid;grid-template-columns:58px minmax(0,1fr);align-items:start;min-height:64px;padding:8px}.agenda-calendar-day-heading{justify-content:flex-start;align-items:flex-start;flex-direction:column;gap:2px;margin:0}.agenda-calendar-day-heading>span{font-size:8px}.agenda-calendar-items{grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}.agenda-calendar-event{font-size:9px}.agenda-calendar-event>small{display:none}.agenda-calendar-grid--day .agenda-calendar-event{grid-template-columns:auto minmax(0,1fr);max-width:none;padding:7px;font-size:10px}.agenda-calendar-grid--day .agenda-calendar-event>small{display:none}}
+
+/* Color is reserved for actions and selected controls; cards and information stay neutral */
+:root{--primary:#4b7385;--primary-hover:#3d6375;--action-tint:#edf4f5}
+.btn-primary{background:var(--primary);border-color:var(--primary);color:#fff}
+.btn-primary:hover,.btn-primary:focus{background:var(--primary-hover);border-color:var(--primary-hover);color:#fff}
+.btn-outline-secondary{color:#4b7385;border-color:#9eb4bd;background:#fff}
+.btn-outline-secondary:hover,.btn-outline-secondary:focus{color:#34596a;border-color:#6e98a8;background:#edf4f5}
+.btn-outline-primary{color:var(--primary);border-color:#9eb4bd;background:#fff}
+.btn-outline-primary:hover,.btn-outline-primary:focus{color:#34596a;border-color:#6e98a8;background:#edf4f5}
+.btn-link{color:var(--primary)}
+.btn-link:hover,.btn-link:focus{color:var(--primary-hover)}
+.btn-outline-danger,.text-danger .btn{border-color:#b96b67;color:#a45d59}
+.brand-light,.side-link.active,.side-link:hover,.action-link,.clear-filter{color:var(--primary)}
+.main-area a:not(.brand):not(.side-link):not(.btn):not(.nav-link){color:var(--primary)}
+.side-link.active,.side-link:hover{background:var(--action-tint);box-shadow:inset 3px 0 0 var(--primary)}
+.action-link,.clear-filter{border-color:#b4c4ca;color:var(--primary)}
+.action-link:hover,.clear-filter:hover{background:var(--action-tint);border-color:var(--primary);color:#34596a}
+.form-control:focus,.form-select:focus{border-color:#8eafba;box-shadow:0 0 0 3px rgb(75 115 133 / 14%)}
+.process-tabs .nav-link.active{color:var(--primary);border-bottom-color:#fff;box-shadow:inset 0 2px 0 var(--primary)}
+.table-pagination .page-link{color:var(--primary)}
+.table-pagination .page-item.active .page-link{background:var(--primary);border-color:var(--primary);color:#fff}
+.dashboard-stats-grid .stat-card,.honorarios-stats .stat-card{border-top:1px solid var(--line);background:#fff}
+.dashboard-stats-grid .stat-value,.honorarios-stats .stat-value{color:var(--ink)}
+.process-finance-summary>div{border-top:1px solid var(--line)}
+.process-finance-summary strong,.process-finance-summary>div:nth-child(2) strong,.process-finance-summary>div:nth-child(3) strong{color:#34434a}
+.status-active,.status-sent,.status-wait,.status-done,.status-cancel{background:#f2f4f4;color:#58656b}
+.agenda-calendar-event,.agenda-calendar-event--prazo,.agenda-calendar-event--aceite,.agenda-calendar-event--recebida,.agenda-calendar-event--entrega{border-left-color:#87949a;background:#f2f4f4;color:#4d5a60}
+.agenda-calendar-event>a,.agenda-calendar-event a{color:var(--primary)}
+.agenda-calendar-event--prazo,.agenda-calendar-event--aceite,.agenda-calendar-event--recebida,.agenda-calendar-event--entrega{color:#4d5a60}
+.agenda-calendar-event[href]:hover,.agenda-calendar-event[href]:focus-visible{border-left-color:var(--primary);background:var(--action-tint);color:#34596a}
+.stat-icon.red,.stat-icon.indigo,.stat-icon.blue,.stat-icon.amber,.stat-icon.green{background:#f0f3f4;color:#607987}
+:root{--surface-pastel:#f2f7f8;--surface-pastel-muted:#eaf1f3}
+.sidebar,.topbar,.stat-card,.list-panel,.form-panel,.login-card{background:var(--surface-pastel)}
+.process-tabs,.process-tabs+.list-panel,.process-tabs .nav-link.active{background:var(--surface-pastel)}
+.process-tabs .nav-link.active{border-bottom-color:var(--surface-pastel)}
+.table-pagination{background:var(--surface-pastel)}
+.app-modal,.app-modal-surface,.app-confirm-dialog{background:var(--surface-pastel)}
+.app-dropdown-menu,.app-dropdown-search-wrap{background:var(--surface-pastel)}
+.agenda-calendar-day{background:var(--surface-pastel)}
+.agenda-calendar-day--muted{background:var(--surface-pastel-muted)}
+
+/* More comfortable type scale for the application UI. Laudo content keeps its own formatting. */
+body{font-size:15px}
+.breadcrumb,.today{font-size:13px}
+.side-link{font-size:14px}
+.side-caption{font-size:10px}
+.sidebar-footer{font-size:12px}
+.page-heading-copy .eyebrow,.eyebrow{font-size:11px}
+.page-heading-copy h1,.page-heading h1{font-size:28px;line-height:1.25}
+.page-heading-copy p,.page-heading p{font-size:14px;line-height:1.55}
+.panel-heading h2,.form-panel>h2,.list-panel>h2,.form-panel h2.section-title{font-size:18px}
+.panel-heading p,.form-section-title p{font-size:12px}
+.form-section-title h2{font-size:15px}
+.form-label,.form-panel label,.process-filter>label,.dashboard-filters>label,.laudos-filter,.honorarios-filter{font-size:12px}
+.form-control,.form-select,.input-group-text{font-size:13px;min-height:40px}
+.form-control-sm,.form-select-sm{font-size:12px;min-height:36px}
+.btn{font-size:13px}
+.btn-sm{font-size:12px}
+.btn-lg{font-size:14px}
+.action-link,.clear-filter{font-size:12px}
+.stat-label{font-size:11px}
+.stat-foot{font-size:12px}
+.stat-value{font-size:27px}
+.stat-value.money{font-size:22px}
+.cases-table{font-size:13px}
+.cases-table thead th{font-size:10px}
+.cases-table tbody td{font-size:13px}
+.person-name{font-size:13px}
+.case-number{font-size:10px}
+.status-pill{font-size:10px}
+.muted,.form-text,.form-check-label,.text-danger{font-size:12px}
+.table-pagination .page-link{font-size:13px;min-width:40px;height:40px}
+.page-size-select,.page-size-form .app-select-trigger{font-size:12px;min-height:38px}
+.process-tabs .nav-link{font-size:14px}
+.process-finance-summary span{font-size:11px}
+.process-finance-summary strong{font-size:19px}
+.process-payment-history h3{font-size:15px}
+.agenda-calendar-weekdays>div{font-size:11px}
+.agenda-calendar-event{font-size:11px}
+.agenda-calendar-event>time{font-size:10px}
+.agenda-calendar-event>small{font-size:9px}
+.agenda-calendar-day-heading{font-size:13px}
+.agenda-calendar-day-heading>span{font-size:11px}
+.agenda-period-navigation>strong{font-size:16px}
+.app-modal-header h2{font-size:20px}
+.app-modal-header p,.app-modal-form label{font-size:13px}
+.app-modal-form .form-control,.app-modal-form .form-select{font-size:14px;min-height:44px}
+.app-confirm-copy h2{font-size:18px}
+.app-confirm-copy p{font-size:14px}
+.heading-actions .btn,.filters .btn,.process-filter-actions .btn,.dashboard-filter-actions .btn,.honorarios-filter-actions .btn{font-size:13px}
+.filters .form-select,.process-filter .form-control,.process-filter .form-select,.dashboard-filters .form-control,.dashboard-filters .form-select,.honorarios-filter .form-control,.honorarios-filter .form-select,.laudos-filter .form-control,.laudos-filter .form-select{font-size:13px;min-height:40px}
+.novo-laudo-form>label,.pericia-laudos-create-form label{font-size:12px}
+.novo-laudo-form .form-control,.novo-laudo-form .form-select,.pericia-laudos-create-form .form-select{font-size:13px;min-height:40px}
+.honorarios-filter-actions .btn,.novo-laudo-form>.btn{font-size:13px;min-height:40px}
+.process-history-list,.process-payment-history table,.process-periciados-table,.laudos-process-table,.pericia-laudos-table{font-size:13px}
+.process-history-meta,.laudos-process-table td:nth-child(4){font-size:11px}
+.laudos-process-table .person-name,.laudos-process-table .action-link{font-size:12px}
+.app-select-trigger,.app-dropdown-search{font-size:13px}
+.agenda-period-navigation .btn{font-size:13px}
+@media(max-width:700px){
+ .page-heading-copy h1,.page-heading h1{font-size:23px}
+ .page-heading-copy p,.page-heading p{font-size:13px}
+ .form-control,.form-select,.input-group-text,.app-modal-form .form-control,.app-modal-form .form-select{font-size:16px;min-height:42px}
+ .side-link{font-size:12px}
+ .cases-table.dashboard-table-fit thead th,.cases-table.dashboard-table-fit tbody td,.cases-table.process-current-fit thead th,.cases-table.process-current-fit tbody td,.cases-table.process-archive-fit thead th,.cases-table.process-archive-fit tbody td{font-size:11px}
+ .cases-table.dashboard-table-fit thead th,.cases-table.process-current-fit thead th,.cases-table.process-archive-fit thead th{font-size:9px}
+ .cases-table.dashboard-table-fit .case-number,.cases-table.process-current-fit .case-number,.cases-table.process-archive-fit .case-number{font-size:9px}
+ .agenda-calendar-event{font-size:11px}
+ .agenda-calendar-day-heading>span{font-size:10px}
+ .heading-actions .btn{font-size:12px}
+ .table-pagination .page-link{font-size:13px}
+ .filters .btn,.process-filter-actions .btn,.dashboard-filter-actions .btn,.honorarios-filter-actions .btn,.laudos-filter-actions .btn{font-size:12px}
+ .app-select-trigger,.app-dropdown-search{font-size:16px}
+}

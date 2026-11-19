@@ -4,6 +4,29 @@
 // Write your JavaScript code.
 
 (() => {
+    document.addEventListener('click', event => {
+        const openButton = event.target.closest('[data-app-modal-open]');
+        if (openButton) {
+            const dialog = document.querySelector(openButton.dataset.appModalOpen);
+            const template = document.querySelector(openButton.dataset.appModalTemplate);
+            const body = dialog?.querySelector('[data-app-modal-body]');
+            if (!dialog || !template || !body) return;
+
+            body.replaceChildren(template.content.cloneNode(true));
+            dialog.showModal();
+            requestAnimationFrame(() => body.querySelector('input:not([type="hidden"]), select, textarea')?.focus({ preventScroll: true }));
+            return;
+        }
+
+        const closeButton = event.target.closest('[data-app-modal-close]');
+        closeButton?.closest('dialog.app-modal')?.close();
+    });
+
+    document.addEventListener('click', event => {
+        if (event.target instanceof HTMLDialogElement && event.target.matches('dialog.app-modal'))
+            event.target.close();
+    });
+
     const confirmDialog = document.getElementById('app-confirm-dialog');
     const confirmMessage = document.getElementById('app-confirm-message');
     const confirmTitle = document.getElementById('app-confirm-title');

@@ -47,26 +47,7 @@
  <div class="form-actions"><button type="submit" class="btn btn-primary btn-lg">@(editar ? "Salvar alterações" : "Cadastrar perícia")</button><a asp-action="Index" class="btn btn-light btn-lg">Cancelar</a>@if (editar) { <button type="submit" form="delete-form" class="btn btn-link text-danger ms-auto" data-confirm-message="Remover esta perícia? Esta ação não pode ser desfeita.">Excluir perícia</button> }</div>
 </form>
 @if (editar) { <form id="delete-form" asp-action="Excluir" asp-route-id="@Model.Id" method="post"></form> }
-@if (editar)
-{
- <section class="form-panel document-panel mt-4">
-  <div class="form-section-title"><span>03</span><div><h2>Laudos e documentos</h2><p>Arquivos privados desta perícia, acessíveis apenas após login.</p></div></div>
-  <form asp-action="AnexarDocumento" asp-route-id="@Model.Id" method="post" enctype="multipart/form-data" class="row g-3 align-items-end">
-   <div class="col-md-8"><label for="arquivo" class="form-label">Selecionar arquivo</label><input id="arquivo" name="arquivo" type="file" class="form-control" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" required /><div class="form-text">PDF, Word (DOC/DOCX), JPG ou PNG. Limite de 25 MB por arquivo.</div></div>
-   <div class="col-md-4"><button type="submit" class="btn btn-primary">Anexar documento</button></div>
-  </form>
-  @if (Model.Documentos.Count > 0)
-  {
-   <div class="table-responsive mt-4"><table class="table align-middle"><thead><tr><th>Arquivo</th><th>Tamanho</th><th>Adicionado</th><th>Ações</th></tr></thead><tbody>
-   @foreach (var documento in Model.Documentos.OrderByDescending(d => d.EnviadoEm))
-   {
-    <tr><td>@documento.NomeOriginal</td><td>@((documento.TamanhoBytes / 1048576d).ToString("0.##")) MB</td><td>@documento.EnviadoEm.ToString("dd/MM/yyyy")</td><td><a asp-action="BaixarDocumento" asp-route-id="@documento.Id" class="action-link">Baixar</a><form asp-action="ExcluirDocumento" asp-route-id="@documento.Id" method="post" class="d-inline"><button type="submit" class="btn btn-link text-danger p-0 ms-3" data-confirm-message="Excluir este arquivo?">Excluir</button></form></td></tr>
-   }
-   </tbody></table></div>
-  }
-  else { <p class="muted mt-4 mb-0">Nenhum documento anexado ainda.</p> }
- </section>
-}
+
 @section Scripts {
  <partial name="_ValidationScriptsPartial" />
  <script>
