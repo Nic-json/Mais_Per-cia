@@ -14,7 +14,6 @@
  <input type="hidden" name="conteudoHtml" id="conteudo-html" />
  <div class="row g-3 p-3 border-bottom bg-light">
   <div class="col-md-4"><label for="tipoLaudo" class="form-label">Tipo do laudo</label><input id="tipoLaudo" name="tipoLaudo" value="@Model.TipoLaudo" class="form-control" maxlength="80" placeholder="Principal, complementar..." /></div>
-  <div class="col-md-4"><label for="prazo" class="form-label">Prazo</label><input id="prazo" name="prazo" value="@Model.Prazo?.ToString("yyyy-MM-dd")" type="date" class="form-control" /></div>
   <div class="col-md-4"><label for="periciadoId" class="form-label">Periciado relacionado</label><select id="periciadoId" name="periciadoId" class="form-select"><option value="">Sem associação</option>@foreach (var pessoa in Model.Periciados.OrderBy(p => p.Nome)) { <option value="@pessoa.Id" selected="@(Model.PericiadoId == pessoa.Id)">@pessoa.Nome</option> }</select></div>
  </div>
  <div class="laudo-toolbar" role="toolbar" aria-label="Formatação do laudo">
@@ -70,7 +69,7 @@
   </div>
  </div>
  <div class="laudo-page-workspace"><div id="editor-laudo" class="laudo-editable" contenteditable="true" lang="pt-BR" spellcheck="true" autocorrect="on" autocapitalize="sentences" role="textbox" aria-label="Texto do laudo" aria-multiline="true" data-placeholder="Escreva o laudo aqui. Use a barra acima para formatar o texto.">@Html.Raw(Model.ConteudoHtml)</div></div>
- <div class="laudo-editor-status"><span>Corretor ortográfico do navegador ativo · Português (Brasil)</span><span id="laudo-word-count">0 palavras</span></div>
+ <div class="laudo-editor-status"><span>Correção ortográfica do navegador · confira se Português (Brasil) está ativado nas configurações do navegador.</span><span id="laudo-word-count">0 palavras</span></div>
  <div class="laudo-editor-footer">
   <span class="muted">@(Model.AtualizadoEm is DateTime atualizado ? $"Último salvamento: {BrasiliaTime.ToBrasilia(atualizado):dd/MM/yyyy HH:mm}" : "Rascunho ainda não salvo")</span>
   <div class="d-flex gap-2">

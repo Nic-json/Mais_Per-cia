@@ -569,3 +569,7 @@ body{font-size:16px}
 .reports-detail-table th:nth-child(1){width:20%}.reports-detail-table th:nth-child(2){width:26%}.reports-detail-table th:nth-child(3){width:13%}.reports-detail-table th:nth-child(4){width:13%}.reports-detail-table th:nth-child(5){width:13%}.reports-detail-table th:nth-child(6){width:15%}
 .reports-detail-table td:nth-child(n+3){font-variant-numeric:tabular-nums}
 @media(max-width:700px){.reports-detail-table th,.reports-detail-table td{padding:8px 5px;font-size:12px}.reports-detail-table thead th{font-size:9px;letter-spacing:0}.reports-detail-table .person-name{font-size:12px}}
+.dashboard-filters>.dashboard-search{height:44px;min-height:44px;align-self:end}
+.dashboard-filters>.dashboard-search .form-control{height:44px;min-height:44px}
+.dashboard-filter-actions>.btn,.dashboard-filter-actions>.clear-filter{height:44px;min-height:44px;display:flex;align-items:center;justify-content:center}
+@media(max-width:700px){.dashboard-filters>.dashboard-search,.dashboard-filters>.dashboard-search .form-control{height:42px;min-height:42px}.dashboard-filter-actions>.btn,.dashboard-filter-actions>.clear-filter{height:42px;min-height:42px}}

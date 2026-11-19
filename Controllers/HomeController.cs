@@ -510,8 +510,7 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
     {
         IQueryable<Pericia> query = db.Pericias.AsNoTracking()
             .Include(pericia => pericia.Periciados)
-            .Include(pericia => pericia.Laudos)
-            .Where(pericia => pericia.Laudos.Any());
+            .Include(pericia => pericia.Laudos);
         if (!string.IsNullOrWhiteSpace(busca))
             query = query.Where(pericia => pericia.Numero.Contains(busca) ||
                 pericia.Periciados.Any(pessoa => pessoa.Nome.Contains(busca)));
@@ -856,7 +855,7 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
     }
 
     [HttpPost, ValidateAntiForgeryToken, RequestSizeLimit(512 * 1024)]
-    public async Task<IActionResult> SalvarLaudo(int id, int laudoId, int? periciadoId, string? conteudoHtml, string? tipoLaudo, DateTime? prazo, bool previsualizar = false)
+    public async Task<IActionResult> SalvarLaudo(int id, int laudoId, int? periciadoId, string? conteudoHtml, string? tipoLaudo, bool previsualizar = false)
     {
         var laudo = await db.LaudosPericia.FirstOrDefaultAsync(l => l.Id == laudoId && l.PericiaId == id);
         if (laudo is null) return NotFound();
@@ -873,11 +872,10 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
 
         var tipoNormalizado = string.IsNullOrWhiteSpace(tipoLaudo) ? null : tipoLaudo.Trim();
         var conteudoNormalizado = sanitizer.Sanitize(conteudoHtml ?? "");
-        if (laudo.PericiadoId != periciadoId || laudo.Tipo != tipoNormalizado || laudo.Prazo != prazo || laudo.ConteudoHtml != conteudoNormalizado)
+        if (laudo.PericiadoId != periciadoId || laudo.Tipo != tipoNormalizado || laudo.ConteudoHtml != conteudoNormalizado)
             db.VersoesLaudo.Add(new VersaoLaudo { LaudoId = laudo.Id, NumeroLaudo = laudo.NumeroLaudo, Tipo = laudo.Tipo, Status = laudo.Status, Prazo = laudo.Prazo, ConteudoHtml = laudo.ConteudoHtml, Responsavel = User.Identity?.Name, SalvoEm = DateTime.UtcNow });
         laudo.PericiadoId = periciadoId;
         laudo.Tipo = tipoNormalizado;
-        laudo.Prazo = prazo;
         laudo.ConteudoHtml = conteudoNormalizado;
         laudo.AtualizadoEm = DateTime.UtcNow;
         if (!string.IsNullOrWhiteSpace(laudo.ConteudoHtml) && laudo.Status == StatusLaudo.Rascunho)

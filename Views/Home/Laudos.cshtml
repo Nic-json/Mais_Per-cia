@@ -2,7 +2,7 @@
 @using Sistemas_para_pericias.Models
 @{ ViewData["Title"] = "Laudos"; string StatusLaudoNome(StatusLaudo s) => s switch { StatusLaudo.EmElaboracao => "Em elaboração", StatusLaudo.Concluido => "Concluído", _ => s.ToString() }; }
 <header class="page-heading"><partial name="_PageTitle" model='new PageHeadingViewModel("DOCUMENTOS TÉCNICOS", "Laudos", "Abra uma perícia para consultar os laudos vinculados a ela.")' /><div class="heading-actions"><a class="btn btn-outline-secondary" asp-action="ModelosLaudo">Modelos</a></div></header>
-<section class="list-panel"><div class="list-heading"><partial name="_PanelTitle" model='new PanelHeadingViewModel("Perícias com laudos", $"{Model.Count()} perícias")' /></div>
+<section class="list-panel"><div class="list-heading"><partial name="_PanelTitle" model='new PanelHeadingViewModel("Perícias", $"{Model.Count()} perícias")' /></div>
 <form method="get" class="laudos-filters">
     <label class="laudos-filter laudos-search">Buscar perícias
         <input name="busca" value="@ViewBag.Busca" class="form-control" placeholder="Número da perícia ou periciado" />
@@ -18,6 +18,6 @@
         <a asp-action="Laudos" class="btn btn-outline-secondary">Limpar</a>
     </div>
 </form>
-@if (!Model.Any()) { <div class="empty-state"><h3>Nenhuma perícia com laudos encontrada</h3><p>As perícias aparecerão aqui depois que tiverem ao menos um laudo.</p></div> }
+@if (!Model.Any()) { <div class="empty-state"><h3>Nenhuma perícia encontrada</h3><p>Ajuste os filtros ou cadastre uma perícia para criar laudos.</p></div> }
 else { <div class="table-responsive"><table class="table cases-table laudos-table laudos-process-table"><thead><tr><th>PERÍCIA</th><th>PERICIADOS</th><th>LAUDOS</th><th>ATUALIZADO</th><th></th></tr></thead><tbody>@foreach (var pericia in Model) { var concluidos = pericia.Laudos.Count(laudo => laudo.Status == StatusLaudo.Concluido); var emElaboracao = pericia.Laudos.Count(laudo => laudo.Status == StatusLaudo.EmElaboracao); <tr><td><div class="person-name">Perícia nº @pericia.Numero</div><div class="case-number">@pericia.Comarca / @pericia.Vara</div></td><td>@(pericia.Periciados.Count == 0 ? "Sem periciados cadastrados" : string.Join(", ", pericia.Periciados.OrderBy(pessoa => pessoa.Nome).Select(pessoa => pessoa.Nome)))</td><td><div class="person-name">@pericia.Laudos.Count laudo(s)</div><div class="case-number">@emElaboracao em elaboração · @concluidos concluído(s)</div></td><td>@(pericia.Laudos.Max(laudo => (DateTime?)laudo.AtualizadoEm) is DateTime atualizado ? BrasiliaTime.ToBrasilia(atualizado).ToString("dd/MM/yyyy HH:mm") : "—")</td><td><a asp-action="LaudosDaPericia" asp-route-id="@pericia.Id" class="action-link">Abrir laudos</a></td></tr> }</tbody></table></div>}
 </section>
