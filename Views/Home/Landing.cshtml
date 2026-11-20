@@ -8,72 +8,186 @@
     <link rel="icon" type="image/png" href="~/images/pericia-em-dia-mark.png" asp-append-version="true" />
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="Organize perícias, periciados, laudos, prazos e honorários em um só lugar com Perícia em Dia." />
+    <meta name="description" content="Organize processos periciais, periciados, laudos, prazos e honorários em um só lugar com o Perícia em Dia." />
+    <meta name="theme-color" content="#f3f7f7" />
     <title>Perícia em Dia · Gestão pericial</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/site-enhancements.css" asp-append-version="true" />
 </head>
-<body class="public-page">
-<header class="public-header">
+<body class="public-page landing-page">
+<header class="public-header landing-header">
     <a class="brand public-brand" asp-controller="Home" asp-action="Index" aria-label="Perícia em Dia, página inicial">
         <img class="brand-mark" src="~/images/pericia-em-dia-mark.png" alt="" />
         <span>Perícia <span class="brand-light">em Dia</span><small>GESTÃO PERICIAL</small></span>
     </a>
-    <nav class="public-nav" aria-label="Navegação">
+    <nav class="public-nav landing-nav" aria-label="Navegação principal">
+        <a href="#como-funciona">Como funciona</a>
         <a href="#recursos">Recursos</a>
-        <a asp-controller="Home" asp-action="Privacy">Privacidade</a>
+        <a href="#planos">Plano</a>
+        <a href="#duvidas">Dúvidas</a>
         <a class="btn btn-outline-secondary" asp-controller="Conta" asp-action="Entrar">Entrar</a>
-        <a class="btn btn-primary" asp-controller="Conta" asp-action="Cadastro">Criar minha conta</a>
     </nav>
 </header>
 
 <main>
-    <section class="public-hero">
-        <div class="public-hero-copy">
-            <div class="eyebrow">ORGANIZAÇÃO PARA A ROTINA DO PERITO</div>
-            <h1>Mais clareza para conduzir cada perícia.</h1>
-            <p>Processos, periciados, laudos, prazos e honorários organizados em um só lugar, com acesso individual para cada profissional.</p>
-            <div class="public-hero-actions">
-                <a class="btn btn-primary btn-lg" asp-controller="Conta" asp-action="Cadastro">Conhecer o sistema</a>
-                <a class="btn btn-outline-secondary btn-lg" href="#recursos">Ver o que você pode organizar</a>
+    <section class="landing-hero" id="inicio">
+        <div class="landing-hero-copy">
+            <span class="landing-kicker"><span class="landing-kicker-dot"></span> GESTÃO PERICIAL EM UM SÓ LUGAR</span>
+            <h1>Mais organização para cada etapa da perícia.</h1>
+            <p class="landing-lead">Acompanhe processos, pessoas, laudos, compromissos e honorários em uma plataforma feita para a rotina do perito.</p>
+            <div class="landing-actions">
+                <a class="btn btn-primary btn-lg" href="#recursos">Conhecer os recursos <span aria-hidden="true">↓</span></a>
+                <a class="landing-text-link" asp-controller="Conta" asp-action="Entrar">Já tenho uma conta <span aria-hidden="true">→</span></a>
             </div>
-            <p class="public-price-note">Plano individual por <strong>R$ 70,00 por mês</strong>. O pagamento é processado pelo Asaas.</p>
+            <div class="landing-reassurance">
+                <span><b aria-hidden="true">✓</b> Acesso individual</span>
+                <span><b aria-hidden="true">✓</b> Funciona no navegador</span>
+                <span><b aria-hidden="true">✓</b> Sem instalar programa</span>
+            </div>
         </div>
-        <div class="public-preview" aria-label="Exemplo ilustrativo do painel do sistema">
-            <div class="preview-top"><span class="preview-mark">P</span><span><strong>Visão geral</strong><small>Seu trabalho, em perspectiva</small></span><span class="preview-date">HOJE</span></div>
-            <div class="preview-metrics">
-                <div><small>PROCESSOS</small><strong>Em acompanhamento</strong><span class="preview-value">Organizados</span></div>
-                <div><small>PRÓXIMOS PASSOS</small><strong>Prazos e agenda</strong><span class="preview-value">Em destaque</span></div>
+
+        <div class="landing-product-frame" aria-label="Prévia ilustrativa do painel do Perícia em Dia">
+            <div class="landing-product-window">
+                <div class="landing-window-bar"><span></span><span></span><span></span><small>PRÉVIA ILUSTRATIVA</small></div>
+                <div class="landing-app-preview">
+                    <aside class="landing-preview-sidebar" aria-hidden="true">
+                        <img src="~/images/pericia-em-dia-mark.png" alt="" />
+                        <i class="is-current">▦</i><i>▤</i><i>▣</i><i>◷</i><i>R$</i>
+                    </aside>
+                    <div class="landing-preview-content">
+                        <div class="landing-preview-heading"><div><small>PAINEL DO PERITO</small><strong>Visão geral</strong></div><span>Hoje</span></div>
+                        <div class="landing-preview-stats">
+                            <div><small>EM ACOMPANHAMENTO</small><strong>Processos</strong><b>Organizados</b></div>
+                            <div><small>EM ELABORAÇÃO</small><strong>Laudos</strong><b>Por etapa</b></div>
+                            <div><small>PRÓXIMOS PRAZOS</small><strong>Agenda</strong><b>Em destaque</b></div>
+                        </div>
+                        <div class="landing-preview-table">
+                            <div class="landing-preview-table-head"><span>ACOMPANHAMENTO</span><span>SITUAÇÃO</span></div>
+                            <div class="landing-preview-row"><span><i class="landing-status-dot dot-teal"></i><b>Processos</b><small>Dados e pessoas vinculadas</small></span><em>Organizados</em></div>
+                            <div class="landing-preview-row"><span><i class="landing-status-dot dot-blue"></i><b>Laudos</b><small>Editor e andamento</small></span><em>Em elaboração</em></div>
+                            <div class="landing-preview-row"><span><i class="landing-status-dot dot-amber"></i><b>Honorários</b><small>Valores e pagamentos</small></span><em>Por processo</em></div>
+                        </div>
+                        <div class="landing-preview-foot"><span>Seus dados, no seu espaço de trabalho</span><span aria-hidden="true">↗</span></div>
+                    </div>
+                </div>
             </div>
-            <div class="preview-list-title">Acompanhe cada etapa</div>
-            <div class="preview-row"><span class="preview-dot dot-blue"></span><span><strong>Perícias</strong><small>Dados e pessoas vinculadas</small></span><span class="preview-arrow">›</span></div>
-            <div class="preview-row"><span class="preview-dot dot-green"></span><span><strong>Laudos</strong><small>Editor e situação de entrega</small></span><span class="preview-arrow">›</span></div>
-            <div class="preview-row"><span class="preview-dot dot-amber"></span><span><strong>Honorários</strong><small>Valores e pagamentos registrados</small></span><span class="preview-arrow">›</span></div>
-            <div class="preview-foot"><span class="preview-lock">✓</span> Espaço individual do profissional</div>
+            <div class="landing-preview-caption"><span class="landing-caption-mark">P</span><span><strong>Uma rotina mais clara</strong><small>Do cadastro ao acompanhamento</small></span></div>
         </div>
     </section>
 
-    <section class="public-features" id="recursos">
-        <div class="public-section-heading">
-            <div class="eyebrow">UM FLUXO DE TRABALHO MAIS ORGANIZADO</div>
-            <h2>O essencial da rotina pericial, conectado.</h2>
-            <p>Consulte as informações do processo e avance para as tarefas relacionadas sem perder o contexto.</p>
+    <section class="landing-benefit-strip" aria-label="Principais áreas do sistema">
+        <span>Processos</span><i></i><span>Laudos</span><i></i><span>Agenda</span><i></i><span>Honorários</span><i></i><span>Relatórios</span>
+    </section>
+
+    <section class="landing-how" id="como-funciona">
+        <div class="landing-section-intro">
+            <span class="landing-kicker">UM FLUXO SIMPLES</span>
+            <h2>Do processo às próximas tarefas, sem perder o fio.</h2>
+            <p>Reúna as informações da perícia e consulte o que precisa de atenção em cada momento.</p>
         </div>
-        <div class="public-feature-grid">
-            <article class="public-feature-card"><span class="feature-number">01</span><h3>Processos e periciados</h3><p>Registre uma perícia e associe as pessoas relacionadas quando precisar. Acompanhe os dados principais em uma visão organizada.</p></article>
-            <article class="public-feature-card"><span class="feature-number">02</span><h3>Laudos em um só lugar</h3><p>Crie laudos vinculados às perícias e continue a redação em um editor com ferramentas de formatação e revisão do navegador.</p></article>
-            <article class="public-feature-card"><span class="feature-number">03</span><h3>Prazos e compromissos</h3><p>Visualize datas importantes no calendário e acompanhe prazos associados aos seus processos.</p></article>
-            <article class="public-feature-card"><span class="feature-number">04</span><h3>Honorários e pagamentos</h3><p>Consulte valores fixados, pagamentos registrados e saldos pendentes por processo.</p></article>
+        <div class="landing-steps">
+            <article class="landing-step-card">
+                <span class="landing-step-number">01</span>
+                <div class="landing-step-icon" aria-hidden="true">＋</div>
+                <h3>Cadastre a perícia</h3>
+                <p>Registre o número, a comarca, a vara, as datas e as pessoas relacionadas ao processo.</p>
+                <span class="landing-step-link">Processos <b aria-hidden="true">↗</b></span>
+            </article>
+            <article class="landing-step-card">
+                <span class="landing-step-number">02</span>
+                <div class="landing-step-icon" aria-hidden="true">◷</div>
+                <h3>Acompanhe prazos e compromissos</h3>
+                <p>Consulte marcos importantes e organize vistorias e compromissos na agenda.</p>
+                <span class="landing-step-link">Agenda <b aria-hidden="true">↗</b></span>
+            </article>
+            <article class="landing-step-card">
+                <span class="landing-step-number">03</span>
+                <div class="landing-step-icon" aria-hidden="true">▤</div>
+                <h3>Escreva e acompanhe os laudos</h3>
+                <p>Crie laudos ligados à perícia, redija no editor e acompanhe o status de cada um.</p>
+                <span class="landing-step-link">Laudos <b aria-hidden="true">↗</b></span>
+            </article>
         </div>
     </section>
 
-    <section class="public-cta">
-        <div><div class="eyebrow">PERÍCIA EM DIA</div><h2>Comece a organizar sua rotina.</h2><p>Crie sua conta individual e conheça o sistema.</p></div>
-        <a class="btn btn-primary btn-lg" asp-controller="Conta" asp-action="Cadastro">Criar conta</a>
+    <section class="landing-features" id="recursos">
+        <div class="landing-section-intro landing-section-intro-wide">
+            <span class="landing-kicker">FEITO PARA O DIA A DIA</span>
+            <h2>As informações que você consulta, reunidas.</h2>
+            <p>Encontre os dados da perícia e siga para a tarefa relacionada, sem espalhar o acompanhamento entre várias planilhas.</p>
+        </div>
+        <div class="landing-feature-grid">
+            <article class="landing-feature-card"><span class="landing-feature-icon feature-teal" aria-hidden="true">▦</span><div><h3>Processos e periciados</h3><p>Cadastre perícias com várias pessoas vinculadas e consulte os principais dados em uma visão organizada.</p></div><span class="landing-feature-index">01</span></article>
+            <article class="landing-feature-card"><span class="landing-feature-icon feature-blue" aria-hidden="true">▤</span><div><h3>Laudos e editor</h3><p>Crie laudos por perícia e redija no editor integrado com opções de formatação e revisão do navegador.</p></div><span class="landing-feature-index">02</span></article>
+            <article class="landing-feature-card"><span class="landing-feature-icon feature-amber" aria-hidden="true">◷</span><div><h3>Agenda e prazos</h3><p>Visualize compromissos e marcos da perícia em calendário para planejar as próximas etapas.</p></div><span class="landing-feature-index">03</span></article>
+            <article class="landing-feature-card"><span class="landing-feature-icon feature-green" aria-hidden="true">R$</span><div><h3>Honorários</h3><p>Acompanhe valores fixados, pagamentos registrados e saldo a receber por processo.</p></div><span class="landing-feature-index">04</span></article>
+            <article class="landing-feature-card"><span class="landing-feature-icon feature-lilac" aria-hidden="true">▥</span><div><h3>Relatórios</h3><p>Consulte totais por período e filtros e exporte os dados disponíveis para CSV.</p></div><span class="landing-feature-index">05</span></article>
+            <article class="landing-feature-card"><span class="landing-feature-icon feature-sand" aria-hidden="true">↺</span><div><h3>Histórico do processo</h3><p>Veja as principais atualizações registradas e quando cada evento aconteceu.</p></div><span class="landing-feature-index">06</span></article>
+        </div>
+    </section>
+
+    <section class="landing-focus">
+        <div class="landing-focus-copy">
+            <span class="landing-kicker">VISÃO DO TRABALHO</span>
+            <h2>Menos tempo procurando. Mais clareza para decidir o próximo passo.</h2>
+            <p>O painel reúne prazos próximos, laudos em andamento e honorários a receber. Abra uma perícia para consultar seus detalhes e continuar de onde parou.</p>
+            <a class="landing-text-link" href="#planos">Conhecer o plano <span aria-hidden="true">→</span></a>
+        </div>
+        <div class="landing-focus-visual" aria-label="Resumo ilustrativo das informações do painel">
+            <div class="landing-focus-top"><span>RESUMO DA ROTINA</span><span class="landing-live-dot"></span></div>
+            <div class="landing-focus-title"><strong>O que merece atenção</strong><small>Visão geral do trabalho</small></div>
+            <div class="landing-focus-item"><span class="focus-icon focus-icon-teal">◷</span><span><b>Prazos próximos</b><small>Consulte as datas na agenda</small></span><i>→</i></div>
+            <div class="landing-focus-item"><span class="focus-icon focus-icon-blue">▤</span><span><b>Laudos em andamento</b><small>Acompanhe a situação de cada laudo</small></span><i>→</i></div>
+            <div class="landing-focus-item"><span class="focus-icon focus-icon-amber">R$</span><span><b>Honorários a receber</b><small>Veja o saldo dos seus processos</small></span><i>→</i></div>
+            <div class="landing-focus-note"><span aria-hidden="true">i</span> Prévia ilustrativa. Os dados reais pertencem à conta autenticada.</div>
+        </div>
+    </section>
+
+    <section class="landing-plan-section" id="planos">
+        <div class="landing-plan-card">
+            <div class="landing-plan-copy">
+                <span class="landing-kicker">PLANO INDIVIDUAL</span>
+                <h2>Uma ferramenta para organizar sua rotina pericial.</h2>
+                <p>Use no computador, tablet ou celular, com uma conta individual para cada profissional.</p>
+                <div class="landing-price"><strong>R$ 70,00</strong><span>/ mês</span></div>
+                <ul class="landing-plan-list">
+                    <li><span>✓</span> Processos e pessoas relacionadas</li>
+                    <li><span>✓</span> Laudos e editor integrado</li>
+                    <li><span>✓</span> Agenda, prazos e honorários</li>
+                    <li><span>✓</span> Relatórios e histórico</li>
+                </ul>
+            </div>
+            <div class="landing-plan-action">
+                <span class="landing-availability"><i></i> ASSINATURAS EM ATIVAÇÃO</span>
+                <p>Estamos concluindo a liberação do pagamento online. A contratação estará disponível assim que essa etapa for finalizada.</p>
+                <a class="btn btn-outline-secondary" asp-controller="Conta" asp-action="Entrar">Já tem uma conta? Entrar</a>
+                <small>Pagamento mensal processado com segurança pelo provedor.</small>
+            </div>
+        </div>
+    </section>
+
+    <section class="landing-faq" id="duvidas">
+        <div class="landing-section-intro">
+            <span class="landing-kicker">PERGUNTAS FREQUENTES</span>
+            <h2>Antes de começar</h2>
+            <p>Informações diretas sobre o que a plataforma faz e como funciona.</p>
+        </div>
+        <div class="landing-faq-list">
+            <details><summary>O sistema gera o laudo automaticamente?</summary><p>Não. Você redige o conteúdo técnico no editor integrado. O sistema organiza os laudos e oferece ferramentas de formatação e revisão do navegador; a análise e a conclusão permanecem sob responsabilidade do perito.</p></details>
+            <details><summary>O sistema consulta os tribunais automaticamente?</summary><p>Não. O cadastro e o acompanhamento das perícias são feitos pelo próprio usuário.</p></details>
+            <details><summary>Posso usar no celular?</summary><p>Sim. A interface se adapta a telas menores e pode ser acessada pelo navegador do celular.</p></details>
+            <details><summary>Meus processos ficam visíveis para outros peritos?</summary><p>Não. Cada conta acessa seus próprios registros dentro da plataforma.</p></details>
+            <details><summary>Quando poderei assinar?</summary><p>O plano individual custa R$ 70,00 por mês. A abertura de novas assinaturas depende da finalização da ativação do pagamento online.</p></details>
+        </div>
+    </section>
+
+    <section class="landing-bottom-cta">
+        <div><span class="landing-kicker">PERÍCIA EM DIA</span><h2>Tenha sua rotina pericial em perspectiva.</h2><p>Entre na sua conta ou conheça os recursos da plataforma.</p></div>
+        <div class="landing-bottom-actions"><a class="btn btn-primary btn-lg" href="#recursos">Ver recursos</a><a class="landing-text-link" asp-controller="Conta" asp-action="Entrar">Entrar <span aria-hidden="true">→</span></a></div>
     </section>
 </main>
 
-<footer class="public-footer"><span>© @BrasiliaTime.Now.Year Perícia em Dia · Gestão pericial</span><a asp-controller="Home" asp-action="Privacy">Aviso de privacidade</a></footer>
+<footer class="landing-footer"><a class="brand public-brand" asp-controller="Home" asp-action="Index" aria-label="Perícia em Dia, página inicial"><img class="brand-mark" src="~/images/pericia-em-dia-mark.png" alt="" /><span>Perícia <span class="brand-light">em Dia</span><small>GESTÃO PERICIAL</small></span></a><span>© @BrasiliaTime.Now.Year Perícia em Dia</span><a asp-controller="Home" asp-action="Privacy">Aviso de privacidade</a></footer>
 </body>
 </html>

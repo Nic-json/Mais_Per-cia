@@ -5,6 +5,8 @@
     var ativa = Model.AcessoAte is DateTime acessoAte && acessoAte >= DateTime.UtcNow;
     var checkoutAberto = !ativa && Model.Status.Equals("Checkout aberto", StringComparison.OrdinalIgnoreCase)
         && !string.IsNullOrWhiteSpace(Model.CheckoutUrl);
+    var erro = TempData["ErroAssinatura"] as string;
+    var erroCadastroAsaas = TempData["ErroCadastroAsaas"] is true;
 }
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -26,9 +28,12 @@
     <h1>Assinatura</h1>
     <p class="login-intro">Gerencie o pagamento e acompanhe a liberação da sua conta.</p>
 
-    @if (TempData["ErroAssinatura"] is string erro)
+    @if (!string.IsNullOrWhiteSpace(erro))
     {
-        <div class="alert alert-warning" role="alert">@erro</div>
+        <div class="alert alert-warning subscription-alert @(erroCadastroAsaas ? "subscription-alert-provider" : "")" role="alert">
+            <strong>@(erroCadastroAsaas ? "Assinatura temporariamente indisponível" : "Não foi possível iniciar o pagamento")</strong>
+            <p class="mb-0">@erro</p>
+        </div>
     }
     @if (TempData["RetornoAssinatura"] is string retorno)
     {

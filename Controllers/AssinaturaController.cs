@@ -88,8 +88,18 @@ public sealed class AssinaturaController(PericiasContext db, IConfiguration conf
             if (!response.IsSuccessStatusCode)
             {
                 var responseBody = await response.Content.ReadAsStringAsync(HttpContext.RequestAborted);
-                logger.LogWarning("Asaas checkout creation returned HTTP {StatusCode}: {Errors}", (int)response.StatusCode, SummarizeApiErrors(responseBody));
-                TempData["ErroAssinatura"] = "Não foi possível abrir o checkout agora. Tente novamente mais tarde.";
+                var errors = SummarizeApiErrors(responseBody);
+                logger.LogWarning("Asaas checkout creation returned HTTP {StatusCode}: {Errors}", (int)response.StatusCode, errors);
+                if (errors.Contains("criação do checkout está desabilitada", StringComparison.OrdinalIgnoreCase) ||
+                    errors.Contains("regularize a situação cadastral", StringComparison.OrdinalIgnoreCase))
+                {
+                    TempData["ErroCadastroAsaas"] = true;
+                    TempData["ErroAssinatura"] = "O Asaas ainda não liberou novas assinaturas para a conta que recebe os pagamentos. Verifique a situação cadastral dessa conta no painel Asaas e tente novamente após a regularização. Nenhuma cobrança foi gerada nesta tentativa.";
+                }
+                else
+                {
+                    TempData["ErroAssinatura"] = "Não foi possível iniciar o pagamento agora. Nenhuma cobrança foi confirmada nesta tentativa. Tente novamente mais tarde.";
+                }
                 return RedirectToAction(nameof(Index));
             }
             using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync(HttpContext.RequestAborted));
