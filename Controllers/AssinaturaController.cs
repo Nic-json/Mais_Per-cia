@@ -75,15 +75,15 @@ public sealed class AssinaturaController(PericiasContext db, IConfiguration conf
             minutesToExpire = 1440,
             externalReference = userId.ToString(CultureInfo.InvariantCulture),
             callback = new { successUrl = $"{site}/Assinatura/Retorno", cancelUrl = $"{site}/Assinatura", expiredUrl = $"{site}/Assinatura" },
-            items = new[] { new { name = "Assinatura Perito em Dia", description = "Acesso mensal ao Perito em Dia", quantity = 1, value = price } },
-            subscription = new { cycle = "MONTHLY", nextDueDate = Sistemas_para_pericias.Utilities.BrasiliaTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture), description = "Assinatura mensal Perito em Dia", externalReference = userId.ToString(CultureInfo.InvariantCulture) }
+            items = new[] { new { name = "Assinatura Perícia em Dia", description = "Acesso mensal à Perícia em Dia", quantity = 1, value = price } },
+            subscription = new { cycle = "MONTHLY", nextDueDate = Sistemas_para_pericias.Utilities.BrasiliaTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture), description = "Assinatura mensal Perícia em Dia", externalReference = userId.ToString(CultureInfo.InvariantCulture) }
         };
 
         try
         {
             using var request = new HttpRequestMessage(HttpMethod.Post, $"{baseUrl}/checkouts") { Content = JsonContent.Create(payload) };
             request.Headers.Add("access_token", config["Asaas:ApiKey"]);
-            request.Headers.UserAgent.ParseAdd("PeritoEmDia/1.0");
+            request.Headers.UserAgent.ParseAdd("PericiaEmDia/1.0");
             using var response = await clients.CreateClient("Asaas").SendAsync(request, HttpContext.RequestAborted);
             if (!response.IsSuccessStatusCode)
             {
@@ -223,7 +223,7 @@ public sealed class AssinaturaController(PericiasContext db, IConfiguration conf
         var url = $"{site}/webhooks/asaas";
         var body = new
         {
-            name = "Perícia Clara - Assinaturas",
+            name = "Perícia em Dia - Assinaturas",
             url,
             email,
             enabled = true,
@@ -245,7 +245,7 @@ public sealed class AssinaturaController(PericiasContext db, IConfiguration conf
         {
             var request = new HttpRequestMessage(method, $"{baseUrl}{endpoint}");
             request.Headers.Add("access_token", config["Asaas:ApiKey"]);
-            request.Headers.UserAgent.ParseAdd("PeritoEmDia/1.0");
+            request.Headers.UserAgent.ParseAdd("PericiaEmDia/1.0");
             if (content is not null) request.Content = JsonContent.Create(content);
             return await client.SendAsync(request, HttpContext.RequestAborted);
         }

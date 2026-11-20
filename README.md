@@ -1,4 +1,4 @@
-# Perito em Dia
+# Perícia em Dia
 
 Aplicação ASP.NET Core MVC para organizar perícias, prazos, laudos e honorários. Cada perito tem uma conta individual e os registros são isolados no banco SQLite compartilhado.
 
@@ -75,6 +75,6 @@ Não envie ao GitHub o `.env`, arquivos `.db`, a pasta `App_Data`, documentos de
 
 ## Assinatura online (Asaas)
 
-O checkout é criado no servidor e aceita Pix/cartão em cobrança recorrente. Configure no .env da VPS BILLING_MONTHLY_PRICE=49.90, ASAAS_API_KEY, ASAAS_WEBHOOK_TOKEN e ASAAS_BASE_URL. O padrão é https://api-sandbox.asaas.com/v3; só use o endpoint de produção depois dos testes e da liberação da conta Asaas. Nunca coloque chaves no Git, no navegador ou em mensagens.
+O checkout é criado no servidor e, no momento, aceita somente cartão de crédito em cobrança recorrente. Configure no `.env` da VPS `BILLING_MONTHLY_PRICE=49.90`, `ASAAS_API_KEY`, `ASAAS_WEBHOOK_TOKEN` e `ASAAS_BASE_URL`. O padrão é `https://api-sandbox.asaas.com/v3`; use `https://api.asaas.com/v3` e uma chave de produção somente depois dos testes e da liberação da conta Asaas. Nunca coloque chaves no Git, no navegador ou em mensagens.
 
 Ao iniciar a primeira assinatura, a aplicação consulta os webhooks da conta Asaas e cria ou atualiza automaticamente a configuração para `https://SEU-DOMINIO/webhooks/asaas`. A chave da API precisa ter permissão para administrar webhooks; `ASAAS_WEBHOOK_TOKEN` deve ter de 32 a 255 caracteres, sem espaços, e não pode ser a chave da API. O Asaas envia o token no cabeçalho `asaas-access-token`. O retorno do navegador não ativa assinatura: a confirmação chega pelo webhook. Confira as entregas em **Integrações > Logs de Webhooks** no painel Asaas. Sandbox e Produção têm chaves, webhooks e dados separados; ao mudar para produção, configure URL e chave de produção no `.env` e inicie um checkout para provisionar o webhook produtivo. A conta administrativa inicial (ID 1), que já possui os dados legados, conserva acesso administrativo sem cobrança.
