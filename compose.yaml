@@ -15,6 +15,14 @@ services:
       Asaas__ApiKey: ${ASAAS_API_KEY:-}
       Asaas__WebhookToken: ${ASAAS_WEBHOOK_TOKEN:-}
       Asaas__BaseUrl: ${ASAAS_BASE_URL:-https://api-sandbox.asaas.com/v3}
+      Email__SmtpHost: ${EMAIL_SMTP_HOST:-}
+      Email__SmtpPort: ${EMAIL_SMTP_PORT:-587}
+      Email__SmtpUser: ${EMAIL_SMTP_USER:-}
+      Email__SmtpPassword: ${EMAIL_SMTP_PASSWORD:-}
+      Email__FromAddress: ${EMAIL_FROM_ADDRESS:-}
+      Email__FromName: ${EMAIL_FROM_NAME:-Perícia em Dia}
+      Email__SupportAddress: ${EMAIL_SUPPORT_ADDRESS:-}
+      Email__UseSsl: ${EMAIL_USE_SSL:-true}
     volumes:
       - pericias-data:/data
     expose:

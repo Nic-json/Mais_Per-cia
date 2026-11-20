@@ -7,4 +7,6 @@ public sealed class AssinaturaViewModel
     public DateTime? AcessoAte { get; init; }
     public string? CheckoutUrl { get; init; }
     public bool CheckoutConfigurado { get; init; }
+    public string? SubscriptionId { get; init; }
+    public bool Cancelada { get; init; }
 }

@@ -164,6 +164,12 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
     public async Task<IActionResult> Configuracoes()
     {
         ViewBag.EmailConta = User.FindFirstValue(ClaimTypes.Email);
+        ViewBag.EmailSuporte = configuration["Email:SupportAddress"];
+        if (int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+        {
+            var conta = await db.ContasUsuarios.AsNoTracking().SingleOrDefaultAsync(u => u.Id == userId);
+            ViewBag.EmailConfirmado = conta?.EmailConfirmado ?? false;
+        }
         await PrepararCatalogoForenseAsync();
         return View(await db.ConfiguracoesPerito.AsNoTracking().FirstOrDefaultAsync() ?? new ConfiguracaoPerito());
     }
@@ -175,6 +181,11 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
         if (!ModelState.IsValid)
         {
             ViewBag.EmailConta = User.FindFirstValue(ClaimTypes.Email);
+            if (int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+            {
+                var conta = await db.ContasUsuarios.AsNoTracking().SingleOrDefaultAsync(u => u.Id == userId);
+                ViewBag.EmailConfirmado = conta?.EmailConfirmado ?? false;
+            }
             await PrepararCatalogoForenseAsync();
             return View("Configuracoes", configuracao);
         }
@@ -730,7 +741,7 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
         await using (var comando = conexao.CreateCommand())
         {
             comando.Transaction = transacao;
-            comando.CommandText = "DELETE FROM \"ContasUsuarios\" WHERE \"Id\" <> $usuarioId; UPDATE \"ContasUsuarios\" SET \"SenhaHash\" = 'REMOVIDA_DA_EXPORTACAO' WHERE \"Id\" = $usuarioId;";
+            comando.CommandText = "DELETE FROM \"TokensConta\"; DELETE FROM \"ContasUsuarios\" WHERE \"Id\" <> $usuarioId; UPDATE \"ContasUsuarios\" SET \"SenhaHash\" = 'REMOVIDA_DA_EXPORTACAO' WHERE \"Id\" = $usuarioId;";
             comando.Parameters.AddWithValue("$usuarioId", usuarioId);
             await comando.ExecuteNonQueryAsync();
         }

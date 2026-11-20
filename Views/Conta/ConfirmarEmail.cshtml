@@ -1,0 +1,4 @@
+@model string
+@{ ViewData["Title"] = "Confirmar e-mail"; Layout = null; }
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><meta name="robots" content="noindex,nofollow"/><title>Confirmar e-mail · Perícia em Dia</title><link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css"/><link rel="stylesheet" href="~/css/site.css" asp-append-version="true"/><link rel="stylesheet" href="~/css/site-enhancements.css" asp-append-version="true"/></head>
+<body class="login-page"><main class="login-card"><div class="eyebrow">SUA CONTA</div><h1>Confirme seu e-mail</h1><p>Confirme que este endereço pertence a você para liberar o acesso à conta.</p><form asp-action="ConfirmarEmailPost" method="post"><input type="hidden" name="token" value="@Model"/><button class="btn btn-primary btn-lg w-100">Confirmar e continuar</button></form></main></body></html>

@@ -4,12 +4,12 @@ namespace Sistemas_para_pericias.Data;
 
 public static class SqliteSchema
 {
-    public const int VersaoEsquema = 5;
+    public const int VersaoEsquema = 6;
 
     public static void EnsureAdditionalTables(SqliteConnection connection, bool criarBackupAntesMigracao = true)
     {
         var tinhaTabelaPagamentos = HasTable(connection, "PagamentosHonorarios");
-        var precisaMigrar = !HasTable(connection, "ContasUsuarios") || !HasTable(connection, "AssinaturasContas") || !HasTable(connection, "EventosAsaas") || !HasColumn(connection, "Pericias", "UsuarioId") || !HasColumn(connection, "DocumentosPericia", "UsuarioId") || !HasColumn(connection, "Periciados", "UsuarioId") || !HasColumn(connection, "LaudosPericia", "UsuarioId") || !HasColumn(connection, "VersoesLaudo", "UsuarioId") || !HasColumn(connection, "EventosAgenda", "UsuarioId") || !HasColumn(connection, "PagamentosHonorarios", "UsuarioId") || !HasColumn(connection, "HistoricoPericias", "UsuarioId") || !HasColumn(connection, "ConfiguracoesPerito", "UsuarioId") || !HasColumn(connection, "ModelosLaudo", "UsuarioId") ||
+        var precisaMigrar = !HasTable(connection, "ContasUsuarios") || !HasTable(connection, "AssinaturasContas") || !HasTable(connection, "EventosAsaas") || !HasTable(connection, "TokensConta") || !HasColumn(connection, "ContasUsuarios", "EmailConfirmado") || !HasColumn(connection, "Pericias", "UsuarioId") || !HasColumn(connection, "DocumentosPericia", "UsuarioId") || !HasColumn(connection, "Periciados", "UsuarioId") || !HasColumn(connection, "LaudosPericia", "UsuarioId") || !HasColumn(connection, "VersoesLaudo", "UsuarioId") || !HasColumn(connection, "EventosAgenda", "UsuarioId") || !HasColumn(connection, "PagamentosHonorarios", "UsuarioId") || !HasColumn(connection, "HistoricoPericias", "UsuarioId") || !HasColumn(connection, "ConfiguracoesPerito", "UsuarioId") || !HasColumn(connection, "ModelosLaudo", "UsuarioId") ||
             !HasTable(connection, "Periciados") || !tinhaTabelaPagamentos || !HasTable(connection, "EventosAgenda") || !HasTable(connection, "HistoricoPericias") || !HasTable(connection, "ConfiguracoesPerito") || !HasTable(connection, "ModelosLaudo") || !HasTable(connection, "VersoesLaudo") || !HasTable(connection, "UnidadesForenses") ||
             !HasColumn(connection, "Pericias", "NumeroProcesso") || !HasColumn(connection, "Pericias", "DataHonorariosFixados") ||
             !HasColumn(connection, "Pericias", "ValorHonorariosSolicitados") || !HasColumn(connection, "Pericias", "DataHonorariosSolicitados") ||
@@ -31,8 +31,18 @@ public static class SqliteSchema
                 "Nome" TEXT NOT NULL,
                 "SenhaHash" TEXT NOT NULL,
                 "Ativo" INTEGER NOT NULL DEFAULT 1,
+                "EmailConfirmado" INTEGER NOT NULL DEFAULT 1,
                 "CriadoEm" TEXT NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS "TokensConta" (
+                "Hash" TEXT NOT NULL CONSTRAINT "PK_TokensConta" PRIMARY KEY,
+                "UsuarioId" INTEGER NOT NULL,
+                "Finalidade" TEXT NOT NULL,
+                "ExpiraEm" TEXT NOT NULL,
+                "UsadoEm" TEXT NULL,
+                CONSTRAINT "FK_TokensConta_ContasUsuarios_UsuarioId" FOREIGN KEY ("UsuarioId") REFERENCES "ContasUsuarios" ("Id") ON DELETE CASCADE
+            );
+            CREATE INDEX IF NOT EXISTS "IX_TokensConta_UsuarioId_Finalidade" ON "TokensConta" ("UsuarioId", "Finalidade");
             CREATE TABLE IF NOT EXISTS "AssinaturasContas" (
                 "Id" INTEGER NOT NULL CONSTRAINT "PK_AssinaturasContas" PRIMARY KEY AUTOINCREMENT,
                 "UsuarioId" INTEGER NOT NULL,
@@ -181,6 +191,8 @@ public static class SqliteSchema
             if (!HasColumn(connection, transaction, tabela, "UsuarioId"))
                 Execute(connection, transaction, $"ALTER TABLE \"{tabela}\" ADD COLUMN \"UsuarioId\" INTEGER NOT NULL DEFAULT 1;");
         }
+        if (!HasColumn(connection, transaction, "ContasUsuarios", "EmailConfirmado"))
+            Execute(connection, transaction, "ALTER TABLE \"ContasUsuarios\" ADD COLUMN \"EmailConfirmado\" INTEGER NOT NULL DEFAULT 1;");
 
         if (!HasColumn(connection, transaction, "Periciados", "Papel"))
             Execute(connection, transaction, "ALTER TABLE \"Periciados\" ADD COLUMN \"Papel\" TEXT NULL;");

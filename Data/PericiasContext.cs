@@ -9,6 +9,7 @@ public class PericiasContext(DbContextOptions<PericiasContext> options, ICurrent
     private int CurrentUserId => currentUser.Id;
 
     public DbSet<ContaUsuario> ContasUsuarios => Set<ContaUsuario>();
+    public DbSet<TokenConta> TokensConta => Set<TokenConta>();
     public DbSet<AssinaturaConta> Assinaturas => Set<AssinaturaConta>();
     public DbSet<EventoAsaas> EventosAsaas => Set<EventoAsaas>();
     public DbSet<Pericia> Pericias => Set<Pericia>();
@@ -60,6 +61,7 @@ public class PericiasContext(DbContextOptions<PericiasContext> options, ICurrent
         modelBuilder.Entity<ModeloLaudo>().Property(e => e.UsuarioId).HasDefaultValue(1);
         modelBuilder.Entity<ContaUsuario>().HasIndex(u => u.EmailNormalizado).IsUnique();
         modelBuilder.Entity<ContaUsuario>().ToTable("ContasUsuarios");
+        modelBuilder.Entity<TokenConta>().ToTable("TokensConta").HasKey(t => t.Hash);
         modelBuilder.Entity<AssinaturaConta>().ToTable("AssinaturasContas").HasIndex(s => s.UsuarioId).IsUnique();
         modelBuilder.Entity<EventoAsaas>().ToTable("EventosAsaas");
         modelBuilder.Entity<Pericia>().HasIndex(p => new { p.UsuarioId, p.Numero }).IsUnique();

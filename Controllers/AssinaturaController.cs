@@ -25,6 +25,8 @@ public sealed class AssinaturaController(PericiasContext db, IConfiguration conf
             ValorMensal = decimal.TryParse(config["Billing:MonthlyPrice"], CultureInfo.InvariantCulture, out var price) && price > 0 ? price : null,
             Status = sub?.Status ?? "Pendente",
             AcessoAte = sub?.AcessoAte,
+            SubscriptionId = sub?.SubscriptionId,
+            Cancelada = string.Equals(sub?.Status, "Cancelada", StringComparison.OrdinalIgnoreCase),
             CheckoutUrl = sub?.CheckoutId is { Length: > 0 } checkoutId
                 ? sub.CheckoutLink is { Length: > 0 } savedLink && IsAllowedCheckoutUrl(savedLink)
                     ? savedLink
@@ -129,6 +131,51 @@ public sealed class AssinaturaController(PericiasContext db, IConfiguration conf
     public IActionResult Retorno()
     {
         TempData["RetornoAssinatura"] = "Checkout encerrado. Se o pagamento foi concluído, a confirmação chegará pelo Asaas em instantes; atualize a situação nesta tela.";
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost("Cancelar"), ValidateAntiForgeryToken]
+    public async Task<IActionResult> Cancelar()
+    {
+        var assinatura = await db.Assinaturas.SingleOrDefaultAsync(x => x.UsuarioId == UserId());
+        if (assinatura is null || string.IsNullOrWhiteSpace(assinatura.SubscriptionId))
+        {
+            TempData["ErroAssinatura"] = "Não encontramos uma assinatura recorrente ativa para cancelar.";
+            return RedirectToAction(nameof(Index));
+        }
+        if (string.Equals(assinatura.Status, "Cancelada", StringComparison.OrdinalIgnoreCase))
+            return RedirectToAction(nameof(Index));
+        if (string.IsNullOrWhiteSpace(config["Asaas:ApiKey"]) || string.IsNullOrWhiteSpace(config["Asaas:BaseUrl"]))
+        {
+            TempData["ErroAssinatura"] = "Não foi possível acessar o provedor para cancelar a recorrência. Tente novamente ou fale com o suporte.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        try
+        {
+            var baseUrl = config["Asaas:BaseUrl"]!.TrimEnd('/');
+            using var request = new HttpRequestMessage(HttpMethod.Delete, $"{baseUrl}/subscriptions/{Uri.EscapeDataString(assinatura.SubscriptionId)}");
+            request.Headers.Add("access_token", config["Asaas:ApiKey"]);
+            request.Headers.UserAgent.ParseAdd("PericiaEmDia/1.0");
+            using var response = await clients.CreateClient("Asaas").SendAsync(request, HttpContext.RequestAborted);
+            if (!response.IsSuccessStatusCode && response.StatusCode != System.Net.HttpStatusCode.NotFound)
+            {
+                logger.LogWarning("Asaas subscription cancellation returned HTTP {StatusCode} for account {AccountId}", (int)response.StatusCode, UserId());
+                TempData["ErroAssinatura"] = "O provedor não confirmou o cancelamento. A recorrência continua ativa; tente novamente ou fale com o suporte.";
+                return RedirectToAction(nameof(Index));
+            }
+            assinatura.Status = "Cancelada";
+            assinatura.CheckoutId = null;
+            assinatura.CheckoutLink = null;
+            assinatura.AtualizadoEm = DateTime.UtcNow;
+            await db.SaveChangesAsync(HttpContext.RequestAborted);
+            TempData["MensagemCancelamento"] = "Assinatura cancelada. Nenhuma nova cobrança recorrente será gerada. Seu acesso permanece até a data já paga, se houver.";
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        {
+            logger.LogError(ex, "Failed to cancel Asaas subscription for account {AccountId}", UserId());
+            TempData["ErroAssinatura"] = "Não foi possível confirmar o cancelamento agora. A recorrência continua ativa; tente novamente.";
+        }
         return RedirectToAction(nameof(Index));
     }
 

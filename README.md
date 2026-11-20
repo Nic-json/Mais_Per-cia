@@ -45,7 +45,7 @@ Esse arranjo deixa aplicação e banco no mesmo servidor e cabe no teto mensal i
 
 ## Situação comercial
 
-O cadastro individual e o isolamento por conta são a base técnica para vários peritos. A integração de assinatura mensal com checkout Asaas está implementada em sandbox, com preço de R$ 70,00 configurável e ativação baseada em webhook autenticado. Antes de cobrar clientes reais, configure credenciais e webhook de produção, valide todo o fluxo no sandbox e finalize confirmação de e-mail, recuperação/exclusão de conta, suporte, termos e aviso de privacidade.
+O cadastro individual e o isolamento por conta são a base técnica para vários peritos. O cadastro exige confirmação de e-mail; a recuperação de senha usa link temporário de uso único. Para habilitar esses fluxos, configure SMTP conforme a seção abaixo. A integração de assinatura mensal com checkout Asaas está implementada, com preço de R$ 70,00 configurável e ativação baseada em webhook autenticado. Antes de cobrar clientes reais, valide todo o fluxo com o titular, configure credenciais e webhook de produção, e finalize exclusão/retenção de dados, suporte, termos e aviso de privacidade.
 
 ## Módulos de processos e gestão
 
@@ -78,3 +78,7 @@ Não envie ao GitHub o `.env`, arquivos `.db`, a pasta `App_Data`, documentos de
 O checkout é criado no servidor e, no momento, aceita somente cartão de crédito em cobrança recorrente. Configure no `.env` da VPS `BILLING_MONTHLY_PRICE=70.00`, `ASAAS_API_KEY`, `ASAAS_WEBHOOK_TOKEN` e `ASAAS_BASE_URL`. O padrão é `https://api-sandbox.asaas.com/v3`; use `https://api.asaas.com/v3` e uma chave de produção somente depois dos testes e da liberação da conta Asaas. Nunca coloque chaves no Git, no navegador ou em mensagens.
 
 Ao iniciar a primeira assinatura, a aplicação consulta os webhooks da conta Asaas e cria ou atualiza automaticamente a configuração para `https://SEU-DOMINIO/webhooks/asaas`. A chave da API precisa ter permissão para administrar webhooks; `ASAAS_WEBHOOK_TOKEN` deve ter de 32 a 255 caracteres, sem espaços, e não pode ser a chave da API. O Asaas envia o token no cabeçalho `asaas-access-token`. O retorno do navegador não ativa assinatura: a confirmação chega pelo webhook. Confira as entregas em **Integrações > Logs de Webhooks** no painel Asaas. Sandbox e Produção têm chaves, webhooks e dados separados; ao mudar para produção, configure URL e chave de produção no `.env` e inicie um checkout para provisionar o webhook produtivo. A conta administrativa inicial (ID 1), que já possui os dados legados, conserva acesso administrativo sem cobrança.
+
+## E-mail de conta (SMTP)
+
+O cadastro de novas contas e a recuperação de senha só funcionam quando o SMTP está configurado. Na VPS, preencha no `.env` `EMAIL_SMTP_HOST`, `EMAIL_SMTP_PORT`, `EMAIL_SMTP_USER`, `EMAIL_SMTP_PASSWORD`, `EMAIL_FROM_ADDRESS` e `EMAIL_SUPPORT_ADDRESS` (opcional), depois recrie o app com `docker compose up -d --force-recreate app`. Não publique esses valores no Git. A porta padrão é 587 com TLS. Contas já existentes são consideradas confirmadas pela migração aditiva; nenhuma senha ou registro operacional é alterado. Links de confirmação expiram em 24 horas e links de redefinição em 1 hora; ambos são de uso único.

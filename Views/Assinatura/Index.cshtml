@@ -7,13 +7,13 @@
         && !string.IsNullOrWhiteSpace(Model.CheckoutUrl);
     var erro = TempData["ErroAssinatura"] as string;
     var erroCadastroAsaas = TempData["ErroCadastroAsaas"] is true;
+    var mensagemCancelamento = TempData["MensagemCancelamento"] as string;
 }
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <link rel="icon" type="image/png" href="~/images/pericia-em-dia-mark.png" asp-append-version="true" />
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex,nofollow" />
     <title>Assinatura · Perícia em Dia</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
@@ -23,73 +23,54 @@
 <body class="login-page">
 <main class="login-card subscription-card">
     <a class="brand login-brand" href="/"><img class="brand-mark" src="~/images/pericia-em-dia-mark.png" alt="" /><span>Perícia <span class="brand-light">em Dia</span><small>GESTÃO PERICIAL</small></span></a>
-
-    <div class="eyebrow">ACESSO AO SISTEMA</div>
-    <h1>Assinatura</h1>
+    <div class="eyebrow">ACESSO AO SISTEMA</div><h1>Assinatura</h1>
     <p class="login-intro">Gerencie o pagamento e acompanhe a liberação da sua conta.</p>
-
-    @if (!string.IsNullOrWhiteSpace(erro))
-    {
-        <div class="alert alert-warning subscription-alert @(erroCadastroAsaas ? "subscription-alert-provider" : "")" role="alert">
-            <strong>@(erroCadastroAsaas ? "Assinatura temporariamente indisponível" : "Não foi possível iniciar o pagamento")</strong>
-            <p class="mb-0">@erro</p>
-        </div>
-    }
-    @if (TempData["RetornoAssinatura"] is string retorno)
-    {
-        <div class="alert alert-info" role="status">@retorno</div>
-    }
+    @if (!string.IsNullOrWhiteSpace(erro)) { <div class="alert alert-warning subscription-alert @(erroCadastroAsaas ? "subscription-alert-provider" : "")" role="alert"><strong>@(erroCadastroAsaas ? "Assinatura temporariamente indisponível" : "Não foi possível concluir a operação")</strong><p class="mb-0">@erro</p></div> }
+    @if (!string.IsNullOrWhiteSpace(mensagemCancelamento)) { <div class="alert alert-success" role="status">@mensagemCancelamento</div> }
+    @if (TempData["RetornoAssinatura"] is string retorno) { <div class="alert alert-info" role="status">@retorno</div> }
 
     @if (ativa)
     {
         <section class="subscription-state subscription-state-active" aria-live="polite">
-            <span class="subscription-state-label">Assinatura ativa</span>
+            <span class="subscription-state-label">@(Model.Cancelada ? "Assinatura cancelada" : "Assinatura ativa")</span>
             <p>Acesso liberado até <strong>@BrasiliaTime.ToBrasilia(Model.AcessoAte!.Value).ToString("dd/MM/yyyy")</strong>.</p>
-            <p class="small mb-0">A renovação mensal é processada pelo Asaas no cartão cadastrado.</p>
+            <p class="small mb-0">@(Model.Cancelada ? "A recorrência foi encerrada e não gerará novas cobranças." : "A renovação mensal é processada pelo Asaas no cartão cadastrado.")</p>
         </section>
         <a class="btn btn-primary w-100 btn-lg subscription-primary" href="/">Acessar o sistema</a>
+        @if (!Model.Cancelada && !string.IsNullOrWhiteSpace(Model.SubscriptionId))
+        {
+            <button type="button" class="btn btn-outline-secondary w-100 mt-3" onclick="document.getElementById('cancelar-assinatura').showModal()">Cancelar renovação</button>
+            <dialog id="cancelar-assinatura" class="account-confirm-dialog">
+                <h2>Cancelar assinatura?</h2>
+                <p>O Asaas encerrará a recorrência e removerá cobranças futuras que ainda estejam pendentes ou vencidas. Pagamentos já realizados permanecem registrados. Seu acesso continuará até <strong>@BrasiliaTime.ToBrasilia(Model.AcessoAte!.Value).ToString("dd/MM/yyyy")</strong>.</p>
+                <div class="d-flex gap-2 justify-content-end"><button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('cancelar-assinatura').close()">Manter assinatura</button><form asp-action="Cancelar" method="post"><button class="btn btn-danger" type="submit">Confirmar cancelamento</button></form></div>
+            </dialog>
+        }
     }
     else if (checkoutAberto)
     {
-        <section class="subscription-state subscription-state-pending" aria-live="polite">
-            <span class="subscription-state-label">Pagamento não concluído</span>
-            <p>Seu checkout continua salvo. Você pode fechar esta página e voltar depois para retomar o pagamento.</p>
-        </section>
-        @if (Model.ValorMensal is decimal valorAberto)
-        {
-            <p class="subscription-price">R$ @valorAberto.ToString("N2") <span>por mês</span></p>
-        }
+        <section class="subscription-state subscription-state-pending" aria-live="polite"><span class="subscription-state-label">Pagamento não concluído</span><p>Seu checkout continua salvo. Você pode fechar esta página e voltar depois para retomar o pagamento.</p></section>
+        @if (Model.ValorMensal is decimal valorAberto) { <p class="subscription-price">R$ @valorAberto.ToString("N2") <span>por mês</span></p> }
         <a class="btn btn-primary w-100 btn-lg subscription-primary" href="@Model.CheckoutUrl">Retomar pagamento</a>
-        <form asp-action="Index" method="get" class="subscription-refresh">
-            <button type="submit" class="btn btn-outline-secondary w-100">Atualizar situação do pagamento</button>
-        </form>
+        <form asp-action="Index" method="get" class="subscription-refresh"><button type="submit" class="btn btn-outline-secondary w-100">Atualizar situação do pagamento</button></form>
         <p class="small text-muted mt-3 mb-0">Se você já pagou, aguarde a confirmação do Asaas e atualize esta página. O acesso só é liberado após a confirmação segura do pagamento.</p>
     }
     else if (Model.CheckoutConfigurado)
     {
-        <section class="subscription-state subscription-state-pending">
-            <span class="subscription-state-label">@(Model.Status is "Checkout expirado" or "Checkout cancelado" ? Model.Status : "Nenhum pagamento pendente")</span>
-            <p>@(Model.Status is "Checkout expirado" or "Checkout cancelado" ? "O checkout anterior não está mais disponível. Você pode iniciar um novo pagamento." : "Inicie a assinatura para liberar o acesso às áreas do sistema após a confirmação do primeiro pagamento.")</p>
-        </section>
-        @if (Model.ValorMensal is decimal valor)
-        {
-            <p class="subscription-price">R$ @valor.ToString("N2") <span>por mês</span></p>
-        }
-        <form asp-action="Iniciar" method="post">
-            @Html.AntiForgeryToken()
-            <button type="submit" class="btn btn-primary w-100 btn-lg subscription-primary">Iniciar assinatura</button>
-        </form>
+        <section class="subscription-state subscription-state-pending"><span class="subscription-state-label">@(Model.Status is "Checkout expirado" or "Checkout cancelado" or "Cancelada" ? Model.Status : "Nenhum pagamento pendente")</span><p>@(Model.Status is "Checkout expirado" or "Checkout cancelado" or "Cancelada" ? "Você pode iniciar uma nova assinatura quando quiser." : "Inicie a assinatura para liberar o acesso às áreas do sistema após a confirmação do primeiro pagamento.")</p></section>
+        @if (Model.ValorMensal is decimal valor) { <p class="subscription-price">R$ @valor.ToString("N2") <span>por mês</span></p> }
+        <form asp-action="Iniciar" method="post">@Html.AntiForgeryToken()<button type="submit" class="btn btn-primary w-100 btn-lg subscription-primary">Iniciar assinatura</button></form>
         <p class="small text-muted mt-3 mb-0">Pagamento recorrente mensal no cartão de crédito, processado pelo Asaas. A conta será liberada após a confirmação.</p>
     }
     else
     {
-        <section class="subscription-state subscription-state-pending">
-            <span class="subscription-state-label">Pagamento indisponível</span>
-            <p>A cobrança online ainda está em configuração. Sua conta foi criada, mas o pagamento ainda não pode ser iniciado.</p>
-        </section>
+        <section class="subscription-state subscription-state-pending"><span class="subscription-state-label">Pagamento indisponível</span><p>A cobrança online ainda está em configuração. Sua conta foi criada, mas o pagamento ainda não pode ser iniciado.</p></section>
     }
-
     <div class="login-note"><form asp-controller="Conta" asp-action="Sair" method="post"><button class="btn btn-link p-0" type="submit">Sair da conta</button></form></div>
 </main>
-</body>
-</html>
+<style>
+    .account-confirm-dialog { max-width: 34rem; border: 1px solid #d5dde2; border-radius: 1rem; padding: 1.5rem; color: #233643; box-shadow: 0 1rem 3rem #162b3a30; }
+    .account-confirm-dialog::backdrop { background: #172b3b80; }
+    .account-confirm-dialog h2 { font-size: 1.35rem; margin-bottom: 1rem; }
+</style>
+</body></html>

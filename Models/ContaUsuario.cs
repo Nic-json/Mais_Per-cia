@@ -20,5 +20,8 @@ public sealed class ContaUsuario
 
     public bool Ativo { get; set; } = true;
 
+    // Contas antigas recebem true na migração; novas contas só são ativadas após confirmação.
+    public bool EmailConfirmado { get; set; } = true;
+
     public DateTime CriadoEm { get; set; } = DateTime.UtcNow;
 }
