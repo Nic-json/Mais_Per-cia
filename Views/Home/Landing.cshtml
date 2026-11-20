@@ -1,0 +1,79 @@
+@{
+    ViewData["Title"] = "Gestão pericial";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <link rel="icon" type="image/png" href="~/images/perito-em-dia-mark.png" asp-append-version="true" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Organize perícias, periciados, laudos, prazos e honorários em um só lugar com o Perito em Dia." />
+    <title>Perito em Dia · Gestão pericial</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site-enhancements.css" asp-append-version="true" />
+</head>
+<body class="public-page">
+<header class="public-header">
+    <a class="brand public-brand" asp-controller="Home" asp-action="Index" aria-label="Perito em Dia, página inicial">
+        <img class="brand-mark" src="~/images/perito-em-dia-mark.png" alt="" />
+        <span>Perito <span class="brand-light">em Dia</span><small>GESTÃO PERICIAL</small></span>
+    </a>
+    <nav class="public-nav" aria-label="Navegação">
+        <a href="#recursos">Recursos</a>
+        <a asp-controller="Home" asp-action="Privacy">Privacidade</a>
+        <a class="btn btn-outline-secondary" asp-controller="Conta" asp-action="Entrar">Entrar</a>
+        <a class="btn btn-primary" asp-controller="Conta" asp-action="Cadastro">Criar minha conta</a>
+    </nav>
+</header>
+
+<main>
+    <section class="public-hero">
+        <div class="public-hero-copy">
+            <div class="eyebrow">ORGANIZAÇÃO PARA A ROTINA DO PERITO</div>
+            <h1>Mais clareza para conduzir cada perícia.</h1>
+            <p>Processos, periciados, laudos, prazos e honorários organizados em um só lugar, com acesso individual para cada profissional.</p>
+            <div class="public-hero-actions">
+                <a class="btn btn-primary btn-lg" asp-controller="Conta" asp-action="Cadastro">Conhecer o sistema</a>
+                <a class="btn btn-outline-secondary btn-lg" href="#recursos">Ver o que você pode organizar</a>
+            </div>
+            <p class="public-price-note">Plano individual por <strong>R$ 49,90 por mês</strong>. O pagamento é processado pelo Asaas.</p>
+        </div>
+        <div class="public-preview" aria-label="Exemplo ilustrativo do painel do sistema">
+            <div class="preview-top"><span class="preview-mark">P</span><span><strong>Visão geral</strong><small>Seu trabalho, em perspectiva</small></span><span class="preview-date">HOJE</span></div>
+            <div class="preview-metrics">
+                <div><small>PROCESSOS</small><strong>Em acompanhamento</strong><span class="preview-value">Organizados</span></div>
+                <div><small>PRÓXIMOS PASSOS</small><strong>Prazos e agenda</strong><span class="preview-value">Em destaque</span></div>
+            </div>
+            <div class="preview-list-title">Acompanhe cada etapa</div>
+            <div class="preview-row"><span class="preview-dot dot-blue"></span><span><strong>Perícias</strong><small>Dados e pessoas vinculadas</small></span><span class="preview-arrow">›</span></div>
+            <div class="preview-row"><span class="preview-dot dot-green"></span><span><strong>Laudos</strong><small>Editor e situação de entrega</small></span><span class="preview-arrow">›</span></div>
+            <div class="preview-row"><span class="preview-dot dot-amber"></span><span><strong>Honorários</strong><small>Valores e pagamentos registrados</small></span><span class="preview-arrow">›</span></div>
+            <div class="preview-foot"><span class="preview-lock">✓</span> Espaço individual do profissional</div>
+        </div>
+    </section>
+
+    <section class="public-features" id="recursos">
+        <div class="public-section-heading">
+            <div class="eyebrow">UM FLUXO DE TRABALHO MAIS ORGANIZADO</div>
+            <h2>O essencial da rotina pericial, conectado.</h2>
+            <p>Consulte as informações do processo e avance para as tarefas relacionadas sem perder o contexto.</p>
+        </div>
+        <div class="public-feature-grid">
+            <article class="public-feature-card"><span class="feature-number">01</span><h3>Processos e periciados</h3><p>Registre uma perícia e associe as pessoas relacionadas quando precisar. Acompanhe os dados principais em uma visão organizada.</p></article>
+            <article class="public-feature-card"><span class="feature-number">02</span><h3>Laudos em um só lugar</h3><p>Crie laudos vinculados às perícias e continue a redação em um editor com ferramentas de formatação e revisão do navegador.</p></article>
+            <article class="public-feature-card"><span class="feature-number">03</span><h3>Prazos e compromissos</h3><p>Visualize datas importantes no calendário e acompanhe prazos associados aos seus processos.</p></article>
+            <article class="public-feature-card"><span class="feature-number">04</span><h3>Honorários e pagamentos</h3><p>Consulte valores fixados, pagamentos registrados e saldos pendentes por processo.</p></article>
+        </div>
+    </section>
+
+    <section class="public-cta">
+        <div><div class="eyebrow">PERITO EM DIA</div><h2>Comece a organizar sua rotina.</h2><p>Crie sua conta individual e conheça o sistema.</p></div>
+        <a class="btn btn-primary btn-lg" asp-controller="Conta" asp-action="Cadastro">Criar conta</a>
+    </section>
+</main>
+
+<footer class="public-footer"><span>© @BrasiliaTime.Now.Year Perito em Dia · Gestão pericial</span><a asp-controller="Home" asp-action="Privacy">Aviso de privacidade</a></footer>
+</body>
+</html>

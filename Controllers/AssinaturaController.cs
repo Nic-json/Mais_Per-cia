@@ -26,7 +26,9 @@ public sealed class AssinaturaController(PericiasContext db, IConfiguration conf
             Status = sub?.Status ?? "Pendente",
             AcessoAte = sub?.AcessoAte,
             CheckoutUrl = sub?.CheckoutId is { Length: > 0 } checkoutId
-                ? sub.CheckoutLink ?? CheckoutFallbackUrl(checkoutId, config["Asaas:BaseUrl"])
+                ? sub.CheckoutLink is { Length: > 0 } savedLink && IsAllowedCheckoutUrl(savedLink)
+                    ? savedLink
+                    : CheckoutFallbackUrl(checkoutId, config["Asaas:BaseUrl"])
                 : null,
             CheckoutConfigurado = CredenciaisOk() && decimal.TryParse(config["Billing:MonthlyPrice"], CultureInfo.InvariantCulture, out var monthly) && monthly > 0
         };
@@ -48,6 +50,16 @@ public sealed class AssinaturaController(PericiasContext db, IConfiguration conf
         if (existing?.AcessoAte >= DateTime.UtcNow)
             return RedirectToAction("Index", "Home");
 
+        // Reuse an open checkout. Creating another recurring checkout here could
+        // leave two valid subscriptions for the same account.
+        if (existing?.Status == "Checkout aberto" && existing.CheckoutId is { Length: > 0 } openCheckoutId)
+        {
+            var openCheckoutUrl = existing.CheckoutLink is { Length: > 0 } savedLink && IsAllowedCheckoutUrl(savedLink)
+                ? savedLink
+                : CheckoutFallbackUrl(openCheckoutId, config["Asaas:BaseUrl"]);
+            if (!string.IsNullOrWhiteSpace(openCheckoutUrl)) return Redirect(openCheckoutUrl);
+        }
+
         var baseUrl = config["Asaas:BaseUrl"]?.TrimEnd('/') ?? "https://api-sandbox.asaas.com/v3";
         var site = config["Public:BaseUrl"]?.TrimEnd('/') ?? $"{Request.Scheme}://{Request.Host}";
         if (!await GarantirWebhookAsync(baseUrl, site))
@@ -63,8 +75,8 @@ public sealed class AssinaturaController(PericiasContext db, IConfiguration conf
             minutesToExpire = 1440,
             externalReference = userId.ToString(CultureInfo.InvariantCulture),
             callback = new { successUrl = $"{site}/Assinatura/Retorno", cancelUrl = $"{site}/Assinatura", expiredUrl = $"{site}/Assinatura" },
-            items = new[] { new { name = "Assinatura Perícia Clara", description = "Acesso mensal ao Perícia Clara", quantity = 1, value = price } },
-            subscription = new { cycle = "MONTHLY", nextDueDate = Sistemas_para_pericias.Utilities.BrasiliaTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture), description = "Assinatura mensal Perícia Clara", externalReference = userId.ToString(CultureInfo.InvariantCulture) }
+            items = new[] { new { name = "Assinatura Perito em Dia", description = "Acesso mensal ao Perito em Dia", quantity = 1, value = price } },
+            subscription = new { cycle = "MONTHLY", nextDueDate = Sistemas_para_pericias.Utilities.BrasiliaTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture), description = "Assinatura mensal Perito em Dia", externalReference = userId.ToString(CultureInfo.InvariantCulture) }
         };
 
         try
@@ -104,7 +116,11 @@ public sealed class AssinaturaController(PericiasContext db, IConfiguration conf
     }
 
     [HttpGet("Retorno")]
-    public IActionResult Retorno() => RedirectToAction(nameof(Index));
+    public IActionResult Retorno()
+    {
+        TempData["RetornoAssinatura"] = "Checkout encerrado. Se o pagamento foi concluído, a confirmação chegará pelo Asaas em instantes; atualize a situação nesta tela.";
+        return RedirectToAction(nameof(Index));
+    }
 
     [HttpPost("/webhooks/asaas"), AllowAnonymous, IgnoreAntiforgeryToken, RequestSizeLimit(131072)]
     public async Task<IActionResult> Webhook()
@@ -272,12 +288,16 @@ public sealed class AssinaturaController(PericiasContext db, IConfiguration conf
 
     private static string GetCheckoutUrl(JsonElement checkout, string id, string baseUrl)
     {
-        if (checkout.TryGetProperty("link", out var linkElement) && Uri.TryCreate(linkElement.GetString(), UriKind.Absolute, out var link) &&
-            link.Scheme == Uri.UriSchemeHttps && (link.Host.Equals("sandbox.asaas.com", StringComparison.OrdinalIgnoreCase) || link.Host.Equals("asaas.com", StringComparison.OrdinalIgnoreCase)))
+        if (checkout.TryGetProperty("link", out var linkElement) && linkElement.ValueKind == JsonValueKind.String &&
+            Uri.TryCreate(linkElement.GetString(), UriKind.Absolute, out var link) && IsAllowedCheckoutUrl(link.AbsoluteUri))
             return link.AbsoluteUri;
 
         return CheckoutFallbackUrl(id, baseUrl);
     }
+
+    private static bool IsAllowedCheckoutUrl(string url) =>
+        Uri.TryCreate(url, UriKind.Absolute, out var link) && link.Scheme == Uri.UriSchemeHttps &&
+        (link.Host.Equals("sandbox.asaas.com", StringComparison.OrdinalIgnoreCase) || link.Host.Equals("asaas.com", StringComparison.OrdinalIgnoreCase));
 
     private static string CheckoutFallbackUrl(string id, string? baseUrl)
     {

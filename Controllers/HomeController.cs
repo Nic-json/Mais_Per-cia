@@ -122,8 +122,11 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
     [AllowAnonymous]
     public IActionResult Error() => View("Error", new ErrorViewModel { RequestId = HttpContext.TraceIdentifier });
 
+    [AllowAnonymous]
     public async Task<IActionResult> Index(string? busca, StatusPericia? status, string? pagamento, string? comarca, DateTime? prazoDe, DateTime? prazoAte, int pagina = 1, int porPagina = 20)
     {
+        if (User.Identity?.IsAuthenticated != true) return View("Landing");
+
         porPagina = NormalizarTamanhoPagina(porPagina, 20);
         var visaoGeral = ConsultaVisaoGeral();
         IQueryable<Pericia> query = visaoGeral.Include(p => p.Periciados).Include(p => p.Laudos);
