@@ -4,7 +4,7 @@ namespace Sistemas_para_pericias.Data;
 
 public static class SqliteSchema
 {
-    public const int VersaoEsquema = 6;
+    public const int VersaoEsquema = 7;
 
     public static void EnsureAdditionalTables(SqliteConnection connection, bool criarBackupAntesMigracao = true)
     {
@@ -18,7 +18,8 @@ public static class SqliteSchema
             !HasColumn(connection, "Periciados", "Papel") || !HasColumn(connection, "Periciados", "Relacao") || !HasColumn(connection, "Periciados", "Contato") || !HasColumn(connection, "Periciados", "RegistroEntrevista") ||
             !HasColumn(connection, "LaudosPericia", "NumeroLaudo") ||
             !HasColumn(connection, "LaudosPericia", "PericiadoId") || !HasColumn(connection, "LaudosPericia", "Status") || !HasColumn(connection, "LaudosPericia", "Tipo") || !HasColumn(connection, "LaudosPericia", "Prazo") || !HasColumn(connection, "LaudosPericia", "EntregueEm") || !HasColumn(connection, "AssinaturasContas", "CheckoutLink");
-        if (criarBackupAntesMigracao && precisaMigrar && TemPericias(connection))
+        var precisaMigrarConta = !HasColumn(connection, "ContasUsuarios", "UltimoAcessoEm") || !HasColumn(connection, "ContasUsuarios", "AvisoInatividadeEnviadoEm");
+        if (criarBackupAntesMigracao && (precisaMigrar || precisaMigrarConta) && TemPericias(connection))
             CriarPontoRestauracao(connection);
 
         using var transaction = connection.BeginTransaction();
@@ -32,7 +33,9 @@ public static class SqliteSchema
                 "SenhaHash" TEXT NOT NULL,
                 "Ativo" INTEGER NOT NULL DEFAULT 1,
                 "EmailConfirmado" INTEGER NOT NULL DEFAULT 1,
-                "CriadoEm" TEXT NOT NULL
+                "CriadoEm" TEXT NOT NULL,
+                "UltimoAcessoEm" TEXT NOT NULL DEFAULT '2000-01-01 00:00:00',
+                "AvisoInatividadeEnviadoEm" TEXT NULL
             );
             CREATE TABLE IF NOT EXISTS "TokensConta" (
                 "Hash" TEXT NOT NULL CONSTRAINT "PK_TokensConta" PRIMARY KEY,
@@ -193,6 +196,13 @@ public static class SqliteSchema
         }
         if (!HasColumn(connection, transaction, "ContasUsuarios", "EmailConfirmado"))
             Execute(connection, transaction, "ALTER TABLE \"ContasUsuarios\" ADD COLUMN \"EmailConfirmado\" INTEGER NOT NULL DEFAULT 1;");
+        if (!HasColumn(connection, transaction, "ContasUsuarios", "UltimoAcessoEm"))
+        {
+            Execute(connection, transaction, "ALTER TABLE \"ContasUsuarios\" ADD COLUMN \"UltimoAcessoEm\" TEXT NULL;");
+            Execute(connection, transaction, "UPDATE \"ContasUsuarios\" SET \"UltimoAcessoEm\" = strftime('%Y-%m-%d %H:%M:%f', 'now') WHERE \"UltimoAcessoEm\" IS NULL;");
+        }
+        if (!HasColumn(connection, transaction, "ContasUsuarios", "AvisoInatividadeEnviadoEm"))
+            Execute(connection, transaction, "ALTER TABLE \"ContasUsuarios\" ADD COLUMN \"AvisoInatividadeEnviadoEm\" TEXT NULL;");
 
         if (!HasColumn(connection, transaction, "Periciados", "Papel"))
             Execute(connection, transaction, "ALTER TABLE \"Periciados\" ADD COLUMN \"Papel\" TEXT NULL;");

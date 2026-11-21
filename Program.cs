@@ -25,6 +25,7 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient("Asaas", client => client.Timeout = TimeSpan.FromSeconds(20));
 builder.Services.AddSingleton<Sistemas_para_pericias.Services.IAccountEmailSender, Sistemas_para_pericias.Services.SmtpAccountEmailSender>();
+builder.Services.AddHostedService<Sistemas_para_pericias.Services.AccountRetentionWorker>();
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 builder.Services.AddScoped<IPasswordHasher<ContaUsuario>, PasswordHasher<ContaUsuario>>();
 builder.Services.AddTransient(_ =>

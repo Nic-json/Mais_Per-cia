@@ -19,6 +19,7 @@ public class ContaController(
     PericiasContext db,
     IPasswordHasher<ContaUsuario> passwordHasher,
     IAccountEmailSender emailSender,
+    IConfiguration configuration,
     ILogger<ContaController> logger) : Controller
 {
     private const string FinalidadeConfirmacao = "confirmar-email";
@@ -32,15 +33,15 @@ public class ContaController(
     }
 
     [HttpGet("Cadastro"), AllowAnonymous]
-    public IActionResult Cadastro() { ViewBag.EmailDisponivel = emailSender.IsConfigured; return View(new CadastroContaViewModel()); }
+    public IActionResult Cadastro() { ViewBag.EmailDisponivel = CadastroConfigurado(); return View(new CadastroContaViewModel()); }
 
     [HttpPost("Cadastro"), AllowAnonymous, ValidateAntiForgeryToken, EnableRateLimiting("login")]
     public async Task<IActionResult> Cadastro(CadastroContaViewModel model)
     {
-        ViewBag.EmailDisponivel = emailSender.IsConfigured;
-        if (!emailSender.IsConfigured)
+        ViewBag.EmailDisponivel = CadastroConfigurado();
+        if (!CadastroConfigurado())
         {
-            ModelState.AddModelError(string.Empty, "O cadastro está temporariamente indisponível enquanto o envio de e-mail não é configurado.");
+            ModelState.AddModelError(string.Empty, "O cadastro está temporariamente indisponível enquanto o e-mail de envio, o contato de suporte e a identificação do serviço não estiverem configurados.");
             return View(model);
         }
         if (!ModelState.IsValid) return View(model);
@@ -60,7 +61,8 @@ public class ContaController(
             Nome = model.Nome.Trim(),
             Ativo = true,
             EmailConfirmado = false,
-            CriadoEm = DateTime.UtcNow
+            CriadoEm = DateTime.UtcNow,
+            UltimoAcessoEm = DateTime.UtcNow
         };
         conta.SenhaHash = passwordHasher.HashPassword(conta, model.Senha);
         db.ContasUsuarios.Add(conta);
@@ -203,11 +205,11 @@ public class ContaController(
             ViewData["ReturnUrl"] = returnUrl;
             return View(model);
         }
+        conta.UltimoAcessoEm = DateTime.UtcNow;
+        conta.AvisoInatividadeEnviadoEm = null;
         if (resultado == PasswordVerificationResult.SuccessRehashNeeded)
-        {
             conta.SenhaHash = passwordHasher.HashPassword(conta, model.Senha);
-            await db.SaveChangesAsync();
-        }
+        await db.SaveChangesAsync();
         await IniciarSessao(conta);
         return Url.IsLocalUrl(returnUrl) ? Redirect(returnUrl!) : RedirectToAction("Index", "Home");
     }
@@ -259,6 +261,8 @@ public class ContaController(
     }
 
     private static string HashToken(string token) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
+
+    private bool CadastroConfigurado() => emailSender.IsConfigured && !string.IsNullOrWhiteSpace(configuration["Service:OperatorName"]);
 
     private async Task IniciarSessao(ContaUsuario conta)
     {

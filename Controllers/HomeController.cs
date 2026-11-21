@@ -117,7 +117,12 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
 
 
     [AllowAnonymous]
-    public IActionResult Privacy() => View();
+    public IActionResult Privacy()
+    {
+        ViewBag.OperadorServico = configuration["Service:OperatorName"];
+        ViewBag.EmailPrivacidade = configuration["Email:SupportAddress"];
+        return View();
+    }
 
     [AllowAnonymous]
     public IActionResult Error() => View("Error", new ErrorViewModel { RequestId = HttpContext.TraceIdentifier });

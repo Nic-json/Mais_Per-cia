@@ -22,11 +22,11 @@ O pacote inclui Docker Compose e Caddy para publicar por HTTPS. A VPS precisa te
 2. Instale Docker e Docker Compose na VPS e envie os arquivos deste projeto.
 3. Copie `.env.example` para `.env` e preencha o subdomínio ou domínio, e-mail de acesso e uma senha longa.
 4. Inicie a aplicação com `docker compose up -d --build`.
-5. Abra `https://<seu-dominio>` e entre com a conta inicial configurada. Novos peritos podem criar contas individuais pela tela de login. As áreas internas são liberadas após pagamento confirmado.
+5. Abra `https://<seu-dominio>` e entre com a conta inicial configurada. Novos peritos poderão criar contas individuais depois de configurar a identificação do operador, o canal de suporte e o SMTP. As áreas internas são liberadas após pagamento confirmado.
 
-O banco SQLite e os anexos ficam no volume Docker `pericias-data`, que sobrevive a atualizações da imagem. Cada conta pode exportar um ZIP com apenas seus registros e anexos. A restauração e edição direta do banco estão desativadas para contas de perito, pois o banco é compartilhado entre usuários. O operador do serviço precisa manter cópias externas do volume.
+O banco SQLite e os anexos ficam no volume Docker `pericias-data`, que sobrevive a atualizações da imagem. Cada conta pode exportar um ZIP com apenas seus registros e anexos. A restauração e edição direta do banco estão desativadas para contas de perito, pois o banco é compartilhado entre usuários. Para preparar cópias externas diárias criptografadas da base, anexos e chaves, siga `ops/backup/README.md`; o timer deve ser ativado somente após o primeiro backup manual concluir com sucesso.
 
-As chaves do ASP.NET Data Protection também ficam em `/data/keys` no volume persistente. Preserve-as junto com o banco ao migrar a VPS para manter válidos os cookies de autenticação durante atualizações. O backup ZIP do painel não inclui essas chaves. Banco, anexos e backups ainda não têm criptografia em repouso fornecida pela aplicação; proteja o disco e mantenha backups externos criptografados.
+As chaves do ASP.NET Data Protection também ficam em `/data/keys` no volume persistente. Preserve-as junto com o banco ao migrar a VPS para manter válidos os cookies de autenticação durante atualizações. O backup ZIP do painel não inclui essas chaves. Banco e anexos não têm criptografia em repouso fornecida pela aplicação; proteja o disco. O backup Restic é criptografado antes do envio, mas depende de configuração, senha guardada fora da VPS e teste periódico de restauração.
 
 ## Estimativa de hospedagem
 
@@ -45,7 +45,7 @@ Esse arranjo deixa aplicação e banco no mesmo servidor e cabe no teto mensal i
 
 ## Situação comercial
 
-O cadastro individual e o isolamento por conta são a base técnica para vários peritos. O cadastro exige confirmação de e-mail; a recuperação de senha usa link temporário de uso único. Para habilitar esses fluxos, configure SMTP conforme a seção abaixo. A integração de assinatura mensal com checkout Asaas está implementada, com preço de R$ 70,00 configurável e ativação baseada em webhook autenticado. Antes de cobrar clientes reais, valide todo o fluxo com o titular, configure credenciais e webhook de produção, e finalize exclusão/retenção de dados, suporte, termos e aviso de privacidade.
+O cadastro individual e o isolamento por conta são a base técnica para vários peritos. O cadastro exige confirmação de e-mail; a recuperação de senha usa link temporário de uso único. Para habilitar esses fluxos, configure SMTP conforme a seção abaixo. A rotina de retenção avisa após 11 meses sem login e pode excluir dados após 12 meses, respeitando aviso prévio e assinaturas ativas; veja `PRIVACIDADE_E_OPERACAO.md`. A integração de assinatura mensal com checkout Asaas está implementada, com preço de R$ 70,00 configurável e ativação baseada em webhook autenticado. Antes de cobrar clientes reais, valide o fluxo com credenciais/webhook de produção, configure SMTP e backup externo, e revise suporte, termos e aviso de privacidade.
 
 ## Módulos de processos e gestão
 
@@ -81,4 +81,4 @@ Ao iniciar a primeira assinatura, a aplicação consulta os webhooks da conta As
 
 ## E-mail de conta (SMTP)
 
-O cadastro de novas contas e a recuperação de senha só funcionam quando o SMTP está configurado. Na VPS, preencha no `.env` `EMAIL_SMTP_HOST`, `EMAIL_SMTP_PORT`, `EMAIL_SMTP_USER`, `EMAIL_SMTP_PASSWORD`, `EMAIL_FROM_ADDRESS` e `EMAIL_SUPPORT_ADDRESS` (opcional), depois recrie o app com `docker compose up -d --force-recreate app`. Não publique esses valores no Git. A porta padrão é 587 com TLS. Contas já existentes são consideradas confirmadas pela migração aditiva; nenhuma senha ou registro operacional é alterado. Links de confirmação expiram em 24 horas e links de redefinição em 1 hora; ambos são de uso único.
+SMTP é o serviço/protocolo de envio de e-mails usado pelo app para confirmação, recuperação de senha e avisos de inatividade. Para Gmail, use `smtp.gmail.com`, porta `587` com TLS, autenticação e senha de app do Google (não a senha normal da conta). Na VPS, preencha `EMAIL_SMTP_HOST`, `EMAIL_SMTP_PORT`, `EMAIL_SMTP_USER`, `EMAIL_SMTP_PASSWORD`, `EMAIL_FROM_ADDRESS`, `EMAIL_SUPPORT_ADDRESS` e `SERVICE_OPERATOR_NAME` no `.env`, depois recrie o app com `docker compose up -d --force-recreate app`. O cadastro permanece desativado enquanto qualquer configuração estiver faltando. Não publique credenciais no Git. Contas já existentes são consideradas confirmadas pela migração aditiva; nenhuma senha ou registro operacional é alterado. Links de confirmação expiram em 24 horas e links de redefinição em 1 hora; ambos são de uso único. O SMTP também envia aviso de inatividade aos 11 meses; sem envio confirmado, a conta não é excluída. Veja [PRIVACIDADE_E_OPERACAO.md](PRIVACIDADE_E_OPERACAO.md) para as regras e limites de retenção.

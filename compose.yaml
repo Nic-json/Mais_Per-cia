@@ -23,6 +23,7 @@ services:
       Email__FromName: ${EMAIL_FROM_NAME:-Perícia em Dia}
       Email__SupportAddress: ${EMAIL_SUPPORT_ADDRESS:-}
       Email__UseSsl: ${EMAIL_USE_SSL:-true}
+      Service__OperatorName: ${SERVICE_OPERATOR_NAME:-}
     volumes:
       - pericias-data:/data
     expose:
@@ -48,6 +49,17 @@ services:
     networks:
       web:
         ipv4_address: 172.30.253.2
+
+  backup:
+    build:
+      context: ./ops/backup
+    profiles: ["backup"]
+    restart: "no"
+    env_file:
+      - path: ./backup.env
+        required: false
+    volumes:
+      - pericias-data:/data
 
 volumes:
   pericias-data:

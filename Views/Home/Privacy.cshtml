@@ -1,12 +1,88 @@
-@{ ViewData["Title"] = "Privacidade"; Layout = null; }
-<!DOCTYPE html><html lang="pt-BR"><head><link rel="icon" type="image/png" href="~/images/pericia-em-dia-mark.png" asp-append-version="true"/><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>Privacidade · Perícia em Dia</title><link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css"/><link rel="stylesheet" href="~/css/site.css" asp-append-version="true"/><link rel="stylesheet" href="~/css/site-enhancements.css" asp-append-version="true"/></head><body class="login-page"><main class="login-card" style="max-width:760px"><a class="brand login-brand" asp-controller="Conta" asp-action="Cadastro"><img class="brand-mark" src="~/images/pericia-em-dia-mark.png" alt=""/><span>Perícia <span class="brand-light">em Dia</span><small>GESTÃO PERICIAL</small></span></a>
-<header class="page-heading"><partial name="_PageTitle" model='new PageHeadingViewModel("INFORMAÇÕES", "Privacidade", "Como os dados são tratados nesta versão do sistema.")' /></header>
-<section class="form-panel">
- <div class="alert alert-warning"><strong>Aviso preliminar.</strong> Esta página ainda não substitui uma política de privacidade revisada para o serviço comercial. O responsável pelo serviço precisa incluir sua identificação e canal de contato antes de abrir cadastros ao público.</div>
- <h2>Dados no sistema</h2>
- <p>O serviço pode armazenar dados de conta (nome e e-mail), informações de processos e periciados, dados de contato, registros de entrevista, laudos e documentos anexados. O conteúdo inserido pelo perito pode incluir dados pessoais sensíveis.</p>
- <p>Os registros são associados à conta que os criou e a aplicação aplica filtros por conta. A infraestrutura atual usa uma VPS e SQLite. O operador deve definir e informar retenção, exclusão, cópias de segurança, subprocessadores, canal para solicitações e responsabilidades de cada parte antes da oferta comercial.</p>
- <h2>Contas</h2>
- <p>O cadastro atual não verifica o endereço de e-mail e ainda não possui recuperação automática de senha nem encerramento/exclusão autônoma da conta. O usuário pode alterar a senha dentro do sistema. Não use esta versão com dados reais de clientes até definir esses procedimentos e publicar os termos aplicáveis.</p>
- <p>Consulte a <a href="https://www.gov.br/anpd/pt-br/centrais-de-conteudo/materiais-educativos-e-publicacoes/guia-orientativo-para-definicoes-dos-agentes-de-tratamento-e-do-encarregado">orientação da ANPD sobre agentes de tratamento</a> para definir responsabilidades do perito e do fornecedor do serviço.</p>
-</section><p class="text-center mt-3"><a asp-controller="Conta" asp-action="Cadastro">Voltar ao cadastro</a></p></main></body></html>
+@{
+    ViewData["Title"] = "Privacidade";
+    Layout = null;
+    var operador = ViewBag.OperadorServico as string;
+    var contato = ViewBag.EmailPrivacidade as string;
+    var identificacaoConfigurada = !string.IsNullOrWhiteSpace(operador) && !string.IsNullOrWhiteSpace(contato);
+}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <link rel="icon" type="image/png" href="~/images/pericia-em-dia-mark.png" asp-append-version="true" />
+    <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="index,follow" />
+    <title>Privacidade · Perícia em Dia</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site-enhancements.css" asp-append-version="true" />
+</head>
+<body class="login-page">
+<main class="login-card" style="max-width: 860px">
+    <a class="brand login-brand" asp-controller="Home" asp-action="Index" aria-label="Perícia em Dia, página inicial">
+        <img class="brand-mark" src="~/images/pericia-em-dia-mark.png" alt="" />
+        <span>Perícia <span class="brand-light">em Dia</span><small>GESTÃO PERICIAL</small></span>
+    </a>
+    <header class="page-heading"><partial name="_PageTitle" model='new PageHeadingViewModel("INFORMAÇÕES", "Privacidade", "Entenda quais dados o serviço trata e como pedir ajuda.")' /></header>
+
+    @if (!identificacaoConfigurada)
+    {
+        <div class="alert alert-warning" role="alert"><strong>Identificação do operador pendente.</strong> Esta página descreve o funcionamento atual, mas o cadastro público não deve ser divulgado até configurar o nome legal do responsável e o e-mail de privacidade no ambiente de produção.</div>
+    }
+
+    <section class="form-panel mb-3">
+        <h2>Quem opera o serviço</h2>
+        @if (!string.IsNullOrWhiteSpace(operador)) { <p><strong>Responsável pelo Perícia em Dia:</strong> @operador</p> }
+        else { <p><strong>Responsável pelo Perícia em Dia:</strong> identificação ainda não configurada.</p> }
+        @if (!string.IsNullOrWhiteSpace(contato)) { <p><strong>Contato de privacidade e suporte:</strong> <a href="mailto:@contato">@contato</a></p> }
+        else { <p><strong>Contato de privacidade e suporte:</strong> ainda não configurado.</p> }
+        <p>O Perícia em Dia fornece ferramentas para o perito organizar seus casos. Em geral, o perito decide por que e como usar os dados de pessoas relacionadas aos processos; o fornecedor do sistema opera a infraestrutura e trata esses dados para prestar o serviço. A definição jurídica de cada agente depende do uso concreto e dos contratos aplicáveis.</p>
+    </section>
+
+    <section class="form-panel mb-3">
+        <h2>Dados tratados e finalidades</h2>
+        <ul>
+            <li><strong>Conta:</strong> nome, e-mail, senha armazenada em hash e estado de confirmação, para autenticar e proteger o acesso.</li>
+            <li><strong>Dados inseridos pelo perito:</strong> processos, números, comarca/vara, dados de contato e observações de periciados, prazos, laudos, agenda, honorários e histórico, para organizar o trabalho pericial.</li>
+            <li><strong>Dados da assinatura:</strong> identificadores do cliente, checkout e recorrência no Asaas, estado da assinatura e período de acesso, para cobrar e liberar o serviço. Os dados do cartão são informados no ambiente do Asaas; o Perícia em Dia não recebe nem armazena o número do cartão.</li>
+            <li><strong>Dados técnicos:</strong> cookies essenciais de sessão, registros técnicos necessários para operar, proteger e diagnosticar o sistema e informações mínimas de e-mail para confirmação e recuperação da conta.</li>
+        </ul>
+        <p>O conteúdo de processos e laudos pode conter dados pessoais sensíveis ou informações protegidas por sigilo judicial. O perito deve inserir apenas dados necessários, ter autorização ou outra base legal aplicável e respeitar o sigilo profissional e processual.</p>
+    </section>
+
+    <section class="form-panel mb-3">
+        <h2>Onde e com quem os dados são tratados</h2>
+        <p>O sistema roda em uma VPS da Locaweb, usa banco SQLite em volume persistente e HTTPS pelo Caddy. A Asaas processa os pagamentos recorrentes. Um serviço SMTP configurado pelo operador envia confirmações e links de recuperação. O provedor SMTP deve ser identificado pelo responsável antes da abertura do cadastro público.</p>
+        <p>Os dados operacionais são associados à conta que os criou e as consultas da aplicação são isoladas por conta. A hospedagem mantém a infraestrutura e pode ter acesso técnico para suporte e operação. O acesso da equipe do serviço deve ser limitado às tarefas necessárias.</p>
+        <p>O tráfego entre navegador e site usa HTTPS. Senhas são armazenadas em hash e os cookies de autenticação usam proteção de navegador. <strong>O banco SQLite, os arquivos e as cópias de segurança não são criptografados em repouso pela aplicação.</strong> Proteção do disco e dos backups é uma responsabilidade operacional ainda a consolidar.</p>
+        <p>Novos anexos de documentos estão temporariamente desativados. Arquivos legados que já existam continuam armazenados e são incluídos na exportação da conta.</p>
+    </section>
+
+    <section class="form-panel mb-3">
+        <h2>Prazo de armazenamento e encerramento</h2>
+        <p>O cancelamento da assinatura interrompe a recorrência, mas <strong>não apaga automaticamente a conta, os processos ou os laudos</strong>. A exportação individual está disponível em Configurações. Para contas que não acessam o serviço por 11 meses, enviamos um aviso ao e-mail cadastrado. Se não houver novo acesso, os dados poderão ser excluídos após 12 meses de inatividade, com pelo menos 30 dias entre o aviso e a exclusão. Contas com assinatura ativa ou período pago vigente ficam fora dessa rotina.</p>
+        <p>Os registros e arquivos associados são removidos da base principal. Cópias locais de restauração são eliminadas após 30 dias; cópias externas operadas pelo provedor ou pelo operador podem seguir o ciclo próprio de expiração. Dados podem ser preservados quando houver obrigação legal ou necessidade de exercício de direitos. Cancelar a assinatura não equivale a solicitar a exclusão.</p>
+    </section>
+
+    <section class="form-panel mb-3">
+        <h2>Seus direitos e solicitações</h2>
+        <p>Você pode pedir informações sobre o tratamento, acesso, correção, portabilidade quando aplicável, bloqueio ou eliminação, além de apresentar dúvidas ou reclamações. Para dados de periciados e outros envolvidos em um caso, procure primeiro o perito responsável, que cadastrou essas informações.</p>
+        @if (!string.IsNullOrWhiteSpace(contato))
+        {
+            <p>Para dados da conta ou do serviço, escreva para <a href="mailto:@contato">@contato</a>. Podemos solicitar informações para confirmar sua identidade antes de atender ao pedido.</p>
+        }
+        else
+        {
+            <p>O canal de privacidade ainda não está configurado. O responsável precisa preencher `EMAIL_SUPPORT_ADDRESS` antes de divulgar o cadastro público.</p>
+        }
+        <p>Pedidos de confirmação e acesso serão tratados nos formatos e prazos previstos na legislação aplicável. A <a href="https://www.gov.br/anpd/pt-br/assuntos/titular-de-dados/direito-dos-titulares">ANPD informa</a> resposta imediata para acesso simplificado e prazo de até 15 dias para declaração completa, quando aplicável.</p>
+    </section>
+
+    <section class="form-panel">
+        <h2>Incidentes de segurança</h2>
+        <p>Se suspeitar de acesso indevido à sua conta, troque a senha e contate o canal de privacidade. O operador deve registrar o incidente, limitar o impacto, preservar evidências e avisar o controlador da conta afetada. A comunicação à ANPD e aos titulares cabe ao controlador quando o incidente puder causar risco ou dano relevante, dentro do prazo regulamentar aplicável, conforme o <a href="https://www.gov.br/anpd/pt-br/canais_atendimento/agente-de-tratamento/comunicado-de-incidente-de-seguranca-cis">regulamento de incidentes da ANPD</a>.</p>
+    </section>
+    <p class="small text-muted mt-3">Esta página descreve os recursos e limitações atuais do produto. Ela precisa ser revisada com a identificação do operador, os fornecedores contratados e os procedimentos efetivamente adotados antes do lançamento comercial.</p>
+    <p class="text-center mt-3"><a asp-controller="Home" asp-action="Index">Voltar ao início</a></p>
+</main>
+</body>
+</html>

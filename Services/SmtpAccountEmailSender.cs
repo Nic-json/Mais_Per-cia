@@ -12,7 +12,7 @@ public sealed class SmtpAccountEmailSender(IConfiguration configuration) : IAcco
     private string? FromAddress => configuration["Email:FromAddress"];
     private string FromName => configuration["Email:FromName"] ?? "Perícia em Dia";
     public string? SupportAddress => configuration["Email:SupportAddress"];
-    public bool IsConfigured => !string.IsNullOrWhiteSpace(Host) && !string.IsNullOrWhiteSpace(FromAddress);
+    public bool IsConfigured => !string.IsNullOrWhiteSpace(Host) && !string.IsNullOrWhiteSpace(User) && !string.IsNullOrWhiteSpace(Password) && !string.IsNullOrWhiteSpace(FromAddress) && !string.IsNullOrWhiteSpace(SupportAddress);
 
     public async Task SendAsync(string recipient, string subject, string htmlBody, CancellationToken cancellationToken = default)
     {

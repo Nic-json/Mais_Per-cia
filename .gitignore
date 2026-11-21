@@ -1,6 +1,7 @@
 .env
 .env.*
 !.env.example
+backup.env
 bin/
 obj/
 publish/

@@ -24,4 +24,8 @@ public sealed class ContaUsuario
     public bool EmailConfirmado { get; set; } = true;
 
     public DateTime CriadoEm { get; set; } = DateTime.UtcNow;
+
+    public DateTime UltimoAcessoEm { get; set; } = DateTime.UtcNow;
+
+    public DateTime? AvisoInatividadeEnviadoEm { get; set; }
 }
