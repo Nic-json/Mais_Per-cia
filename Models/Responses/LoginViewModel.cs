@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Sistemas_para_pericias.Models;
+namespace Sistemas_para_pericias.Models.Responses;
 
 public class LoginViewModel
 {
@@ -12,3 +12,4 @@ public class LoginViewModel
     [Display(Name = "Senha")]
     public string Senha { get; set; } = "";
 }
+

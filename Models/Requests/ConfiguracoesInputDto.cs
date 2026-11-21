@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
+using Sistemas_para_pericias.Models;
 
-namespace Sistemas_para_pericias.Models;
+namespace Sistemas_para_pericias.Models.Requests;
 
 /// <summary>Preferências editáveis no formulário; credenciais MFA e campos de sistema ficam fora do payload.</summary>
 public sealed class ConfiguracoesInputDto
@@ -25,3 +26,5 @@ public sealed class ConfiguracoesInputDto
         AtualizadoEm = DateTime.UtcNow
     };
 }
+
+

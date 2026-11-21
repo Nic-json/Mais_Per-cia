@@ -10,6 +10,8 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Sistemas_para_pericias.Data;
 using Sistemas_para_pericias.Models;
+using Sistemas_para_pericias.Models.Requests;
+using Sistemas_para_pericias.Models.Responses;
 using Sistemas_para_pericias.Services;
 
 namespace Sistemas_para_pericias.Controllers;
@@ -284,3 +286,4 @@ public class ContaController(
         return RedirectToAction(nameof(Entrar));
     }
 }
+

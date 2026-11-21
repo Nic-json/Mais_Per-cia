@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
+using Sistemas_para_pericias.Models;
 
-namespace Sistemas_para_pericias.Models;
+namespace Sistemas_para_pericias.Models.Requests;
 
 /// <summary>Campos que o formulário de cadastro/edição está autorizado a alterar.</summary>
 public sealed class PericiaFormInputDto
@@ -61,3 +62,5 @@ public sealed class PericiadoFormInputDto
     [StringLength(4000)]
     public string? Observacoes { get; set; }
 }
+
+

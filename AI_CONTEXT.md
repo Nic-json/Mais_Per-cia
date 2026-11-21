@@ -1,6 +1,6 @@
 # Contexto do projeto para assistentes de IA
 
-Atualizado em 20/11/2026. Resumo operacional para orientar mudanças sem exigir a leitura do repositório inteiro. O código é a fonte de verdade: confira os arquivos relacionados antes de alterar comportamento.
+Atualizado em 21/11/2026. Resumo operacional para orientar mudanças sem exigir a leitura do repositório inteiro. O código é a fonte de verdade: confira os arquivos relacionados antes de alterar comportamento.
 
 ## Produto e arquitetura
 
@@ -12,6 +12,12 @@ Perícia em Dia é uma aplicação privada em português para um perito judicial
 - Desenvolvimento local com `dotnet run`; produção em Docker Compose + Caddy com HTTPS.
 - Cadastro individual e login com senha em hash ASP.NET Identity PasswordHasher, cookie seguro e limite por IP. Novas contas confirmam o e-mail antes de entrar; links de confirmação expiram em 24 horas. Redefinição de senha usa tokens aleatórios de uso único, armazenados somente como hash, com validade de uma hora e resposta que não revela se o e-mail existe. SMTP é configurado por `Email__SmtpHost`, `Email__SmtpPort`, `Email__SmtpUser`, `Email__SmtpPassword`, `Email__FromAddress`, `Email__FromName`, `Email__SupportAddress` e `Email__UseSsl`; o cadastro fica indisponível sem SMTP, contato de suporte e `Service__OperatorName`. A migração SQLite adiciona `EmailConfirmado` com default `true` para preservar as contas existentes e cria a tabela de tokens. Checkout mensal recorrente somente por cartão de crédito, configurável via Asaas; a primeira cobrança vence no dia da contratação. O usuário pode cancelar a própria recorrência pela página Assinatura; o sistema só confirma após resposta do Asaas, mantém o acesso até o fim do período pago e informa que cobranças pendentes/vencidas vinculadas podem ser removidas pelo provedor. A tela de assinatura separa os estados ativa, checkout pendente, cancelada e indisponibilidade; checkout pendente retoma o link salvo. Erro da Asaas por restrição cadastral da conta recebedora recebe orientação específica na interface, sem expor a resposta bruta da API. Um checkout recorrente aberto é reutilizado para evitar cobranças duplicadas. O retorno do checkout informa que a confirmação é assíncrona; somente webhook autenticado confirma pagamento e libera acesso, exceto a conta inicial ID 1. Antes de gerar cobrança, a aplicação consulta e provisiona o webhook Asaas. O link retornado pelo Asaas é validado e persistido por conta; links antigos sem valor salvo usam fallback por ambiente. `Public__BaseUrl` em produção define callbacks HTTPS usando `APP_DOMAIN`. Webhooks associam eventos de pagamento ao checkout usando `payment.checkoutSession` quando o corpo não tem objeto `checkout`. Eventos de confirmação, atraso, recusa, cancelamento, expiração, estorno e chargeback são tratados com idempotência por ID; assinatura criada/alterada sem pagamento confirmado não libera acesso. Os dados do produto enviados ao Asaas usam a marca Perícia em Dia. O preço padrão da assinatura é R$ 70,00, configurável por `Billing__MonthlyPrice` / `BILLING_MONTHLY_PRICE`; o valor de assinaturas existentes no Asaas não é alterado automaticamente. `Admin__Email`/`Admin__Password` bootstrap criam a conta inicial ID 1.
 - Todo registro operacional tem `UsuarioId`; filtros globais no `PericiasContext` e preenchimento automático em `SaveChanges` isolam as contas. Dados antigos migram para a conta inicial ID 1.
+
+### Organização atual do código
+
+- DTOs de entrada de formulários ficam em `Models/Requests/`; modelos preparados para exibição nas páginas ficam em `Models/Responses/`. Entidades persistidas continuam em `Models/` e não devem ser usadas como payload de entrada quando existir um DTO específico.
+- As ações antes concentradas em `HomeController.cs` foram separadas em arquivos parciais por domínio (`HomeController.Processos.cs`, `Agenda`, `Financeiro`, `Relatorios`, `Laudos` e `Backup`). Isso mantém rotas e comportamento existentes, mas continua sendo uma única classe MVC `HomeController`; a extração para controllers de runtime independentes ainda é uma etapa futura.
+- Essa divisão é uma organização de código de baixo risco, não uma arquitetura de camadas completa. Regras de negócio e consultas ainda residem em actions do MVC; novas extrações devem preservar rotas, isolamento por `UsuarioId`, compatibilidade SQLite e validações atuais.
 
 ## Funcionalidades no código local
 
@@ -57,10 +63,11 @@ Perícia em Dia é uma aplicação privada em português para um perito judicial
 ## Mapa rápido do código
 
 - `Program.cs`: configuração, autenticação, armazenamento e inicialização SQLite.
-- `Controllers/HomeController.cs`: landing page pública, processos, dashboard, laudos, agenda, honorários, relatórios, documentos e operações do banco.
+- `Controllers/HomeController.cs` e `Controllers/HomeController.*.cs`: controller MVC dividido em arquivos parciais por domínio; a classe mantém as rotas atuais e ainda concentra as actions.
 - `Controllers/ContaController.cs`: cadastro, confirmação de e-mail, login, alteração e redefinição de senha e sessão individual. `Services/SmtpAccountEmailSender.cs`: envio de mensagens transacionais via SMTP. `Controllers/AssinaturaController.cs`: checkout Asaas, status individual e webhook de pagamento.
+- `Models/Requests/`: DTOs de entrada para formulários (perícia, configurações e unidade forense). `Models/Responses/`: ViewModels de saída usados pelas views Razor.
 - `Models/Pericia.cs`: entidades de perícia, pessoa, laudo/versão, evento, pagamento, histórico, perfil e modelo.
-- `Models/EditorLaudoViewModel.cs`: dados apresentados ao editor.
+- `Models/Responses/EditorLaudoViewModel.cs`: dados apresentados ao editor.
 - `Data/PericiasContext.cs`: mapeamentos, filtros globais por proprietário e atribuição automática do `UsuarioId`.
 - `Data/SqliteSchema.cs`: migrações adicionais executadas na inicialização, incluindo tabelas de assinatura e idempotência de webhooks.
 - `Views/Home/`: telas MVC, incluindo `Landing.cshtml` pública; `Views/Shared/_Layout.cshtml` contém a navegação autenticada, e `_PageTitle.cshtml` / `_PanelTitle.cshtml` padronizam os títulos das páginas e seções.

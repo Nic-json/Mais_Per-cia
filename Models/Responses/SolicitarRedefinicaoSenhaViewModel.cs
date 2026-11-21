@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Sistemas_para_pericias.Models;
+namespace Sistemas_para_pericias.Models.Responses;
 
 public sealed class SolicitarRedefinicaoSenhaViewModel
 {
@@ -8,3 +8,4 @@ public sealed class SolicitarRedefinicaoSenhaViewModel
     [Display(Name = "E-mail")]
     public string Email { get; set; } = "";
 }
+

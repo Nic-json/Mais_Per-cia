@@ -9,6 +9,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Sistemas_para_pericias.Data;
 using Sistemas_para_pericias.Models;
+using Sistemas_para_pericias.Models.Requests;
+using Sistemas_para_pericias.Models.Responses;
 
 namespace Sistemas_para_pericias.Controllers;
 
@@ -395,3 +397,4 @@ public sealed class AssinaturaController(PericiasContext db, IConfiguration conf
         return a.Length == b.Length && CryptographicOperations.FixedTimeEquals(a, b);
     }
 }
+

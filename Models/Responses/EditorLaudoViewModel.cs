@@ -1,4 +1,6 @@
-namespace Sistemas_para_pericias.Models;
+using Sistemas_para_pericias.Models;
+
+namespace Sistemas_para_pericias.Models.Responses;
 
 public class EditorLaudoViewModel
 {
@@ -16,3 +18,5 @@ public class EditorLaudoViewModel
     public DateTime? AtualizadoEm { get; set; }
     public List<VersaoLaudo> Versoes { get; set; } = [];
 }
+
+

@@ -1,4 +1,4 @@
-namespace Sistemas_para_pericias.Models;
+namespace Sistemas_para_pericias.Models.Responses;
 
 public sealed record AgendaCalendarEntryViewModel(
     DateTime Data,
@@ -13,3 +13,4 @@ public sealed record AgendaCalendarDayViewModel(
     bool DentroDoPeriodo,
     bool Hoje,
     IReadOnlyList<AgendaCalendarEntryViewModel> Itens);
+

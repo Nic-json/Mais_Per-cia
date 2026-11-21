@@ -1,4 +1,4 @@
-@model Sistemas_para_pericias.Models.PaginationViewModel
+@model Sistemas_para_pericias.Models.Responses.PaginationViewModel
 @{
     var paginaInicial = Math.Max(1, Math.Min(Model.Pagina - 2, Model.TotalPaginas - 4));
     var paginaFinal = Math.Min(Model.TotalPaginas, paginaInicial + 4);
@@ -31,3 +31,4 @@
         }
     </ul>
 </nav>
+

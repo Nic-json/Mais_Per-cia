@@ -1,4 +1,4 @@
-@model Sistemas_para_pericias.Models.AlterarSenhaViewModel
+@model Sistemas_para_pericias.Models.Responses.AlterarSenhaViewModel
 @{ ViewData["Title"] = "Alterar senha"; }
 <header class="page-heading"><partial name="_PageTitle" model='new PageHeadingViewModel("SUA CONTA", "Alterar senha", "Confirme a senha atual para escolher uma nova.")' /></header>
 <section class="form-panel" style="max-width:600px">
@@ -10,3 +10,4 @@
   <button class="btn btn-primary">Atualizar senha</button> <a asp-controller="Home" asp-action="Configuracoes" class="btn btn-light">Voltar</a>
  </form>
 </section>
+

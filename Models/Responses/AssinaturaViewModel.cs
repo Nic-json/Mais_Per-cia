@@ -1,4 +1,4 @@
-namespace Sistemas_para_pericias.Models;
+namespace Sistemas_para_pericias.Models.Responses;
 
 public sealed class AssinaturaViewModel
 {
@@ -10,3 +10,4 @@ public sealed class AssinaturaViewModel
     public string? SubscriptionId { get; init; }
     public bool Cancelada { get; init; }
 }
+

@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Sistemas_para_pericias.Models;
+namespace Sistemas_para_pericias.Models.Responses;
 
 public sealed class CadastroContaViewModel
 {
@@ -20,3 +20,4 @@ public sealed class CadastroContaViewModel
     [Display(Name = "Confirme a senha")]
     public string ConfirmarSenha { get; set; } = "";
 }
+

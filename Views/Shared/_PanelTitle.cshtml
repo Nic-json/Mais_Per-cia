@@ -1,4 +1,4 @@
-@model Sistemas_para_pericias.Models.PanelHeadingViewModel
+@model Sistemas_para_pericias.Models.Responses.PanelHeadingViewModel
 <header class="panel-heading">
     <h2>@Model.Title</h2>
     @if (!string.IsNullOrWhiteSpace(Model.Description))
@@ -6,3 +6,4 @@
         <p>@Model.Description</p>
     }
 </header>
+

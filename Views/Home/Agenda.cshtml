@@ -4,7 +4,7 @@
     var inicioPeriodo = (DateTime)ViewBag.InicioAgenda;
     var fimPeriodo = (DateTime)ViewBag.FimAgenda;
     var modo = (string)ViewBag.Modo;
-    var diasAgenda = (IReadOnlyList<Sistemas_para_pericias.Models.AgendaCalendarDayViewModel>)ViewBag.DiasAgenda;
+    var diasAgenda = (IReadOnlyList<Sistemas_para_pericias.Models.Responses.AgendaCalendarDayViewModel>)ViewBag.DiasAgenda;
     var diasSemana = new[] { "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo" };
 }
 <header class="page-heading">
@@ -110,3 +110,4 @@
 })();
 </script>
 }
+

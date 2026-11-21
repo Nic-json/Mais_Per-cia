@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Sistemas_para_pericias.Models;
+namespace Sistemas_para_pericias.Models.Responses;
 
 public sealed class AlterarSenhaViewModel
 {
@@ -16,3 +16,4 @@ public sealed class AlterarSenhaViewModel
     [Display(Name = "Confirme a nova senha")]
     public string ConfirmarNovaSenha { get; set; } = "";
 }
+

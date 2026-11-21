@@ -1,4 +1,4 @@
-namespace Sistemas_para_pericias.Models;
+namespace Sistemas_para_pericias.Models.Responses;
 
 public sealed class PaginationViewModel
 {
@@ -17,3 +17,4 @@ public sealed class PaginationViewModel
     public int TamanhoPagina { get; }
     public Dictionary<string, string> Filtros { get; }
 }
+
