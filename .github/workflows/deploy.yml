@@ -28,7 +28,7 @@ jobs:
         run: dotnet build "Sistemas para pericias.csproj" --configuration Release
 
       - name: Package source for the VPS
-        run: tar -czf "$RUNNER_TEMP/pericias-deploy.tar.gz" --exclude=.git --exclude=.env --exclude='*.db' --exclude='*.db-shm' --exclude='*.db-wal' --exclude=App_Data --exclude=bin --exclude=obj --exclude=publish .
+        run: tar -czf "$RUNNER_TEMP/pericias-deploy.tar.gz" --exclude=.git --exclude=.env --exclude=backup.env --exclude='*.db' --exclude='*.db-shm' --exclude='*.db-wal' --exclude=App_Data --exclude=bin --exclude=obj --exclude=publish .
 
       - name: Check deployment secrets
         env:
@@ -59,4 +59,10 @@ jobs:
         run: |
           ssh_args=(-i "$HOME/.ssh/deploy_key" -o IdentitiesOnly=yes -o UserKnownHostsFile="$HOME/.ssh/known_hosts" -o StrictHostKeyChecking=yes)
           scp "${ssh_args[@]}" "$RUNNER_TEMP/pericias-deploy.tar.gz" "$VPS_USER@$VPS_HOST:/tmp/pericias-deploy.tar.gz"
-          ssh "${ssh_args[@]}" "$VPS_USER@$VPS_HOST" 'set -e; cd /opt/pericias; tar -xzf /tmp/pericias-deploy.tar.gz -C /opt/pericias; docker compose up -d --build; docker compose ps; rm -f /tmp/pericias-deploy.tar.gz'
+          ssh "${ssh_args[@]}" "$VPS_USER@$VPS_HOST" 'set -e
+          cd /opt/pericias
+          find /opt/pericias -mindepth 1 -maxdepth 1 ! -name .env ! -name backup.env -exec rm -rf -- {} +
+          tar -xzf /tmp/pericias-deploy.tar.gz -C /opt/pericias
+          docker compose up -d --build
+          docker compose ps
+          rm -f /tmp/pericias-deploy.tar.gz'

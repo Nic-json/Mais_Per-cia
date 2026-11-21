@@ -73,7 +73,7 @@ Perícia em Dia é uma aplicação privada em português para um perito judicial
 - `Views/Home/`: telas MVC, incluindo `Landing.cshtml` pública; `Views/Shared/_Layout.cshtml` contém a navegação autenticada, e `_PageTitle.cshtml` / `_PanelTitle.cshtml` padronizam os títulos das páginas e seções.
 - `wwwroot/css/`, `wwwroot/js/`: estilos e scripts.
 - `compose.yaml`, `Dockerfile`, `Caddyfile`: contêineres e proxy HTTPS.
-- `.github/workflows/deploy.yml`: build e deploy por push em `main`.
+- `.github/workflows/deploy.yml`: build e deploy por push em `main`; antes de extrair o pacote, limpa o código antigo em `/opt/pericias`, preservando `.env` e `backup.env`. Banco, uploads, chaves de proteção de dados e estado do Caddy ficam em volumes Docker nomeados, que não são removidos no deploy.
 - `README.md`: execução, hospedagem e secrets de deploy.
 
 Inspecione apenas os arquivos do recurso solicitado e as dependências necessárias. Evite ler ou colar o repositório inteiro.
