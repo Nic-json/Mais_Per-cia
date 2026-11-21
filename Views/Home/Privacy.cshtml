@@ -51,16 +51,16 @@
 
     <section class="form-panel mb-3">
         <h2>Onde e com quem os dados são tratados</h2>
-        <p>O sistema roda em uma VPS da Locaweb, usa banco SQLite em volume persistente e HTTPS pelo Caddy. A Asaas processa os pagamentos recorrentes. Um serviço SMTP configurado pelo operador envia confirmações e links de recuperação. O provedor SMTP deve ser identificado pelo responsável antes da abertura do cadastro público.</p>
+        <p>O sistema roda em uma VPS da Locaweb, usa banco SQLite em volume persistente e HTTPS pelo Caddy. A Zoho Mail envia mensagens transacionais por SMTP. A Asaas processa os pagamentos recorrentes. Backups externos são enviados ao Backblaze B2 usando Restic.</p>
         <p>Os dados operacionais são associados à conta que os criou e as consultas da aplicação são isoladas por conta. A hospedagem mantém a infraestrutura e pode ter acesso técnico para suporte e operação. O acesso da equipe do serviço deve ser limitado às tarefas necessárias.</p>
-        <p>O tráfego entre navegador e site usa HTTPS. Senhas são armazenadas em hash e os cookies de autenticação usam proteção de navegador. <strong>O banco SQLite, os arquivos e as cópias de segurança não são criptografados em repouso pela aplicação.</strong> Proteção do disco e dos backups é uma responsabilidade operacional ainda a consolidar.</p>
+        <p>O tráfego entre navegador e site usa HTTPS. Senhas são armazenadas em hash e os cookies de autenticação usam proteção de navegador. O banco SQLite e os arquivos mantidos na VPS não são criptografados em repouso pela aplicação. Os backups externos são criptografados pelo Restic antes do envio ao Backblaze B2. Cópias baixadas manualmente ficam sob responsabilidade de quem as armazenar.</p>
         <p>Novos anexos de documentos estão temporariamente desativados. Arquivos legados que já existam continuam armazenados e são incluídos na exportação da conta.</p>
     </section>
 
     <section class="form-panel mb-3">
         <h2>Prazo de armazenamento e encerramento</h2>
         <p>O cancelamento da assinatura interrompe a recorrência, mas <strong>não apaga automaticamente a conta, os processos ou os laudos</strong>. A exportação individual está disponível em Configurações. Para contas que não acessam o serviço por 11 meses, enviamos um aviso ao e-mail cadastrado. Se não houver novo acesso, os dados poderão ser excluídos após 12 meses de inatividade, com pelo menos 30 dias entre o aviso e a exclusão. Contas com assinatura ativa ou período pago vigente ficam fora dessa rotina.</p>
-        <p>Os registros e arquivos associados são removidos da base principal. Cópias locais de restauração são eliminadas após 30 dias; cópias externas operadas pelo provedor ou pelo operador podem seguir o ciclo próprio de expiração. Dados podem ser preservados quando houver obrigação legal ou necessidade de exercício de direitos. Cancelar a assinatura não equivale a solicitar a exclusão.</p>
+        <p>Os registros e arquivos associados são removidos da base principal. Cópias locais de restauração são eliminadas após 30 dias. Os backups externos no Backblaze B2 seguem retenção de 7 cópias diárias e 3 mensais; por isso, dados excluídos da base principal podem permanecer em backups até a expiração dessas cópias. Cópias baixadas manualmente não têm exclusão automática. Dados podem ser preservados quando houver obrigação legal ou necessidade de exercício de direitos. Cancelar a assinatura não equivale a solicitar a exclusão.</p>
     </section>
 
     <section class="form-panel mb-3">

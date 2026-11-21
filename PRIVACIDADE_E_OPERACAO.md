@@ -19,7 +19,7 @@ Documento de trabalho para operar o serviço. Não substitui revisão jurídica.
 | Dados do cartão | Processar a cobrança | Informados diretamente ao Asaas; o aplicativo não os recebe nem guarda |
 | Sessão e dados técnicos mínimos | Manter login, proteger e diagnosticar o serviço | Navegador e infraestrutura do serviço |
 
-Fornecedores já conhecidos: Locaweb (VPS), Asaas (pagamentos) e o provedor SMTP que será selecionado. Registrar nome jurídico, região de processamento, subprocessadores, retenção, suporte e condições contratuais de cada fornecedor antes da abertura comercial. Não afirmar que os dados ficam exclusivamente no Brasil sem validar cada fornecedor.
+Fornecedores em uso: Locaweb (VPS), Zoho Mail (SMTP), Asaas (pagamentos) e Backblaze B2 (backups externos via Restic). Registrar e confirmar nome jurídico, região de processamento, subprocessadores, retenção, suporte e condições contratuais de cada fornecedor antes da abertura comercial. Não afirmar que os dados ficam exclusivamente no Brasil sem validar cada fornecedor.
 
 ## 3. Controles existentes e limitações
 
@@ -27,7 +27,7 @@ Fornecedores já conhecidos: Locaweb (VPS), Asaas (pagamentos) e o provedor SMTP
 - Separação dos dados operacionais por `UsuarioId` e filtros por conta. O administrador inicial ID 1 é uma conta diferenciada e tem acesso apenas aos dados associados à própria conta segundo os filtros do aplicativo.
 - Confirmação de e-mail para contas novas; tokens de confirmação e redefinição são aleatórios, de uso único, com hash persistido e validade limitada.
 - Webhook Asaas autenticado e idempotente; o estado retornado pelo navegador não libera assinatura.
-- SQLite, arquivos e backups não têm criptografia em repouso fornecida pelo aplicativo. A VPS, o volume Docker, o acesso SSH e as cópias externas precisam de controles do operador.
+- SQLite e arquivos na VPS não têm criptografia em repouso fornecida pelo aplicativo. Backups externos são criptografados pelo Restic antes de serem enviados ao Backblaze B2; credenciais e senha de restauração ficam fora do Git. A VPS, o volume Docker, o acesso SSH e cópias baixadas manualmente precisam de controles do operador.
 - Não existe trilha de auditoria completa, canal dentro do produto para pedidos de titulares nem exclusão self-service. Anexos novos estão desativados; arquivos legados permanecem no armazenamento até a exclusão da conta.
 - O ZIP de exportação contém dados operacionais da conta. O processo remove as contas e tokens de outras pessoas, além de hashes de senha e eventos globais de webhook.
 
@@ -61,10 +61,10 @@ O aplicativo registra a data do último login e executa uma rotina diária de re
 
 ## 7. Itens para liberar cadastro comercial
 
-- Definir e cadastrar `SERVICE_OPERATOR_NAME` e `EMAIL_SUPPORT_ADDRESS`; configurar e testar SMTP com domínio autorizado (SPF/DKIM/DMARC quando suportados pelo provedor).
-- Identificar o provedor SMTP e atualizar a página pública com fornecedores e regiões reais.
+- Confirmar que `SERVICE_OPERATOR_NAME` e `EMAIL_SUPPORT_ADDRESS` estão corretos na VPS e que a caixa de suporte é monitorada; SMTP Zoho com domínio autorizado já foi configurado e testado.
+- Confirmar nome jurídico, regiões de processamento, subprocessadores e condições de Locaweb, Zoho Mail, Asaas e Backblaze B2 antes de publicar afirmações específicas sobre localização ou tratamento dos dados.
 - Revisar a página de privacidade e preparar Termos de Uso, condições de assinatura/cancelamento e contrato/instruções de tratamento com assessoria apropriada.
-- Configurar SMTP autenticado, testar o envio do aviso de inatividade e definir/operar backup externo criptografado com prazo de expiração verificável.
+- Testar o envio do aviso de inatividade via SMTP; backup externo criptografado Restic/B2 já foi configurado e restaurado em pasta temporária, mas falta confirmar a execução automática agendada.
 - Validar isolamento de contas e exportação sem dados de terceiros no artefato implantado; validar Asaas em produção e seus webhooks antes de cobrar.
 - Definir pessoa responsável por privacidade e processo de plantão para incidente. Não publicar dados de contato pessoais sem decidir que esse canal será monitorado.
 
