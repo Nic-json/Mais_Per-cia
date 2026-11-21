@@ -1,0 +1,107 @@
+@{
+    ViewData["Title"] = "Termos de Uso";
+    Layout = null;
+    var operador = ViewBag.OperadorServico as string;
+    var identificacaoLegal = ViewBag.IdentificacaoLegal as string;
+    var registroFornecedor = ViewBag.RegistroFornecedor as string;
+    var enderecoFornecedor = ViewBag.EnderecoFornecedor as string;
+    var contato = ViewBag.EmailSuporte as string;
+    var precoMensal = ViewBag.PrecoMensal is decimal preco ? preco : 70m;
+    var identificacaoCompleta = !string.IsNullOrWhiteSpace(identificacaoLegal)
+        && !string.IsNullOrWhiteSpace(registroFornecedor)
+        && !string.IsNullOrWhiteSpace(enderecoFornecedor)
+        && !string.IsNullOrWhiteSpace(contato);
+}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <link rel="icon" type="image/png" href="~/images/pericia-em-dia-mark.png" asp-append-version="true" />
+    <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="index,follow" />
+    <meta name="description" content="Termos de uso, assinatura, cobrança e cancelamento do Perícia em Dia." />
+    <title>Termos de Uso · Perícia em Dia</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site-enhancements.css" asp-append-version="true" />
+</head>
+<body class="login-page">
+<main class="login-card" style="max-width: 860px">
+    <a class="brand login-brand" asp-controller="Home" asp-action="Index" aria-label="Perícia em Dia, página inicial">
+        <img class="brand-mark" src="~/images/pericia-em-dia-mark.png" alt="" />
+        <span>Perícia <span class="brand-light">em Dia</span><small>GESTÃO PERICIAL</small></span>
+    </a>
+    <header class="page-heading"><partial name="_PageTitle" model='new PageHeadingViewModel("CONTRATAÇÃO E USO", "Termos de Uso", "Leia como funciona a conta, a assinatura e o cancelamento.")' /></header>
+
+    <section class="form-panel mb-3">
+        <h2>1. Quem oferece o serviço</h2>
+        @if (!identificacaoCompleta)
+        {
+            <div class="alert alert-warning" role="alert"><strong>Identificação comercial incompleta.</strong> O responsável deve completar os dados legais e o endereço de atendimento antes de abrir as vendas.</div>
+        }
+        @if (!string.IsNullOrWhiteSpace(identificacaoLegal)) { <p><strong>Fornecedor:</strong> @identificacaoLegal</p> }
+        @if (!string.IsNullOrWhiteSpace(registroFornecedor)) { <p><strong>CPF/CNPJ:</strong> @registroFornecedor</p> }
+        @if (!string.IsNullOrWhiteSpace(enderecoFornecedor)) { <p><strong>Endereço:</strong> @enderecoFornecedor</p> }
+        @if (!string.IsNullOrWhiteSpace(operador))
+        {
+            <p>O serviço Perícia em Dia é operado por <strong>@operador</strong> ("Operador").</p>
+        }
+        else
+        {
+            <p>O serviço Perícia em Dia é oferecido pelo responsável identificado na <a asp-action="Privacy">Política de Privacidade</a>.</p>
+        }
+        <p>Ao criar uma conta ou contratar uma assinatura, você declara que leu e aceita estes termos. Se contratar em nome de outra pessoa ou organização, declara ter autorização para isso.</p>
+    </section>
+
+    <section class="form-panel mb-3">
+        <h2>2. Conta e uso da plataforma</h2>
+        <p>A conta é individual. Você deve manter seus dados de acesso em sigilo, informar dados corretos e avisar o suporte se suspeitar de uso não autorizado. Não compartilhe credenciais nem tente acessar dados de outras contas.</p>
+        <p>A plataforma ajuda a organizar perícias, periciados, laudos, prazos, agenda e honorários. Ela não consulta tribunais nem produz conclusões técnicas automaticamente. O perito continua responsável pelo conteúdo dos laudos, pelos prazos profissionais e pela legalidade dos dados que inserir.</p>
+        <p>Não envie conteúdo que você não tenha autorização para armazenar. Dados de processos e laudos podem estar sujeitos a sigilo judicial ou profissional. Use a plataforma conforme a legislação e as regras aplicáveis ao seu trabalho.</p>
+    </section>
+
+    <section class="form-panel mb-3">
+        <h2>3. Plano, preço e cobrança</h2>
+        <p>O plano individual custa atualmente <strong>R$ @precoMensal.ToString("N2", System.Globalization.CultureInfo.GetCultureInfo("pt-BR")) por mês</strong>. O preço, a periodicidade e a forma de pagamento apresentados na tela de contratação antes da confirmação são os aplicáveis àquela assinatura.</p>
+        <p>A assinatura é mensal e recorrente no cartão de crédito, processada pelo Asaas. A primeira cobrança é prevista para a data da contratação; as renovações seguem o ciclo mensal informado pelo provedor. A recorrência continua até que o cancelamento seja confirmado.</p>
+        <p>O acesso é liberado após a confirmação do pagamento pelo Asaas. O retorno do navegador ao site, sozinho, não confirma pagamento. O Perícia em Dia não recebe nem armazena o número completo do cartão.</p>
+        <p>Qualquer mudança de preço será informada antes de produzir efeito em uma renovação, permitindo que você cancele se não quiser continuar. A cobrança e a confirmação dependem da disponibilidade do cartão e dos serviços do Asaas.</p>
+    </section>
+
+    <section class="form-panel mb-3">
+        <h2>4. Como cancelar e o que acontece depois</h2>
+        <ol>
+            <li>Entre na conta e acesse <strong>Assinatura</strong>. Na assinatura ativa, escolha <strong>Cancelar renovação</strong> e confirme o pedido. Se a opção não estiver disponível, solicite o cancelamento pelo contato de suporte abaixo.</li>
+            <li>O sistema solicita o encerramento da recorrência ao Asaas. A solicitação só é considerada concluída quando o provedor responde confirmando o cancelamento; confira a mensagem exibida na conta. Se houver falha, contate o suporte para acompanhamento.</li>
+            <li>Depois da confirmação, não devem ocorrer novas renovações. O acesso permanece até o fim do período já pago, cuja data aparece na tela da assinatura.</li>
+            <li>O cancelamento da renovação não apaga a conta nem os processos, laudos ou demais dados. A exclusão e a retenção seguem a <a asp-action="Privacy">Política de Privacidade</a>. Cobranças pendentes vinculadas à recorrência podem ser canceladas pelo Asaas; valores já pagos não são automaticamente estornados pelo cancelamento.</li>
+        </ol>
+        <p>Nas contratações à distância, o direito de arrependimento previsto no artigo 49 do <a href="https://planalto.gov.br/ccivil_03/leis/l8078compilado.htm">Código de Defesa do Consumidor</a> pode ser exercido no prazo legal de 7 dias, quando aplicável; os valores pagos nesse caso devem ser devolvidos conforme a lei. Para pedir atendimento, inclusive sobre uma cobrança, escreva ao suporte e informe o e-mail da conta e os dados da transação que tiver disponíveis; nunca envie senha ou dados completos do cartão.</p>
+    </section>
+
+    <section class="form-panel mb-3">
+        <h2>5. Disponibilidade e dados</h2>
+        <p>O serviço depende de conexão à internet, hospedagem e fornecedores externos. Podemos realizar manutenção e corrigir falhas; se uma interrupção relevante afetar sua conta, entre em contato pelo canal de suporte. Não prometemos disponibilidade contínua sem interrupções.</p>
+        <p>Você pode exportar os dados da conta pelas ferramentas disponíveis no sistema. O cancelamento não substitui um pedido de exclusão. A política de privacidade informa os dados tratados, fornecedores, retenção, backups e canal para solicitações.</p>
+    </section>
+
+    <section class="form-panel">
+        <h2>6. Suporte e atualização destes termos</h2>
+        @if (!string.IsNullOrWhiteSpace(contato))
+        {
+            <p>Para dúvidas, cancelamento ou solicitações relacionadas à assinatura, escreva para <a href="mailto:@contato">@contato</a>.</p>
+        }
+        else
+        {
+            <p>O contato de suporte está informado na <a asp-action="Privacy">Política de Privacidade</a>.</p>
+        }
+        <p>Se estes termos mudarem, a versão atualizada será publicada nesta página com a data de revisão. Mudanças relevantes na cobrança serão comunicadas antes de se aplicarem à assinatura.</p>
+        <p><strong>Última atualização:</strong> @BrasiliaTime.Now.ToString("dd/MM/yyyy").</p>
+    </section>
+
+    <nav class="d-flex flex-wrap justify-content-center gap-3 mt-4" aria-label="Páginas legais">
+        <a asp-action="Privacy">Política de Privacidade</a>
+        <a asp-controller="Home" asp-action="Index">Voltar ao início</a>
+    </nav>
+</main>
+</body>
+</html>

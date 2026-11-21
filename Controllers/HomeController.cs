@@ -116,11 +116,25 @@ public class HomeController(PericiasContext db, IConfiguration configuration, IW
     }
 
 
-    [AllowAnonymous]
+    [HttpGet("/privacidade"), HttpGet("/Home/Privacy"), AllowAnonymous]
     public IActionResult Privacy()
     {
         ViewBag.OperadorServico = configuration["Service:OperatorName"];
         ViewBag.EmailPrivacidade = configuration["Email:SupportAddress"];
+        return View();
+    }
+
+    [HttpGet("/termos"), HttpGet("/Home/Terms"), AllowAnonymous]
+    public IActionResult Terms()
+    {
+        ViewBag.OperadorServico = configuration["Service:OperatorName"];
+        ViewBag.IdentificacaoLegal = configuration["Service:LegalName"];
+        ViewBag.RegistroFornecedor = configuration["Service:TaxId"];
+        ViewBag.EnderecoFornecedor = configuration["Service:BusinessAddress"];
+        ViewBag.EmailSuporte = configuration["Email:SupportAddress"];
+        ViewBag.PrecoMensal = decimal.TryParse(configuration["Billing:MonthlyPrice"], NumberStyles.Number, CultureInfo.InvariantCulture, out var preco)
+            ? preco
+            : 70m;
         return View();
     }
 

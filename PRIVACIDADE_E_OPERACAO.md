@@ -73,3 +73,7 @@ O aplicativo registra a data do último login e executa uma rotina diária de re
 - [ANPD — Direitos dos titulares](https://www.gov.br/anpd/pt-br/assuntos/titular-de-dados/direito-dos-titulares)
 - [ANPD — Agentes de tratamento e encarregado](https://www.gov.br/anpd/pt-br/centrais-de-conteudo/materiais-educativos-e-publicacoes/guia-orientativo-para-definicoes-dos-agentes-de-tratamento-e-do-encarregado)
 - [ANPD — Comunicação de incidente de segurança](https://www.gov.br/anpd/pt-br/canais_atendimento/agente-de-tratamento/comunicado-de-incidente-de-seguranca-cis)
+
+## Termos de uso e cobrança
+
+A página pública de Termos de Uso foi preparada em `Views/Home/Terms.cshtml` e ligada à landing, ao cadastro e à tela de assinatura. Ela descreve a assinatura mensal atual, cobrança recorrente por cartão via Asaas, confirmação de pagamento pelo webhook, cancelamento da renovação e manutenção do acesso até o período pago. Cancelar não exclui a conta ou os dados; a retenção segue a política de privacidade. A página exige revisar os dados do fornecedor e mostra um aviso enquanto faltarem `Service__LegalName`, `Service__TaxId`, `Service__BusinessAddress` ou o contato de suporte. Revisar o texto com assessoria jurídica e conferir com o contrato e a configuração real do Asaas antes de abrir vendas.

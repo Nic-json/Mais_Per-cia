@@ -24,6 +24,9 @@ services:
       Email__SupportAddress: ${EMAIL_SUPPORT_ADDRESS:-}
       Email__UseSsl: ${EMAIL_USE_SSL:-true}
       Service__OperatorName: ${SERVICE_OPERATOR_NAME:-}
+      Service__LegalName: ${SERVICE_LEGAL_NAME:-}
+      Service__TaxId: ${SERVICE_TAX_ID:-}
+      Service__BusinessAddress: ${SERVICE_BUSINESS_ADDRESS:-}
     volumes:
       - pericias-data:/data
     expose:
