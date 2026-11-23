@@ -2,7 +2,7 @@
 @using Sistemas_para_pericias.Models
 @{ ViewData["Title"] = "Processo " + Model.Numero; string StatusLaudoNome(StatusLaudo status) => status switch { StatusLaudo.EmElaboracao => "em elaboração", StatusLaudo.Concluido => "Concluído", _ => status.ToString() }; }
 <header class="page-heading"><div><a asp-action="Processos" class="back-link">Voltar à lista</a><partial name="_PageTitle" model='new PageHeadingViewModel("PROCESSO / PERÍCIA", $"Perícia nº {Model.Numero}", Model.Status.ToString())' /></div><div class="heading-actions"><a asp-action="Editar" asp-route-id="@Model.Id" class="btn btn-outline-secondary">Editar cadastro</a></div></header>
-@if (TempData["MensagemFinanceira"] is string msg) { <div class="alert alert-success">@msg</div> } @if (TempData["ErroFinanceiro"] is string erro) { <div class="alert alert-danger">@erro</div> }
+@if (TempData["MensagemFinanceira"] is string msg) { <partial name="_FeedbackMessage" model='new FeedbackMessageViewModel(msg, FeedbackMessageType.Success)' /> } @if (TempData["ErroFinanceiro"] is string erro) { <partial name="_FeedbackMessage" model='new FeedbackMessageViewModel(erro, FeedbackMessageType.Error)' /> }
 <section id="resumo" class="form-panel process-summary-panel mb-3"><partial name="_PanelTitle" model='new PanelHeadingViewModel("Resumo do processo")' /><div class="process-summary-grid">
     <div class="process-summary-item"><b>Número da perícia</b><span>@Model.Numero</span></div>
     <div class="process-summary-item"><b>Comarca / Vara</b><span>@Model.Comarca / @Model.Vara</span></div>

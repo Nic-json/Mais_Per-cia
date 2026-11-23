@@ -6,8 +6,8 @@
     string StatusLaudoNome(StatusLaudo status) => status switch { StatusLaudo.EmElaboracao => "Em elaboração", StatusLaudo.Concluido => "Concluído", _ => status.ToString() };
 }
 <header class="page-heading"><div><a asp-action="Laudos" class="back-link">← Voltar à Central de laudos</a><partial name="_PageTitle" model='new PageHeadingViewModel("GESTÃO DE LAUDOS", "Laudos da perícia", $"Perícia nº {Model.Numero}")' /></div></header>
-@if (TempData["Mensagem"] is string mensagem) { <div class="alert alert-success">@mensagem</div> }
-@if (TempData["Erro"] is string erro) { <div class="alert alert-danger">@erro</div> }
+@if (TempData["Mensagem"] is string mensagem) { <partial name="_FeedbackMessage" model='new FeedbackMessageViewModel(mensagem, FeedbackMessageType.Success)' /> }
+@if (TempData["Erro"] is string erro) { <partial name="_FeedbackMessage" model='new FeedbackMessageViewModel(erro, FeedbackMessageType.Error)' /> }
 <section class="form-panel pericia-laudos-create mb-3"><partial name="_PanelTitle" model='new PanelHeadingViewModel("Criar laudo", "O número será gerado automaticamente.")' /><form asp-action="CriarLaudo" method="post" class="pericia-laudos-create-form"><input type="hidden" name="periciaId" value="@Model.Id"/><label>Periciado relacionado<select name="periciadoId" class="form-select"><option value="">Sem associação</option>@foreach (var pessoa in Model.Periciados.OrderBy(p => p.Nome)) { <option value="@pessoa.Id">@pessoa.Nome</option> }</select></label><label>Modelo opcional<select name="modeloId" class="form-select"><option value="">Começar em branco</option>@foreach (var modelo in modelos) { <option value="@modelo.Id">@modelo.Nome</option> }</select></label><button type="submit" class="btn btn-primary">Criar e abrir editor</button></form></section>
 <section class="list-panel"><div class="list-heading"><partial name="_PanelTitle" model='new PanelHeadingViewModel("Laudos desta perícia", $"{Model.Laudos.Count} laudos")' /></div>
 @if (Model.Laudos.Count == 0) { <div class="empty-state"><h3>Nenhum laudo cadastrado</h3><p>Use o formulário acima para criar o primeiro laudo desta perícia.</p></div> }

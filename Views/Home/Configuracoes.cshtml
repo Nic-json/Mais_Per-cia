@@ -2,7 +2,7 @@
 @using Sistemas_para_pericias.Services
 @{ ViewData["Title"] = "Configurações"; var catalogoForos = (IEnumerable<ForoTjrs>)(ViewBag.CatalogoForos ?? Array.Empty<ForoTjrs>()); var forosPersonalizados = (IEnumerable<UnidadeForense>)(ViewBag.UnidadesForenses ?? Array.Empty<UnidadeForense>()); var codigosPersonalizados = (HashSet<string>)(ViewBag.CatalogoForosCodigosPersonalizados ?? new HashSet<string>()); }
 <header class="page-heading"><partial name="_PageTitle" model='new PageHeadingViewModel("PREFERÊNCIAS", "Configurações", "Seu perfil, seus lembretes e seus dados.")' /></header>
-@if (TempData["MensagemConfiguracao"] is string mensagem) { <div class="alert alert-success">@mensagem</div> }
+@if (TempData["MensagemConfiguracao"] is string mensagem) { <partial name="_FeedbackMessage" model='new FeedbackMessageViewModel(mensagem, FeedbackMessageType.Success)' /> }
 <form asp-action="SalvarConfiguracoes" method="post" class="form-panel mb-3">
  <div asp-validation-summary="ModelOnly" class="text-danger"></div><partial name="_PanelTitle" model='new PanelHeadingViewModel("Perfil profissional")' />
  <p class="muted">O perfil é privado nesta conta.</p>
@@ -23,8 +23,8 @@
 <details class="form-panel mb-3">
  <summary class="h5 mb-0">Catálogo de foros do TJRS</summary>
  <p class="muted mt-3">A lista inicial vem da relação oficial de códigos publicada em 2009. Adicione ou corrija códigos que você descobrir; seus ajustes valem para esta conta e substituem a entrada inicial.</p>
- @if (TempData["MensagemCatalogoForense"] is string mensagemCatalogo) { <div class="alert alert-success">@mensagemCatalogo</div> }
- @if (TempData["ErroCatalogoForense"] is string erroCatalogo) { <div class="alert alert-danger">@erroCatalogo</div> }
+ @if (TempData["MensagemCatalogoForense"] is string mensagemCatalogo) { <partial name="_FeedbackMessage" model='new FeedbackMessageViewModel(mensagemCatalogo, FeedbackMessageType.Success)' /> }
+ @if (TempData["ErroCatalogoForense"] is string erroCatalogo) { <partial name="_FeedbackMessage" model='new FeedbackMessageViewModel(erroCatalogo, FeedbackMessageType.Error)' /> }
  <form asp-action="AdicionarUnidadeForense" method="post" class="row g-2 align-items-end mb-4">
   <div class="col-sm-2"><label class="form-label" for="Codigo">Código OOOO</label><input id="Codigo" name="Codigo" class="form-control" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" required placeholder="0132" /></div>
   <div class="col-sm-4"><label class="form-label" for="Comarca">Comarca</label><input id="Comarca" name="Comarca" class="form-control" maxlength="120" required /></div>

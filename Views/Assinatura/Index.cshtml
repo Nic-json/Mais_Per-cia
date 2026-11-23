@@ -25,9 +25,9 @@
     <a class="brand login-brand" href="/"><img class="brand-mark" src="~/images/pericia-em-dia-mark.png" alt="" /><span>Perícia <span class="brand-light">em Dia</span><small>GESTÃO PERICIAL</small></span></a>
     <div class="eyebrow">ACESSO AO SISTEMA</div><h1>Assinatura</h1>
     <p class="login-intro">Gerencie o pagamento e acompanhe a liberação da sua conta.</p>
-    @if (!string.IsNullOrWhiteSpace(erro)) { <div class="alert alert-warning subscription-alert @(erroCadastroAsaas ? "subscription-alert-provider" : "")" role="alert"><strong>@(erroCadastroAsaas ? "Assinatura temporariamente indisponível" : "Não foi possível concluir a operação")</strong><p class="mb-0">@erro</p></div> }
-    @if (!string.IsNullOrWhiteSpace(mensagemCancelamento)) { <div class="alert alert-success" role="status">@mensagemCancelamento</div> }
-    @if (TempData["RetornoAssinatura"] is string retorno) { <div class="alert alert-info" role="status">@retorno</div> }
+    @if (!string.IsNullOrWhiteSpace(erro)) { <partial name="_FeedbackMessage" model='new FeedbackMessageViewModel(erro, FeedbackMessageType.Error, erroCadastroAsaas ? "Assinatura temporariamente indisponível" : "Não foi possível concluir a operação")' /> }
+    @if (!string.IsNullOrWhiteSpace(mensagemCancelamento)) { <partial name="_FeedbackMessage" model='new FeedbackMessageViewModel(mensagemCancelamento, FeedbackMessageType.Success)' /> }
+    @if (TempData["RetornoAssinatura"] is string retorno) { <partial name="_FeedbackMessage" model='new FeedbackMessageViewModel(retorno, FeedbackMessageType.Information)' /> }
 
     @if (ativa)
     {

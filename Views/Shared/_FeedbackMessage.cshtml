@@ -1,0 +1,17 @@
+@model FeedbackMessageViewModel
+@{
+    var (style, label, icon, role) = Model.Type switch
+    {
+        FeedbackMessageType.Success => ("success", "Concluído", "✓", "status"),
+        FeedbackMessageType.Error => ("error", "Não foi possível concluir", "!", "alert"),
+        FeedbackMessageType.Warning => ("warning", "Atenção", "!", "alert"),
+        _ => ("information", "Informação", "i", "status")
+    };
+}
+<div class="app-feedback app-feedback--@style" role="@role" aria-live="@(role == "alert" ? "assertive" : "polite")">
+    <span class="app-feedback__icon" aria-hidden="true">@icon</span>
+    <div class="app-feedback__content">
+        <strong>@(Model.Title ?? label)</strong>
+        <p>@Model.Message</p>
+    </div>
+</div>

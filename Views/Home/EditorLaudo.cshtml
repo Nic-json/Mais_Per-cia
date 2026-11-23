@@ -7,8 +7,8 @@
  <div><a asp-action="LaudosDaPericia" asp-route-id="@Model.PericiaId" class="back-link">← Voltar aos laudos</a><partial name="_PageTitle" model='new PageHeadingViewModel("LAUDO PERICIAL", "Editor do laudo", $"Laudo nº {Model.NumeroLaudo} · Perícia nº {Model.Numero} · {Model.NomePericiado}")' /></div>
 </header>
 
-@if (TempData["MensagemLaudo"] is string mensagem) { <div class="alert alert-success">@mensagem</div> }
-@if (TempData["ErroLaudo"] is string erro) { <div class="alert alert-danger">@erro</div> }
+@if (TempData["MensagemLaudo"] is string mensagem) { <partial name="_FeedbackMessage" model='new FeedbackMessageViewModel(mensagem, FeedbackMessageType.Success)' /> }
+@if (TempData["ErroLaudo"] is string erro) { <partial name="_FeedbackMessage" model='new FeedbackMessageViewModel(erro, FeedbackMessageType.Error)' /> }
 
 <form asp-action="SalvarLaudo" asp-route-id="@Model.PericiaId" asp-route-laudoId="@Model.LaudoId" method="post" id="form-laudo" class="laudo-editor-panel">
  <input type="hidden" name="conteudoHtml" id="conteudo-html" />

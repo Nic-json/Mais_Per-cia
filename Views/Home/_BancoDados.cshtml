@@ -1,5 +1,5 @@
-﻿@if (TempData["MensagemBanco"] is string mensagem) { <div class="alert alert-success">@mensagem</div> }
-@if (TempData["ErroBanco"] is string erro) { <div class="alert alert-danger">@erro</div> }
+@if (TempData["MensagemBanco"] is string mensagem) { <partial name="_FeedbackMessage" model='new FeedbackMessageViewModel(mensagem, FeedbackMessageType.Success)' /> }
+@if (TempData["ErroBanco"] is string erro) { <partial name="_FeedbackMessage" model='new FeedbackMessageViewModel(erro, FeedbackMessageType.Error)' /> }
 
 <section class="form-panel mb-4">
  <div class="form-section-title"><span>01</span><div><h2>Editar com um software externo</h2><p>O banco deste sistema usa SQLite. O DB Browser for SQLite pode abrir e editar o arquivo localmente.</p></div></div>

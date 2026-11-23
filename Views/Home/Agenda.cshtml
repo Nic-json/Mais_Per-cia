@@ -21,8 +21,8 @@
     <input type="date" name="data" value="@inicioPeriodo.ToString("yyyy-MM-dd")" class="form-control" />
     <button class="btn btn-outline-secondary">Ir</button>
 </form>
-@if (TempData["MensagemAgenda"] is string msg) { <div class="alert alert-success">@msg</div> }
-@if (TempData["ErroAgenda"] is string erro) { <div class="alert alert-danger">@erro</div> }
+@if (TempData["MensagemAgenda"] is string msg) { <partial name="_FeedbackMessage" model='new FeedbackMessageViewModel(msg, FeedbackMessageType.Success)' /> }
+@if (TempData["ErroAgenda"] is string erro) { <partial name="_FeedbackMessage" model='new FeedbackMessageViewModel(erro, FeedbackMessageType.Error)' /> }
 <partial name="_AppModal" model='new AppModalViewModel("agenda-create-modal", "Novo compromisso", "Vincule o compromisso a uma perícia e informe data, horário e local.")' />
 <template id="agenda-create-template">
     <form asp-action="CriarEvento" method="post" class="app-modal-form agenda-create-form">
